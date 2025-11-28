@@ -1,0 +1,123 @@
+# Default values for LogPilot
+
+replicaCount: 1
+
+image:
+  repository: logpilot
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: logpilot.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: logpilot-tls
+  #    hosts:
+  #      - logpilot.local
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Persistence for SQLite database
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+
+# Environment configuration
+config:
+  # JWT secret - CHANGE THIS IN PRODUCTION!
+  jwtSecret: "change-me-in-production-use-strong-secret"
+  jwtExpiresIn: "24h"
+  # Admin API key for cleanup endpoint
+  adminApiKey: "change-me-use-strong-key"
+
+# Cleanup CronJob
+cleanup:
+  enabled: true
+  schedule: "0 * * * *"  # Every hour
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+
+# Kubernetes Metrics Collector (optional sidecar/separate deployment)
+metricsCollector:
+  enabled: false
+  image:
+    repository: logpilot-k8s-collector
+    tag: latest
+  schedule: "*/5 * * * *"  # Every 5 minutes
+  # API token will be provided via secret
+
+# Liveness and Readiness probes
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3

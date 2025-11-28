@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-50 text-gray-900;
+}
+
+.log-level-DEBUG { @apply text-gray-500; }
+.log-level-INFO { @apply text-blue-600; }
+.log-level-WARNING { @apply text-yellow-600; }
+.log-level-ERROR { @apply text-red-600; }
+.log-level-CRITICAL { @apply text-red-800 font-bold; }
+
+.log-level-badge-DEBUG { @apply bg-gray-100 text-gray-700; }
+.log-level-badge-INFO { @apply bg-blue-100 text-blue-700; }
+.log-level-badge-WARNING { @apply bg-yellow-100 text-yellow-700; }
+.log-level-badge-ERROR { @apply bg-red-100 text-red-700; }
+.log-level-badge-CRITICAL { @apply bg-red-200 text-red-900; }

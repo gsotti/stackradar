@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Git
+.git/
+.gitignore
+
+# Build output (will be created during build)
+dist/
+build/
+
+# Database
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.idea/
+.vscode/
+
+# Tests
+coverage/
+__tests__/
+*.test.js
+*.spec.js
+
+# Misc
+.DS_Store
+Thumbs.db
+*.tgz
+helm/
+k8s-collector/
