@@ -5,6 +5,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-logpilot}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-logpilot_password}
       - POSTGRES_DB=${POSTGRES_DB:-logpilot}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
@@ -17,7 +18,8 @@ services:
       retries: 5
 
   logpilot:
-    build: .
+    #build: .
+    image:  ghcr.io/gsotti/logradar:latest
     ports:
       - "8000:8000"
     environment:
@@ -40,16 +42,6 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
-
-  test-logger:
-    build: ./test-logger
-    environment:
-      - API_TOKEN=62b81c04d47245efb82fae99282998158b72e4a8683b46d494e57a38e45d180e
-      - API_URL=http://host.docker.internal:8000
-      - SYSTEM_NAME=Test
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: unless-stopped
 
 volumes:
   logpilot-data:

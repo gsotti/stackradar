@@ -1,0 +1,6 @@
+# Environment variables
+.env
+
+# Temporary files
+*.tmp
+.DS_Store

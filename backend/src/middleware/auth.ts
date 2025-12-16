@@ -31,11 +31,11 @@ export function verifyToken(token: string): number | null {
 }
 
 // Express middleware
-export function authMiddleware(
+export async function authMiddleware(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -52,6 +52,19 @@ export function authMiddleware(
   }
 
   req.userId = userId;
+
+  try {
+    // Load tenant mappings for this user to enforce tenant scoping
+    const result = await db.query<{ tenant_id: number }>(
+      'SELECT tenant_id FROM user_tenants WHERE user_id = $1',
+      [userId]
+    );
+    req.userTenantIds = result.rows.map(r => r.tenant_id);
+  } catch (e) {
+    console.error('authMiddleware: failed to load user tenant mappings', e);
+    req.userTenantIds = [];
+  }
+
   next();
 }
 

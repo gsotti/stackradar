@@ -13,13 +13,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function runMigrations(): Promise<void> {
-  const pool = new Pool({
+  const connectionConfig = {
     host: process.env.POSTGRES_HOST || 'localhost',
     port: parseInt(process.env.POSTGRES_PORT || '5432'),
     user: process.env.POSTGRES_USER || 'logpilot',
     password: process.env.POSTGRES_PASSWORD || 'logpilot_password',
     database: process.env.POSTGRES_DB || 'logpilot',
-  });
+  };
+
+  const pool = new Pool(connectionConfig);
 
   try {
     console.log('🔄 Running database migrations...\n');
@@ -67,17 +69,63 @@ async function runMigrations(): Promise<void> {
       try {
         await client.query('BEGIN');
 
-        // Remove comments and split by semicolons
+        // Remove comments
         const cleanedSql = sql
           .split('\n')
           .filter(line => !line.trim().startsWith('--'))
           .join('\n');
 
-        const statements = cleanedSql
-          .split(';')
-          .map(s => s.trim())
-          .filter(s => s.length > 0);
+        // Smart split: handle DO $$ blocks that contain semicolons
+        const statements: string[] = [];
+        let currentStatement = '';
+        let inDollarQuote = false;
+        let dollarTag = '';
 
+        for (let i = 0; i < cleanedSql.length; i++) {
+          const char = cleanedSql[i];
+          currentStatement += char;
+
+          // Check for dollar-quoted strings (DO $$, $body$, etc.)
+          if (char === '$') {
+            const nextChars = cleanedSql.slice(i, i + 10);
+            const dollarMatch = nextChars.match(/^\$\w*\$/);
+
+            if (dollarMatch) {
+              const tag = dollarMatch[0];
+
+              if (!inDollarQuote) {
+                // Starting a dollar-quoted block
+                inDollarQuote = true;
+                dollarTag = tag;
+                currentStatement += tag.slice(1); // Add the rest of the tag
+                i += tag.length - 1;
+              } else if (tag === dollarTag) {
+                // Ending the dollar-quoted block
+                inDollarQuote = false;
+                currentStatement += tag.slice(1);
+                i += tag.length - 1;
+                dollarTag = '';
+              }
+            }
+          }
+
+          // Split on semicolon only if not inside dollar-quoted block
+          if (char === ';' && !inDollarQuote) {
+            const trimmed = currentStatement.trim();
+            if (trimmed.length > 0) {
+              statements.push(trimmed);
+            }
+            currentStatement = '';
+          }
+        }
+
+        // Add any remaining statement
+        const trimmed = currentStatement.trim();
+        if (trimmed.length > 0) {
+          statements.push(trimmed);
+        }
+
+        // Execute each statement
         for (const statement of statements) {
           await client.query(statement);
         }

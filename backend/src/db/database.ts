@@ -1,8 +1,11 @@
 import pkg from 'pg';
+import dotenv from "dotenv";
 const { Pool } = pkg;
 
-// Create a PostgreSQL connection pool
-const pool = new Pool({
+dotenv.config();
+
+// Debug: Print connection details for main pool
+const dbConfig = {
   host: process.env.POSTGRES_HOST || 'localhost',
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
   user: process.env.POSTGRES_USER || 'logpilot',
@@ -11,7 +14,10 @@ const pool = new Pool({
   max: 20, // Maximum number of connections in pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
-});
+};
+
+// Create a PostgreSQL connection pool
+const pool = new Pool(dbConfig);
 
 // Test connection on startup
 pool.on('connect', () => {
@@ -35,4 +41,5 @@ export async function initDatabase(): Promise<void> {
   }
 }
 
+export { pool };
 export default pool;

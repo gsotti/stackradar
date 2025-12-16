@@ -1,6 +1,6 @@
-# LogPilot 🚀
+# LogRadar 🚀
 
-A simple, self-hosted log aggregation service - an alternative to Papertrail.
+A simple, self-hosted log aggregation service - as an alternative to Papertrail.
 
 ## Features
 
@@ -157,6 +157,13 @@ curl -X POST "http://localhost:8000/api/k8s/metrics/YOUR_API_TOKEN" \
 | `JWT_EXPIRES_IN` | Token expiration | 24h |
 | `ADMIN_API_KEY` | Admin key for cleanup endpoint | (required) |
 | `STATIC_PATH` | Path to frontend files | ./static |
+| `CLUSTER_MODE` | Enable Node.js multi-core clustering per pod | true |
+| `WORKERS` | Number of worker processes (defaults to CPU cores) | <cpu count> |
+
+### Horizontal and Vertical Scaling
+
+- Vertical: The backend can utilize multiple CPU cores via Node.js clustering. Set `CLUSTER_MODE=true` and optionally `WORKERS` to a fixed number. Each pod/container will run a primary process that forks workers which share the same port.
+- Horizontal: You can run multiple replicas/pods behind a load balancer or Kubernetes Service. The application is stateless; each replica can process requests independently. The internal cleanup cron runs once per process cluster (only in the primary process inside each pod).
 
 ## Development
 

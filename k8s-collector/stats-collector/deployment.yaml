@@ -1,0 +1,99 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logradar-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: logradar-stats-collector
+  namespace: logradar-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logradar-stats-collector
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - pods
+      - services
+      - persistentvolumeclaims
+      - namespaces
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+    verbs: ["get", "list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - nodes
+      - pods
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logradar-stats-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logradar-stats-collector
+subjects:
+  - kind: ServiceAccount
+    name: logradar-stats-collector
+    namespace: logradar-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: logradar-stats-config
+  namespace: logradar-system
+type: Opaque
+stringData:
+  # REQUIRED: Replace with your LogRadar URL
+  LOGRADAR_URL: "https://your-logradar-instance.com"
+  # REQUIRED: Replace with your API token from LogRadar
+  API_TOKEN: "your-api-token-here"
+  # OPTIONAL: Name your cluster
+  CLUSTER_NAME: "my-cluster"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logradar-stats-collector
+  namespace: logradar-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logradar-stats-collector
+  template:
+    metadata:
+      labels:
+        app: logradar-stats-collector
+    spec:
+      serviceAccountName: logradar-stats-collector
+      containers:
+        - name: stats-collector
+          # REQUIRED: Build and push this image to your registry
+          # Example: docker build -f Dockerfile -t your-registry/logradar-stats-collector:latest .
+          #          docker push your-registry/logradar-stats-collector:latest
+          image: your-registry/logradar-stats-collector:latest
+          imagePullPolicy: Always
+          env:
+            # Collection interval in milliseconds (default: 10000 = 10 seconds)
+            - name: COLLECTION_INTERVAL
+              value: "10000"
+          envFrom:
+            - secretRef:
+                name: logradar-stats-config
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "64Mi"
+              cpu: "150m"

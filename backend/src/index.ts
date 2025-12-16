@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { CronJob } from 'cron';
+import os from 'os';
+import cluster from 'cluster';
 
 import { initDatabase } from './db/database.js';
 import authRoutes from './routes/auth.js';
@@ -12,6 +14,9 @@ import logRoutes from './routes/logs.js';
 import ingestRoutes from './routes/ingest.js';
 import k8sRoutes from './routes/k8s.js';
 import adminRoutes from './routes/admin.js';
+import tenantRoutes from './routes/tenants.js';
+import applicationRoutes from './routes/applications.js';
+import environmentRoutes from './routes/environments.js';
 import { cleanupOldLogs } from './services/cleanup.js';
 
 dotenv.config();
@@ -21,6 +26,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 8001;
+const CLUSTER_MODE = (process.env.CLUSTER_MODE || 'true').toLowerCase() === 'true';
+const WORKERS = Number(process.env.WORKERS || os.cpus().length || 1);
 
 // Middleware
 app.use(cors());
@@ -36,6 +43,9 @@ app.use('/api/logs', logRoutes);
 app.use('/api/ingest', ingestRoutes);
 app.use('/api/k8s', k8sRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/environments', environmentRoutes);
 
 // Health check
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -63,23 +73,52 @@ app.use((err: any, _req: Request, res: Response) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 LogPilot server running on port ${PORT}`);
-});
+function startHttpServer() {
+  app.listen(PORT, () => {
+    console.log(`🚀 LogRadar server PID ${process.pid} listening on port ${PORT}`);
+  });
+}
 
 // Cleanup Cron Job (runs every hour)
-const cleanupJob = new CronJob('0 * * * *', async () => {
-  console.log('Running scheduled log cleanup...');
-  try {
-    const deleted = await cleanupOldLogs();
-    console.log(`Cleanup complete. Deleted ${deleted} old log entries.`);
-  } catch (error) {
-    console.error('Cleanup job failed:', error);
-  }
-});
+function scheduleCleanupJobOnce() {
+  const job = new CronJob('0 * * * *', async () => {
+    console.log('Running scheduled log cleanup...');
+    try {
+      const deleted = await cleanupOldLogs();
+      console.log(`Cleanup complete. Deleted ${deleted} old log entries.`);
+    } catch (error) {
+      console.error('Cleanup job failed:', error);
+    }
+  });
 
-cleanupJob.start();
-console.log('📅 Cleanup cron job scheduled (hourly)');
+  job.start();
+  console.log('📅 Cleanup cron job scheduled (hourly)');
+}
+
+// Cluster bootstrap: utilize multiple CPU cores if enabled
+if (CLUSTER_MODE && cluster.isPrimary) {
+  // Primary/master process
+  console.log(`Primary process ${process.pid} starting ${WORKERS} worker(s)`);
+
+  // Schedule cleanup only once in primary
+  scheduleCleanupJobOnce();
+
+  for (let i = 0; i < WORKERS; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker) => {
+    console.warn(`Worker ${worker.process.pid} exited. Starting a new one...`);
+    cluster.fork();
+  });
+} else {
+  // Worker or single-process mode
+  startHttpServer();
+
+  // If not clustering, ensure cleanup is still scheduled
+  if (!CLUSTER_MODE) {
+    scheduleCleanupJobOnce();
+  }
+}
 
 export default app;

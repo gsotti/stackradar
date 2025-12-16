@@ -10,10 +10,15 @@ interface LogQueryParams {
   level?: string;
   search?: string;
   source?: string;
+  tenant?: string;
+  environment?: string;
+  application?: string;
+  application_id?: string;
   start_time?: string;
   end_time?: string;
   limit?: string;
   offset?: string;
+  before_id?: string;
 }
 
 // Query logs
@@ -27,16 +32,22 @@ router.get('/', authMiddleware, async (
       level,
       search,
       source,
+      tenant,
+      environment,
+      application,
+      application_id,
       start_time,
       end_time,
       limit = '100',
-      offset = '0'
+      offset = '0',
+      before_id
     } = req.query;
 
-    // Get user's system IDs
+    // Get all system IDs limited to the user's tenant mappings
+    const tenantIds = req.userTenantIds || [];
     const userSystemsResult = await db.query<Pick<System, 'id'>>(
-      'SELECT id FROM systems WHERE user_id = $1',
-      [req.userId]
+      'SELECT id FROM systems WHERE tenant_id = ANY($1)',
+      [tenantIds]
     );
     const userSystemIds = userSystemsResult.rows.map(s => s.id);
 
@@ -46,17 +57,18 @@ router.get('/', authMiddleware, async (
     }
 
     // If specific system requested, check access
-    if (system_id && !userSystemIds.includes(parseInt(system_id))) {
+    if (system_id && !userSystemIds.includes(Number(system_id))) {
       res.status(403).json({ detail: 'Access denied to this system' });
       return;
     }
 
-    const filterSystemIds = system_id ? [parseInt(system_id)] : userSystemIds;
+    const filterSystemIds = system_id ? [Number(system_id)] : userSystemIds;
 
     // Build query dynamically
     const params: any[] = [filterSystemIds];
     let paramIndex = 2;
-    let whereClause = `system_id = ANY($1)`;
+    // Join through environments -> applications -> systems to scope by system access
+    let whereClause = `s.id = ANY($1)`;
 
     if (level) {
       whereClause += ` AND level = $${paramIndex}`;
@@ -88,17 +100,60 @@ router.get('/', authMiddleware, async (
       paramIndex++;
     }
 
-    // Get total count
+    if (before_id) {
+      // Load logs older than a specific id for infinite scroll
+      whereClause += ` AND le.id < $${paramIndex}`;
+      params.push(parseInt(before_id));
+      paramIndex++;
+    }
+
+    if (tenant) {
+      whereClause += ` AND s.tenant_id = $${paramIndex}`;
+      params.push(tenant);
+      paramIndex++;
+    }
+
+    if (environment) {
+      whereClause += ` AND e.name ILIKE $${paramIndex}`;
+      params.push(`%${environment}%`);
+      paramIndex++;
+    }
+
+    if (application_id) {
+      whereClause += ` AND a.id = $${paramIndex}`;
+      params.push(parseInt(application_id));
+      paramIndex++;
+    } else if (application) {
+      whereClause += ` AND a.name ILIKE $${paramIndex}`;
+      params.push(`%${application}%`);
+      paramIndex++;
+    }
+
     const countResult = await db.query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM log_entries WHERE ${whereClause}`,
-      params
+      `SELECT COUNT(*) as count
+       FROM log_entries le
+       LEFT JOIN environments e ON e.id = le.environment_id
+       LEFT JOIN applications a ON a.id = e.application_id
+       LEFT JOIN systems s ON s.id = a.system_id
+       WHERE ${whereClause}`,
+       params
     );
 
     // Get logs
+    /*
+     LEFT JOIN environments e ON e.id = le.environment_id
+     LEFT JOIN applications a ON a.id = e.application_id
+     LEFT JOIN systems s ON s.id = a.system_id
+   */
+
     const logsResult = await db.query<LogEntry>(
-      `SELECT * FROM log_entries
+      `SELECT le.*
+       FROM log_entries le
+       LEFT JOIN environments e ON e.id = le.environment_id
+       LEFT JOIN applications a ON a.id = e.application_id
+       LEFT JOIN systems s ON s.id = a.system_id
        WHERE ${whereClause}
-       ORDER BY timestamp DESC
+       ORDER BY le.timestamp DESC
        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, parseInt(limit), parseInt(offset)]
     );
@@ -116,8 +171,11 @@ router.get('/', authMiddleware, async (
 });
 
 interface StatsQueryParams {
-  system_id?: string;
+  system_id?: number;
   hours?: string;
+  tenant_id?: number;
+  environment_id?: number;
+  application_id?: number;
 }
 
 interface LevelCount {
@@ -136,12 +194,13 @@ router.get('/stats', authMiddleware, async (
   res: Response
 ): Promise<void> => {
   try {
-    const { system_id, hours = '24' } = req.query;
+    const { system_id, hours = '24', tenant_id, environment_id, application_id } = req.query;
 
-    // Get user's system IDs
+    // Get all system IDs limited to the user's tenant mappings
+    const tenantIds = req.userTenantIds || [];
     const userSystemsResult = await db.query<Pick<System, 'id'>>(
-      'SELECT id FROM systems WHERE user_id = $1',
-      [req.userId]
+      'SELECT id FROM systems WHERE tenant_id = ANY($1)',
+      [tenantIds]
     );
     const userSystemIds = userSystemsResult.rows.map(s => s.id);
 
@@ -155,27 +214,55 @@ router.get('/stats', authMiddleware, async (
       return;
     }
 
-    if (system_id && !userSystemIds.includes(parseInt(system_id))) {
+    if (system_id && !userSystemIds.includes(Number(system_id))) {
       res.status(403).json({ detail: 'Access denied to this system' });
       return;
     }
 
-    const filterSystemIds = system_id ? [parseInt(system_id)] : userSystemIds;
+    const filterSystemIds = system_id ? [Number(system_id)] : userSystemIds;
     const since = new Date(Date.now() - parseInt(hours) * 60 * 60 * 1000).toISOString();
 
-    // Total logs
+    // Build filter conditions
+    const params: any[] = [filterSystemIds, since];
+    let paramIndex = 3;
+    let filterClause = '';
+
+    if (tenant_id) {
+      filterClause += ` AND s.tenant_id = $${paramIndex}`;
+      params.push(Number(tenant_id));
+      paramIndex++;
+    }
+
+    if (environment_id) {
+      filterClause += ` AND e.id = $${paramIndex}`;
+      params.push(Number(environment_id));
+      paramIndex++;
+    }
+
+    if (application_id) {
+      filterClause += ` AND a.id = $${paramIndex}`;
+      params.push(Number(application_id));
+      paramIndex++;
+    }
+
     const totalResult = await db.query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM log_entries
-       WHERE system_id = ANY($1) AND timestamp >= $2`,
-      [filterSystemIds, since]
+      `SELECT COUNT(*) as count FROM log_entries le
+       LEFT JOIN environments e ON e.id = le.environment_id
+       LEFT JOIN applications a ON a.id = e.application_id
+       LEFT JOIN systems s ON s.id = a.system_id
+       WHERE s.id = ANY($1) AND le.timestamp >= $2${filterClause}`,
+      params
     );
 
     // Logs by level
     const levelCountsResult = await db.query<LevelCount>(
-      `SELECT level, COUNT(*)::int as count FROM log_entries
-       WHERE system_id = ANY($1) AND timestamp >= $2
-       GROUP BY level`,
-      [filterSystemIds, since]
+      `SELECT le.level, COUNT(*)::int as count FROM log_entries le
+       LEFT JOIN environments e ON e.id = le.environment_id
+       LEFT JOIN applications a ON a.id = e.application_id
+       LEFT JOIN systems s ON s.id = a.system_id
+       WHERE s.id = ANY($1) AND le.timestamp >= $2${filterClause}
+       GROUP BY le.level`,
+      params
     );
 
     const logs_by_level: Record<string, number> = {};
@@ -191,11 +278,36 @@ router.get('/stats', authMiddleware, async (
       const hourStart = new Date(Date.now() - (i + 1) * 60 * 60 * 1000);
       const hourEnd = new Date(Date.now() - i * 60 * 60 * 1000);
 
+      const hourParams: any[] = [filterSystemIds, hourStart.toISOString(), hourEnd.toISOString()];
+      let hourParamIndex = 4;
+      let hourFilterClause = '';
+
+      if (tenant_id) {
+        hourFilterClause += ` AND s.tenant_id = $${hourParamIndex}`;
+        hourParams.push(Number(tenant_id));
+        hourParamIndex++;
+      }
+
+      if (environment_id) {
+        hourFilterClause += ` AND e.id = $${hourParamIndex}`;
+        hourParams.push(Number(environment_id));
+        hourParamIndex++;
+      }
+
+      if (application_id) {
+        hourFilterClause += ` AND a.id = $${hourParamIndex}`;
+        hourParams.push(Number(application_id));
+        hourParamIndex++;
+      }
+
       const count = await db.query<{ count: string }>(
-        `SELECT COUNT(*) as count FROM log_entries
-         WHERE system_id = ANY($1)
-         AND timestamp >= $2 AND timestamp < $3`,
-        [filterSystemIds, hourStart.toISOString(), hourEnd.toISOString()]
+        `SELECT COUNT(*) as count FROM log_entries le
+         LEFT JOIN environments e ON e.id = le.environment_id
+         LEFT JOIN applications a ON a.id = e.application_id
+         LEFT JOIN systems s ON s.id = a.system_id
+         WHERE s.id = ANY($1)
+         AND le.timestamp >= $2 AND le.timestamp < $3${hourFilterClause}`,
+        hourParams
       );
 
       logs_per_hour.push({
@@ -206,14 +318,17 @@ router.get('/stats', authMiddleware, async (
 
     // Top sources
     const topSourcesResult = await db.query<SourceCount>(
-      `SELECT source, COUNT(*)::int as count FROM log_entries
-       WHERE system_id = ANY($1)
-       AND timestamp >= $2
-       AND source IS NOT NULL
-       GROUP BY source
+      `SELECT le.source, COUNT(*)::int as count FROM log_entries le
+       LEFT JOIN environments e ON e.id = le.environment_id
+       LEFT JOIN applications a ON a.id = e.application_id
+       LEFT JOIN systems s ON s.id = a.system_id
+       WHERE s.id = ANY($1)
+       AND le.timestamp >= $2${filterClause}
+       AND le.source IS NOT NULL
+       GROUP BY le.source
        ORDER BY count DESC
        LIMIT 10`,
-      [filterSystemIds, since]
+      params
     );
 
     res.json({

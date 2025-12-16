@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:8000'
-    }
+    },
+    allowedHosts: ['localhost', '127.0.0.1', "logradar.denovo-share.com", "logradarapi.denovo-share.com"],
   },
   build: {
     outDir: 'dist',

@@ -1,0 +1,29 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Enable corepack for yarn
+RUN corepack enable
+
+# Copy package files
+COPY package.json yarn.lock ./
+
+# Install dependencies
+RUN yarn install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Expose backend port
+EXPOSE 8000
+
+# Create startup script that runs migrations then starts dev server
+RUN echo '#!/bin/sh' > /app/start-dev.sh && \
+    echo 'echo "🔄 Running migrations..."' >> /app/start-dev.sh && \
+    echo 'yarn db:migrate' >> /app/start-dev.sh && \
+    echo 'echo "🚀 Starting dev server..."' >> /app/start-dev.sh && \
+    echo 'yarn dev' >> /app/start-dev.sh && \
+    chmod +x /app/start-dev.sh
+
+# Run migrations and start dev server
+CMD ["/app/start-dev.sh"]

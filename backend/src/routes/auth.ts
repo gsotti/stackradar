@@ -37,12 +37,39 @@ router.post('/register', async (
 
     const passwordHash = hashPassword(password);
 
-    const result = await db.query<Omit<User, 'password_hash' | 'is_approved' | 'is_admin'>>(
-      'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name, is_active, created_at',
-      [email, passwordHash, name || null]
-    );
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
 
-    res.status(201).json(result.rows[0]);
+      // Create user
+      const userResult = await client.query<Omit<User, 'password_hash' | 'is_approved' | 'is_admin'>>(
+        'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name, is_active, created_at',
+        [email, passwordHash, name || null]
+      );
+      const createdUser = userResult.rows[0];
+
+      // Create a tenant named "Default" for this user
+      const tenantResult = await client.query<{ id: number }>(
+        'INSERT INTO tenants (name) VALUES ($1) RETURNING id',
+        ['Default']
+      );
+      const tenantId = tenantResult.rows[0].id;
+
+      // Map user to tenant
+      await client.query(
+        'INSERT INTO user_tenants (user_id, tenant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [createdUser.id, tenantId]
+      );
+
+      await client.query('COMMIT');
+
+      res.status(201).json(createdUser);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ detail: 'Internal server error' });

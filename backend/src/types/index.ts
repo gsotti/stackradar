@@ -18,18 +18,49 @@ export interface System {
   description: string | null;
   api_token: string;
   retention_days: number;
-  user_id: number;
+  tenant_id: number;
   created_at: Date;
+}
+
+export interface Tenant {
+  id: number;
+  name: string;
+  description: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Application {
+  id: number;
+  system_id: number;
+  name: string;
+  description: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Environment {
+  id: number;
+  application_id: number;
+  name: string;
+  created_at: Date;
+  deleted_at: Date | null;
 }
 
 export interface LogEntry {
   id: number;
-  system_id: number;
+  environment_id: number | null;
   timestamp: Date;
   level: string;
   message: string;
   source: string | null;
   metadata: Record<string, any> | null;
+  tenant: string | null;
+  system_type: string | null;
+  environment: string | null;
+  application: string | null;
+  tenant_id: number | null;
+  application_id: number | null;
   created_at: Date;
 }
 
@@ -56,6 +87,12 @@ export interface K8sMetrics {
   pvc_bound: number;
   namespaces: string | null;
   alerts: string | null;
+  tenant: string | null;
+  system_type: string | null;
+  environment: string | null;
+  application: string | null;
+  tenant_id: number | null;
+  application_id: number | null;
   updated_at: Date;
 }
 
@@ -89,6 +126,10 @@ export interface IngestLogRequest {
   source?: string;
   metadata?: Record<string, any>;
   timestamp?: string;
+  tenant?: string;
+  system_type?: string;
+  environment?: string;
+  application?: string;
 }
 
 export interface IngestLogsRequest {
@@ -98,6 +139,7 @@ export interface IngestLogsRequest {
 // Extended Express Request with auth
 export interface AuthRequest<P = any, ResBody = any, ReqBody = any, ReqQuery = any> extends Request<P, ResBody, ReqBody, ReqQuery> {
   userId?: number;
+  userTenantIds?: number[]; // enforced tenant visibility for the authenticated user
 }
 
 // JWT Payload

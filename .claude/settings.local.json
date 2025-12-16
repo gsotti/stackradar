@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(yarn build)",
+      "Bash(export KUBECONFIG=/Users/stefan/Workspace-Denovo/raan-circulate-v2/src/infrastructure/k8s/kubeconfig-nonprod.yaml)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker build:*)",
+      "Bash(docker push:*)"
     ],
     "deny": [],
     "ask": []
