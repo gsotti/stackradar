@@ -13,6 +13,7 @@ import SystemsPage from './pages/SystemsPage';
 import SystemDetailsPage from './pages/SystemDetailsPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import UsersPage from './pages/UsersPage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
               <Route path="/systems/:id" element={<ProtectedRoute><SystemDetailsPage /></ProtectedRoute>} />
               <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
             </Routes>
           </NotificationProvider>
         </AppProvider>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Server, Activity, Users, LogOut, Menu, X,
-  Moon, Sun, ChevronLeft, ChevronRight, Package
+  Moon, Sun, ChevronLeft, ChevronRight, Package, Settings
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -41,7 +41,10 @@ export default function Sidebar() {
     { name: 'Logs', href: '/logs/live', icon: Activity },
     { name: 'Systems', href: '/systems', icon: Server },
     { name: 'Applications', href: '/applications', icon: Package },
-    ...(user?.is_admin ? [{ name: 'Users', href: '/users', icon: Users }] : []),
+    ...(user?.is_admin ? [
+      { name: 'Users', href: '/users', icon: Users },
+      { name: 'Admin Settings', href: '/admin/settings', icon: Settings }
+    ] : []),
   ];
 
   // Fetch tenants from API

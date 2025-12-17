@@ -18,8 +18,8 @@ services:
       retries: 5
 
   logpilot:
-    #build: .
-    image:  ghcr.io/gsotti/logradar:latest
+    build: .
+    #image:  ghcr.io/gsotti/logradar:latest
     ports:
       - "8000:8000"
     environment:

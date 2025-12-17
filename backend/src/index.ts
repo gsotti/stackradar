@@ -17,7 +17,9 @@ import adminRoutes from './routes/admin.js';
 import tenantRoutes from './routes/tenants.js';
 import applicationRoutes from './routes/applications.js';
 import environmentRoutes from './routes/environments.js';
+import alertRoutes from './routes/alerts.js';
 import { cleanupOldLogs } from './services/cleanup.js';
+import { evaluateAllAlerts } from './services/alerting/evaluator.js';
 
 dotenv.config();
 
@@ -46,6 +48,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/environments', environmentRoutes);
+app.use('/api/alerts', alertRoutes);
 
 // Health check
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -95,13 +98,29 @@ function scheduleCleanupJobOnce() {
   console.log('📅 Cleanup cron job scheduled (hourly)');
 }
 
+// Alert Evaluation Cron Job (runs every 5 minutes)
+function scheduleAlertJobOnce() {
+  const job = new CronJob('*/5 * * * *', async () => {
+    console.log('Running alert evaluation...');
+    try {
+      await evaluateAllAlerts();
+    } catch (error) {
+      console.error('Alert evaluation failed:', error);
+    }
+  });
+
+  job.start();
+  console.log('📅 Alert evaluation cron job scheduled (every 5 minutes)');
+}
+
 // Cluster bootstrap: utilize multiple CPU cores if enabled
 if (CLUSTER_MODE && cluster.isPrimary) {
   // Primary/master process
   console.log(`Primary process ${process.pid} starting ${WORKERS} worker(s)`);
 
-  // Schedule cleanup only once in primary
+  // Schedule cleanup and alerts only once in primary
   scheduleCleanupJobOnce();
+  scheduleAlertJobOnce();
 
   for (let i = 0; i < WORKERS; i++) {
     cluster.fork();
@@ -115,9 +134,10 @@ if (CLUSTER_MODE && cluster.isPrimary) {
   // Worker or single-process mode
   startHttpServer();
 
-  // If not clustering, ensure cleanup is still scheduled
+  // If not clustering, ensure cleanup and alerts are still scheduled
   if (!CLUSTER_MODE) {
     scheduleCleanupJobOnce();
+    scheduleAlertJobOnce();
   }
 }
 

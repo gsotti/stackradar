@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, Server, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
+import { RefreshCw, ArrowLeft, Server, Activity, CheckCircle, AlertTriangle, Bell, BarChart2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { api } from '../utils/api';
+import AlertsView from '../components/alerts/AlertsView';
 
 export default function SystemDetailsPage() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function SystemDetailsPage() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [activeTab, setActiveTab] = useState('metrics');
 
   const fetchAll = async () => {
     try {
@@ -76,20 +78,61 @@ export default function SystemDetailsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{system?.name || `System #${id}`}</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Kubernetes summary and live CPU/Memory (last 30 minutes)</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              {activeTab === 'metrics' ? 'Kubernetes summary and live CPU/Memory (last 30 minutes)' : 'Alert management and monitoring'}
+            </p>
           </div>
         </div>
-        <button
-          onClick={() => setAutoRefresh((v) => !v)}
-          className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${autoRefresh ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
-        >
-          {autoRefresh ? 'Auto-refresh: ON' : 'Auto-refresh: OFF'}
-        </button>
+        {activeTab === 'metrics' && (
+          <button
+            onClick={() => setAutoRefresh((v) => !v)}
+            className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${autoRefresh ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
+          >
+            {autoRefresh ? 'Auto-refresh: ON' : 'Auto-refresh: OFF'}
+          </button>
+        )}
       </div>
 
-      {/* Summary grid styled like KubernetesPage */}
-      {summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="flex gap-4">
+          <button
+            onClick={() => setActiveTab('metrics')}
+            className={`
+              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+              ${
+                activeTab === 'metrics'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+              }
+            `}
+          >
+            <BarChart2 className="w-4 h-4" />
+            Metrics
+          </button>
+          <button
+            onClick={() => setActiveTab('alerts')}
+            className={`
+              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+              ${
+                activeTab === 'alerts'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+              }
+            `}
+          >
+            <Bell className="w-4 h-4" />
+            Alerts
+          </button>
+        </nav>
+      </div>
+
+      {/* Content based on active tab */}
+      {activeTab === 'metrics' ? (
+        <>
+          {/* Summary grid styled like KubernetesPage */}
+          {summary ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
           {/* CPU usage */}
           <div className="group relative bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all">
@@ -165,60 +208,64 @@ export default function SystemDetailsPage() {
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">PVCs (bound/total): <span className="font-semibold text-gray-900 dark:text-white">{safeNumber(summary.pvc_bound)}/{safeNumber(summary.pvc_count)}</span></div>
           </div>
         </div>
-      ) : (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-lg p-4">
-          No Kubernetes metrics available yet for this system.
-        </div>
-      )}
+          ) : (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-lg p-4">
+              No Kubernetes metrics available yet for this system.
+            </div>
+          )}
 
-      <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">CPU & Memory (Live)</h2>
-            <button onClick={fetchAll} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <RefreshCw className="w-4 h-4" /> Refresh
-            </button>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">CPU & Memory (Live)</h2>
+                <button onClick={fetchAll} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <RefreshCw className="w-4 h-4" /> Refresh
+                </button>
+              </div>
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+                    <XAxis
+                      dataKey="timestamp"
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      stroke="#9ca3af"
+                      tickFormatter={(t) => new Date(t).toLocaleTimeString()}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      stroke="#9ca3af"
+                    />
+                    <Tooltip
+                      labelFormatter={(l) => new Date(l).toLocaleString()}
+                      formatter={(v, _n, item) => [`${Number(v).toFixed(1)}%`, item?.dataKey === 'cpu_usage_percent' ? 'CPU' : 'Memory']}
+                      cursor={{
+                        // subtle hover overlay tuned per theme
+                        fill: typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+                          ? 'rgba(255,255,255,0.06)'
+                          : 'rgba(0,0,0,0.04)'
+                      }}
+                      contentStyle={{
+                        backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
+                        color: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#F9FAFB' : '#111827',
+                        border: '1px solid',
+                        borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
+                        borderRadius: 8
+                      }}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="cpu_usage_percent" name="CPU" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="memory_usage_percent" name="Memory" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
-          <div className="h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
-                <XAxis
-                  dataKey="timestamp"
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  stroke="#9ca3af"
-                  tickFormatter={(t) => new Date(t).toLocaleTimeString()}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  stroke="#9ca3af"
-                />
-                <Tooltip
-                  labelFormatter={(l) => new Date(l).toLocaleString()}
-                  formatter={(v, _n, item) => [`${Number(v).toFixed(1)}%`, item?.dataKey === 'cpu_usage_percent' ? 'CPU' : 'Memory']}
-                  cursor={{
-                    // subtle hover overlay tuned per theme
-                    fill: typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
-                      ? 'rgba(255,255,255,0.06)'
-                      : 'rgba(0,0,0,0.04)'
-                  }}
-                  contentStyle={{
-                    backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
-                    color: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#F9FAFB' : '#111827',
-                    border: '1px solid',
-                    borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
-                    borderRadius: 8
-                  }}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="cpu_usage_percent" name="CPU" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="memory_usage_percent" name="Memory" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <AlertsView systemId={id} />
+      )}
     </div>
   );
 }

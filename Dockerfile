@@ -15,6 +15,10 @@ WORKDIR /app/backend
 # Install build dependencies for native modules (bytenode)
 RUN apk add --no-cache python3 make g++
 
+# Build argument to control obfuscation (defaults to enabled for production)
+ARG DISABLE_OBFUSCATION=false
+ENV DISABLE_OBFUSCATION=${DISABLE_OBFUSCATION}
+
 COPY backend/package.json backend/yarn.lock ./
 RUN corepack enable && yarn install --frozen-lockfile
 COPY backend/src ./src

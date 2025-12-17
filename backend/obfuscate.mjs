@@ -3,6 +3,8 @@
 /**
  * Obfuscate JavaScript files using javascript-obfuscator
  * This makes the code harder to reverse engineer
+ *
+ * Set DISABLE_OBFUSCATION=true to skip obfuscation
  */
 
 import JavaScriptObfuscator from 'javascript-obfuscator';
@@ -12,6 +14,15 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Check if obfuscation is disabled via environment variable
+const isObfuscationDisabled = process.env.DISABLE_OBFUSCATION === 'true';
+
+if (isObfuscationDisabled) {
+  console.log('⚠️  Obfuscation DISABLED via DISABLE_OBFUSCATION environment variable');
+  console.log('📦 Build complete without obfuscation\n');
+  process.exit(0);
+}
 
 let obfuscatedCount = 0;
 
