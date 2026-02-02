@@ -12,12 +12,13 @@ export interface User {
   created_at: Date;
 }
 
-export interface System {
+export interface Site {
   id: number;
   name: string;
   description: string | null;
   api_token: string;
   retention_days: number;
+  site_type: 'docker' | 'kubernetes' | 'generic';
   tenant_id: number;
   created_at: Date;
 }
@@ -30,44 +31,43 @@ export interface Tenant {
   updated_at: Date;
 }
 
-export interface Application {
+export interface Environment {
   id: number;
-  system_id: number;
+  site_id: number;
+  name: string;
+  display_name: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface System {
+  id: number;
+  environment_id: number;
   name: string;
   description: string | null;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface Environment {
-  id: number;
-  application_id: number;
-  name: string;
-  created_at: Date;
-  deleted_at: Date | null;
-}
-
 export interface LogEntry {
   id: number;
-  environment_id: number | null;
+  system_id: number;
   timestamp: Date;
   level: string;
   message: string;
   source: string | null;
   metadata: Record<string, any> | null;
   tenant: string | null;
-  system_type: string | null;
+  site: string | null;
   environment: string | null;
-  application: string | null;
+  system: string | null;
   tenant_id: number | null;
-  application_id: number | null;
   created_at: Date;
 }
 
 export interface K8sMetrics {
   id: number;
-  system_id: number;
-  cluster_name: string | null;
+  site_id: number;
   node_count: number;
   node_ready: number;
   pod_count: number;
@@ -76,23 +76,13 @@ export interface K8sMetrics {
   pod_failed: number;
   cpu_usage_percent: number;
   memory_usage_percent: number;
-  cpu_requests: number;
-  cpu_limits: number;
-  memory_requests: number;
-  memory_limits: number;
   deployment_count: number;
   deployment_ready: number;
   service_count: number;
   pvc_count: number;
   pvc_bound: number;
-  namespaces: string | null;
-  alerts: string | null;
-  tenant: string | null;
-  system_type: string | null;
-  environment: string | null;
-  application: string | null;
+  pv_count: number;
   tenant_id: number | null;
-  application_id: number | null;
   updated_at: Date;
 }
 
@@ -114,10 +104,39 @@ export interface LoginResponse {
   token_type: string;
 }
 
-export interface CreateSystemRequest {
+export interface CreateSiteRequest {
   name: string;
   description?: string;
   retention_days?: number;
+  site_type?: 'docker' | 'kubernetes' | 'generic';
+}
+
+export interface UpdateSiteRequest {
+  name?: string;
+  description?: string;
+  retention_days?: number;
+  site_type?: 'docker' | 'kubernetes' | 'generic';
+}
+
+export interface CreateEnvironmentRequest {
+  site_id: number;
+  name: string;
+}
+
+export interface UpdateEnvironmentRequest {
+  name?: string;
+  display_name?: string;
+}
+
+export interface CreateSystemRequest {
+  environment_id: number;
+  name: string;
+  description?: string;
+}
+
+export interface UpdateSystemRequest {
+  name?: string;
+  description?: string;
 }
 
 export interface IngestLogRequest {
@@ -127,9 +146,9 @@ export interface IngestLogRequest {
   metadata?: Record<string, any>;
   timestamp?: string;
   tenant?: string;
-  system_type?: string;
+  site?: string;
   environment?: string;
-  application?: string;
+  system?: string;
 }
 
 export interface IngestLogsRequest {
@@ -174,7 +193,7 @@ export type ChannelType = 'email' | 'webhook';
 
 export interface AlertRule {
   id: number;
-  system_id: number;
+  site_id: number;
   name: string;
   description: string | null;
   metric_type: MetricType;
@@ -183,21 +202,18 @@ export interface AlertRule {
   time_window_minutes: number;
   severity: AlertSeverity;
   enabled: boolean;
-  cooldown_minutes: number;
   created_at: Date;
   updated_at: Date;
-  created_by: number | null;
 }
 
 export interface NotificationChannel {
   id: number;
-  system_id: number;
+  site_id: number;
   name: string;
   channel_type: ChannelType;
   enabled: boolean;
   email_recipients: string[] | null;
   webhook_url: string | null;
-  webhook_method: string | null;
   webhook_headers: Record<string, string> | null;
   created_at: Date;
   updated_at: Date;
@@ -210,8 +226,8 @@ export interface AlertRuleChannel {
 
 export interface AlertHistory {
   id: number;
-  alert_rule_id: number;
-  system_id: number;
+  alert_rule_id: number | null;
+  site_id: number;
   state: AlertState;
   triggered_at: Date;
   resolved_at: Date | null;
@@ -237,7 +253,7 @@ export interface SmtpConfig {
 
 // Alert API Request Types
 export interface CreateAlertRuleRequest {
-  system_id: number;
+  site_id: number;
   name: string;
   description?: string;
   metric_type: MetricType;
@@ -245,7 +261,6 @@ export interface CreateAlertRuleRequest {
   threshold_value: number;
   time_window_minutes?: number;
   severity?: AlertSeverity;
-  cooldown_minutes?: number;
   notification_channel_ids?: number[];
 }
 
@@ -258,17 +273,15 @@ export interface UpdateAlertRuleRequest {
   time_window_minutes?: number;
   severity?: AlertSeverity;
   enabled?: boolean;
-  cooldown_minutes?: number;
   notification_channel_ids?: number[];
 }
 
 export interface CreateNotificationChannelRequest {
-  system_id: number;
+  site_id: number;
   name: string;
   channel_type: ChannelType;
   email_recipients?: string[];
   webhook_url?: string;
-  webhook_method?: string;
   webhook_headers?: Record<string, string>;
 }
 
@@ -277,7 +290,6 @@ export interface UpdateNotificationChannelRequest {
   enabled?: boolean;
   email_recipients?: string[];
   webhook_url?: string;
-  webhook_method?: string;
   webhook_headers?: Record<string, string>;
 }
 

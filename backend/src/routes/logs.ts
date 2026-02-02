@@ -11,9 +11,9 @@ interface LogQueryParams {
   search?: string;
   source?: string;
   tenant?: string;
+  site?: string;
   environment?: string;
-  application?: string;
-  application_id?: string;
+  system?: string;
   start_time?: string;
   end_time?: string;
   limit?: string;
@@ -33,9 +33,9 @@ router.get('/', authMiddleware, async (
       search,
       source,
       tenant,
+      site,
       environment,
-      application,
-      application_id,
+      system,
       start_time,
       end_time,
       limit = '100',
@@ -43,10 +43,26 @@ router.get('/', authMiddleware, async (
       before_id
     } = req.query;
 
+    // Debug: Log received filter parameters
+    console.log('🔍 [Backend /logs] Received query params:', {
+      tenant,
+      site,
+      environment,
+      system,
+      system_id,
+      level,
+      search,
+      limit,
+      offset
+    });
+
     // Get all system IDs limited to the user's tenant mappings
     const tenantIds = req.userTenantIds || [];
     const userSystemsResult = await db.query<Pick<System, 'id'>>(
-      'SELECT id FROM systems WHERE tenant_id = ANY($1)',
+      `SELECT sys.id FROM systems sys
+       JOIN environments e ON e.id = sys.environment_id
+       JOIN sites si ON si.id = e.site_id
+       WHERE si.tenant_id = ANY($1)`,
       [tenantIds]
     );
     const userSystemIds = userSystemsResult.rows.map(s => s.id);
@@ -67,8 +83,8 @@ router.get('/', authMiddleware, async (
     // Build query dynamically
     const params: any[] = [filterSystemIds];
     let paramIndex = 2;
-    // Join through environments -> applications -> systems to scope by system access
-    let whereClause = `s.id = ANY($1)`;
+    // Join through systems -> environments -> sites to scope by system access
+    let whereClause = `sys.id = ANY($1)`;
 
     if (level) {
       whereClause += ` AND level = $${paramIndex}`;
@@ -108,50 +124,77 @@ router.get('/', authMiddleware, async (
     }
 
     if (tenant) {
-      whereClause += ` AND s.tenant_id = $${paramIndex}`;
+      whereClause += ` AND si.tenant_id = $${paramIndex}`;
       params.push(tenant);
       paramIndex++;
     }
 
-    if (environment) {
-      whereClause += ` AND e.name ILIKE $${paramIndex}`;
-      params.push(`%${environment}%`);
+    if (site) {
+      // Check if site is a numeric ID or a text search
+      const siteAsNumber = parseInt(site, 10);
+      if (!isNaN(siteAsNumber)) {
+        // If numeric, filter by site_id
+        whereClause += ` AND si.id = $${paramIndex}`;
+        params.push(siteAsNumber);
+      } else {
+        // If text, search in legacy text field
+        whereClause += ` AND le.site ILIKE $${paramIndex}`;
+        params.push(`%${site}%`);
+      }
       paramIndex++;
     }
 
-    if (application_id) {
-      whereClause += ` AND a.id = $${paramIndex}`;
-      params.push(parseInt(application_id));
-      paramIndex++;
-    } else if (application) {
-      whereClause += ` AND a.name ILIKE $${paramIndex}`;
-      params.push(`%${application}%`);
+    if (environment) {
+      // Check if environment is a numeric ID or a text search
+      const environmentAsNumber = parseInt(environment, 10);
+      if (!isNaN(environmentAsNumber)) {
+        // If numeric, filter by environment_id
+        whereClause += ` AND e.id = $${paramIndex}`;
+        params.push(environmentAsNumber);
+      } else {
+        // If text, search in environment name or legacy text field
+        whereClause += ` AND (e.name ILIKE $${paramIndex} OR le.environment ILIKE $${paramIndex})`;
+        params.push(`%${environment}%`);
+      }
       paramIndex++;
     }
+
+    if (system) {
+      // Check if system is a numeric ID or a text search
+      const systemAsNumber = parseInt(system, 10);
+      if (!isNaN(systemAsNumber)) {
+        // If numeric, filter by system_id
+        whereClause += ` AND sys.id = $${paramIndex}`;
+        params.push(systemAsNumber);
+      } else {
+        // If text, search in legacy text field
+        whereClause += ` AND le.system ILIKE $${paramIndex}`;
+        params.push(`%${system}%`);
+      }
+      paramIndex++;
+    }
+
+    // Debug: Log final query details
+    console.log('🔍 [Backend /logs] Query WHERE clause:', whereClause);
+    console.log('🔍 [Backend /logs] Query params:', params);
 
     const countResult = await db.query<{ count: string }>(
       `SELECT COUNT(*) as count
        FROM log_entries le
-       LEFT JOIN environments e ON e.id = le.environment_id
-       LEFT JOIN applications a ON a.id = e.application_id
-       LEFT JOIN systems s ON s.id = a.system_id
+       LEFT JOIN systems sys ON sys.id = le.system_id
+       LEFT JOIN environments e ON e.id = sys.environment_id
+       LEFT JOIN sites si ON si.id = e.site_id
        WHERE ${whereClause}`,
        params
     );
 
     // Get logs
-    /*
-     LEFT JOIN environments e ON e.id = le.environment_id
-     LEFT JOIN applications a ON a.id = e.application_id
-     LEFT JOIN systems s ON s.id = a.system_id
-   */
-
     const logsResult = await db.query<LogEntry>(
       `SELECT le.*
        FROM log_entries le
-       LEFT JOIN environments e ON e.id = le.environment_id
-       LEFT JOIN applications a ON a.id = e.application_id
-       LEFT JOIN systems s ON s.id = a.system_id
+       LEFT JOIN systems sys ON sys.id = le.system_id
+       LEFT JOIN environments e ON e.id = sys.environment_id
+       LEFT JOIN sites si ON si.id = e.site_id
        WHERE ${whereClause}
        ORDER BY le.timestamp DESC
        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
@@ -175,7 +218,6 @@ interface StatsQueryParams {
   hours?: string;
   tenant_id?: number;
   environment_id?: number;
-  application_id?: number;
 }
 
 interface LevelCount {
@@ -194,12 +236,15 @@ router.get('/stats', authMiddleware, async (
   res: Response
 ): Promise<void> => {
   try {
-    const { system_id, hours = '24', tenant_id, environment_id, application_id } = req.query;
+    const { system_id, hours = '24', tenant_id, environment_id } = req.query;
 
     // Get all system IDs limited to the user's tenant mappings
     const tenantIds = req.userTenantIds || [];
     const userSystemsResult = await db.query<Pick<System, 'id'>>(
-      'SELECT id FROM systems WHERE tenant_id = ANY($1)',
+      `SELECT sys.id FROM systems sys
+       JOIN environments e ON e.id = sys.environment_id
+       JOIN sites si ON si.id = e.site_id
+       WHERE si.tenant_id = ANY($1)`,
       [tenantIds]
     );
     const userSystemIds = userSystemsResult.rows.map(s => s.id);
@@ -228,7 +273,7 @@ router.get('/stats', authMiddleware, async (
     let filterClause = '';
 
     if (tenant_id) {
-      filterClause += ` AND s.tenant_id = $${paramIndex}`;
+      filterClause += ` AND si.tenant_id = $${paramIndex}`;
       params.push(Number(tenant_id));
       paramIndex++;
     }
@@ -239,28 +284,22 @@ router.get('/stats', authMiddleware, async (
       paramIndex++;
     }
 
-    if (application_id) {
-      filterClause += ` AND a.id = $${paramIndex}`;
-      params.push(Number(application_id));
-      paramIndex++;
-    }
-
     const totalResult = await db.query<{ count: string }>(
       `SELECT COUNT(*) as count FROM log_entries le
-       LEFT JOIN environments e ON e.id = le.environment_id
-       LEFT JOIN applications a ON a.id = e.application_id
-       LEFT JOIN systems s ON s.id = a.system_id
-       WHERE s.id = ANY($1) AND le.timestamp >= $2${filterClause}`,
+       LEFT JOIN systems sys ON sys.id = le.system_id
+       LEFT JOIN environments e ON e.id = sys.environment_id
+       LEFT JOIN sites si ON si.id = e.site_id
+       WHERE sys.id = ANY($1) AND le.timestamp >= $2${filterClause}`,
       params
     );
 
     // Logs by level
     const levelCountsResult = await db.query<LevelCount>(
       `SELECT le.level, COUNT(*)::int as count FROM log_entries le
-       LEFT JOIN environments e ON e.id = le.environment_id
-       LEFT JOIN applications a ON a.id = e.application_id
-       LEFT JOIN systems s ON s.id = a.system_id
-       WHERE s.id = ANY($1) AND le.timestamp >= $2${filterClause}
+       LEFT JOIN systems sys ON sys.id = le.system_id
+       LEFT JOIN environments e ON e.id = sys.environment_id
+       LEFT JOIN sites si ON si.id = e.site_id
+       WHERE sys.id = ANY($1) AND le.timestamp >= $2${filterClause}
        GROUP BY le.level`,
       params
     );
@@ -283,7 +322,7 @@ router.get('/stats', authMiddleware, async (
       let hourFilterClause = '';
 
       if (tenant_id) {
-        hourFilterClause += ` AND s.tenant_id = $${hourParamIndex}`;
+        hourFilterClause += ` AND si.tenant_id = $${hourParamIndex}`;
         hourParams.push(Number(tenant_id));
         hourParamIndex++;
       }
@@ -294,18 +333,12 @@ router.get('/stats', authMiddleware, async (
         hourParamIndex++;
       }
 
-      if (application_id) {
-        hourFilterClause += ` AND a.id = $${hourParamIndex}`;
-        hourParams.push(Number(application_id));
-        hourParamIndex++;
-      }
-
       const count = await db.query<{ count: string }>(
         `SELECT COUNT(*) as count FROM log_entries le
-         LEFT JOIN environments e ON e.id = le.environment_id
-         LEFT JOIN applications a ON a.id = e.application_id
-         LEFT JOIN systems s ON s.id = a.system_id
-         WHERE s.id = ANY($1)
+         LEFT JOIN systems sys ON sys.id = le.system_id
+         LEFT JOIN environments e ON e.id = sys.environment_id
+         LEFT JOIN sites si ON si.id = e.site_id
+         WHERE sys.id = ANY($1)
          AND le.timestamp >= $2 AND le.timestamp < $3${hourFilterClause}`,
         hourParams
       );
@@ -316,16 +349,18 @@ router.get('/stats', authMiddleware, async (
       });
     }
 
-    // Top sources
+    // Top sources (grouped by system and environment)
     const topSourcesResult = await db.query<SourceCount>(
-      `SELECT le.source, COUNT(*)::int as count FROM log_entries le
-       LEFT JOIN environments e ON e.id = le.environment_id
-       LEFT JOIN applications a ON a.id = e.application_id
-       LEFT JOIN systems s ON s.id = a.system_id
-       WHERE s.id = ANY($1)
+      `SELECT
+         CONCAT(sys.name, ' (', e.name, ')') as source,
+         COUNT(*)::int as count
+       FROM log_entries le
+       LEFT JOIN systems sys ON sys.id = le.system_id
+       LEFT JOIN environments e ON e.id = sys.environment_id
+       LEFT JOIN sites si ON si.id = e.site_id
+       WHERE sys.id = ANY($1)
        AND le.timestamp >= $2${filterClause}
-       AND le.source IS NOT NULL
-       GROUP BY le.source
+       GROUP BY sys.name, e.name
        ORDER BY count DESC
        LIMIT 10`,
       params

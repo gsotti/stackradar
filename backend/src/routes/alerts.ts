@@ -28,16 +28,16 @@ const router = Router();
 // ALERT RULES ENDPOINTS
 // ============================================================================
 
-// Get all alert rules for a system
+// Get all alert rules for a site
 router.get(
   '/rules',
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { system_id } = req.query;
+      const { site_id } = req.query;
 
-      if (!system_id) {
-        res.status(400).json({ detail: 'system_id query parameter is required' });
+      if (!site_id) {
+        res.status(400).json({ detail: 'site_id query parameter is required' });
         return;
       }
 
@@ -57,10 +57,10 @@ router.get(
             '{}'::int[]
           ) as channel_ids
          FROM alert_rules ar
-         INNER JOIN systems s ON ar.system_id = s.id
-         WHERE ar.system_id = $1 AND s.tenant_id = ANY($2)
+         INNER JOIN sites s ON ar.site_id = s.id
+         WHERE ar.site_id = $1 AND s.tenant_id = ANY($2)
          ORDER BY ar.created_at DESC`,
-        [system_id, allowed]
+        [site_id, allowed]
       );
 
       res.json(result.rows);
@@ -89,7 +89,7 @@ router.get(
             '{}'::int[]
           ) as channel_ids
          FROM alert_rules ar
-         INNER JOIN systems s ON ar.system_id = s.id
+         INNER JOIN sites s ON ar.site_id = s.id
          WHERE ar.id = $1 AND s.tenant_id = ANY($2)`,
         [id, allowed]
       );
@@ -117,31 +117,31 @@ router.post(
       const allowed = req.userTenantIds || [];
 
       // Validate required fields
-      if (!body.system_id || !body.name || !body.metric_type || !body.threshold_operator || body.threshold_value === undefined) {
+      if (!body.site_id || !body.name || !body.metric_type || !body.threshold_operator || body.threshold_value === undefined) {
         res.status(400).json({ detail: 'Missing required fields' });
         return;
       }
 
-      // Check system access
-      const systemCheck = await db.query(
-        'SELECT id FROM systems WHERE id = $1 AND tenant_id = ANY($2)',
-        [body.system_id, allowed]
+      // Check site access
+      const siteCheck = await db.query(
+        'SELECT id FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+        [body.site_id, allowed]
       );
 
-      if (systemCheck.rows.length === 0) {
-        res.status(404).json({ detail: 'System not found or access denied' });
+      if (siteCheck.rows.length === 0) {
+        res.status(404).json({ detail: 'Site not found or access denied' });
         return;
       }
 
       // Create alert rule
       const result = await db.query<AlertRule>(
         `INSERT INTO alert_rules (
-          system_id, name, description, metric_type, threshold_operator,
-          threshold_value, time_window_minutes, severity, cooldown_minutes, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          site_id, name, description, metric_type, threshold_operator,
+          threshold_value, time_window_minutes, severity, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *`,
         [
-          body.system_id,
+          body.site_id,
           body.name,
           body.description || null,
           body.metric_type,
@@ -149,7 +149,6 @@ router.post(
           body.threshold_value,
           body.time_window_minutes || 5,
           body.severity || 'warning',
-          body.cooldown_minutes || 30,
           req.userId,
         ]
       );
@@ -187,7 +186,7 @@ router.put(
       // Check access
       const accessCheck = await db.query(
         `SELECT ar.id FROM alert_rules ar
-         INNER JOIN systems s ON ar.system_id = s.id
+         INNER JOIN sites s ON ar.site_id = s.id
          WHERE ar.id = $1 AND s.tenant_id = ANY($2)`,
         [id, allowed]
       );
@@ -234,10 +233,6 @@ router.put(
         updates.push(`enabled = $${paramCount++}`);
         values.push(body.enabled);
       }
-      if (body.cooldown_minutes !== undefined) {
-        updates.push(`cooldown_minutes = $${paramCount++}`);
-        values.push(body.cooldown_minutes);
-      }
 
       updates.push(`updated_at = NOW()`);
       values.push(id);
@@ -277,8 +272,8 @@ router.delete(
 
       const result = await db.query(
         `DELETE FROM alert_rules ar
-         USING systems s
-         WHERE ar.system_id = s.id AND ar.id = $1 AND s.tenant_id = ANY($2)
+         USING sites s
+         WHERE ar.site_id = s.id AND ar.id = $1 AND s.tenant_id = ANY($2)
          RETURNING ar.id`,
         [id, allowed]
       );
@@ -308,7 +303,7 @@ router.post(
       // Get rule
       const ruleResult = await db.query<AlertRule>(
         `SELECT ar.* FROM alert_rules ar
-         INNER JOIN systems s ON ar.system_id = s.id
+         INNER JOIN sites s ON ar.site_id = s.id
          WHERE ar.id = $1 AND s.tenant_id = ANY($2)`,
         [id, allowed]
       );
@@ -322,7 +317,7 @@ router.post(
 
       // Get current metric value
       const metricValue = await getCurrentMetricValue(
-        rule.system_id,
+        rule.site_id,
         rule.metric_type,
         rule.time_window_minutes
       );
@@ -351,16 +346,16 @@ router.post(
 // NOTIFICATION CHANNELS ENDPOINTS
 // ============================================================================
 
-// Get notification channels for a system
+// Get notification channels for a site
 router.get(
   '/channels',
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { system_id } = req.query;
+      const { site_id } = req.query;
 
-      if (!system_id) {
-        res.status(400).json({ detail: 'system_id query parameter is required' });
+      if (!site_id) {
+        res.status(400).json({ detail: 'site_id query parameter is required' });
         return;
       }
 
@@ -368,10 +363,10 @@ router.get(
 
       const result = await db.query<NotificationChannel>(
         `SELECT nc.* FROM notification_channels nc
-         INNER JOIN systems s ON nc.system_id = s.id
-         WHERE nc.system_id = $1 AND s.tenant_id = ANY($2)
+         INNER JOIN sites s ON nc.site_id = s.id
+         WHERE nc.site_id = $1 AND s.tenant_id = ANY($2)
          ORDER BY nc.created_at DESC`,
-        [system_id, allowed]
+        [site_id, allowed]
       );
 
       res.json(result.rows);
@@ -392,19 +387,19 @@ router.post(
       const allowed = req.userTenantIds || [];
 
       // Validate required fields
-      if (!body.system_id || !body.name || !body.channel_type) {
+      if (!body.site_id || !body.name || !body.channel_type) {
         res.status(400).json({ detail: 'Missing required fields' });
         return;
       }
 
-      // Check system access
-      const systemCheck = await db.query(
-        'SELECT id FROM systems WHERE id = $1 AND tenant_id = ANY($2)',
-        [body.system_id, allowed]
+      // Check site access
+      const siteCheck = await db.query(
+        'SELECT id FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+        [body.site_id, allowed]
       );
 
-      if (systemCheck.rows.length === 0) {
-        res.status(404).json({ detail: 'System not found or access denied' });
+      if (siteCheck.rows.length === 0) {
+        res.status(404).json({ detail: 'Site not found or access denied' });
         return;
       }
 
@@ -422,17 +417,16 @@ router.post(
       // Create notification channel
       const result = await db.query<NotificationChannel>(
         `INSERT INTO notification_channels (
-          system_id, name, channel_type, email_recipients,
-          webhook_url, webhook_method, webhook_headers
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          site_id, name, channel_type, email_recipients,
+          webhook_url, webhook_headers
+        ) VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *`,
         [
-          body.system_id,
+          body.site_id,
           body.name,
           body.channel_type,
           body.email_recipients || null,
           body.webhook_url || null,
-          body.webhook_method || 'POST',
           body.webhook_headers ? JSON.stringify(body.webhook_headers) : null,
         ]
       );
@@ -458,7 +452,7 @@ router.put(
       // Check access
       const accessCheck = await db.query(
         `SELECT nc.id FROM notification_channels nc
-         INNER JOIN systems s ON nc.system_id = s.id
+         INNER JOIN sites s ON nc.site_id = s.id
          WHERE nc.id = $1 AND s.tenant_id = ANY($2)`,
         [id, allowed]
       );
@@ -488,10 +482,6 @@ router.put(
       if (body.webhook_url !== undefined) {
         updates.push(`webhook_url = $${paramCount++}`);
         values.push(body.webhook_url);
-      }
-      if (body.webhook_method !== undefined) {
-        updates.push(`webhook_method = $${paramCount++}`);
-        values.push(body.webhook_method);
       }
       if (body.webhook_headers !== undefined) {
         updates.push(`webhook_headers = $${paramCount++}`);
@@ -525,8 +515,8 @@ router.delete(
 
       const result = await db.query(
         `DELETE FROM notification_channels nc
-         USING systems s
-         WHERE nc.system_id = s.id AND nc.id = $1 AND s.tenant_id = ANY($2)
+         USING sites s
+         WHERE nc.site_id = s.id AND nc.id = $1 AND s.tenant_id = ANY($2)
          RETURNING nc.id`,
         [id, allowed]
       );
@@ -554,10 +544,10 @@ router.get(
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { system_id, state, limit = '50', offset = '0' } = req.query;
+      const { site_id, state, limit = '50', offset = '0' } = req.query;
 
-      if (!system_id) {
-        res.status(400).json({ detail: 'system_id query parameter is required' });
+      if (!site_id) {
+        res.status(400).json({ detail: 'site_id query parameter is required' });
         return;
       }
 
@@ -567,10 +557,10 @@ router.get(
         SELECT ah.*, ar.name as rule_name, ar.metric_type, ar.severity
         FROM alert_history ah
         INNER JOIN alert_rules ar ON ah.alert_rule_id = ar.id
-        INNER JOIN systems s ON ah.system_id = s.id
-        WHERE ah.system_id = $1 AND s.tenant_id = ANY($2)
+        INNER JOIN sites s ON ah.site_id = s.id
+        WHERE ah.site_id = $1 AND s.tenant_id = ANY($2)
       `;
-      const params: any[] = [system_id, allowed];
+      const params: any[] = [site_id, allowed];
       let paramCount = 3;
 
       if (state) {
@@ -597,10 +587,10 @@ router.get(
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { system_id } = req.query;
+      const { site_id } = req.query;
 
-      if (!system_id) {
-        res.status(400).json({ detail: 'system_id query parameter is required' });
+      if (!site_id) {
+        res.status(400).json({ detail: 'site_id query parameter is required' });
         return;
       }
 
@@ -610,11 +600,11 @@ router.get(
         `SELECT ah.*, ar.name as rule_name, ar.metric_type, ar.severity
          FROM alert_history ah
          INNER JOIN alert_rules ar ON ah.alert_rule_id = ar.id
-         INNER JOIN systems s ON ah.system_id = s.id
-         WHERE ah.system_id = $1 AND s.tenant_id = ANY($2)
+         INNER JOIN sites s ON ah.site_id = s.id
+         WHERE ah.site_id = $1 AND s.tenant_id = ANY($2)
            AND ah.state = 'firing' AND ah.resolved_at IS NULL
          ORDER BY ah.triggered_at DESC`,
-        [system_id, allowed]
+        [site_id, allowed]
       );
 
       res.json(result.rows);
@@ -638,8 +628,8 @@ router.post(
       const result = await db.query<AlertHistory>(
         `UPDATE alert_history ah
          SET state = 'resolved', resolved_at = NOW()
-         FROM systems s
-         WHERE ah.system_id = s.id AND ah.id = $1 AND s.tenant_id = ANY($2)
+         FROM sites s
+         WHERE ah.site_id = s.id AND ah.id = $1 AND s.tenant_id = ANY($2)
            AND ah.state = 'firing'
          RETURNING ah.*`,
         [id, allowed]
@@ -821,34 +811,34 @@ router.post(
   authMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { channel_id, system_id } = req.body;
+      const { channel_id, site_id } = req.body;
 
-      if (!channel_id || !system_id) {
-        res.status(400).json({ detail: 'channel_id and system_id are required' });
+      if (!channel_id || !site_id) {
+        res.status(400).json({ detail: 'channel_id and site_id are required' });
         return;
       }
 
       const allowed = req.userTenantIds || [];
 
-      // Check if system exists and user has access
-      const systemResult = await db.query(
-        'SELECT id, name FROM systems WHERE id = $1 AND tenant_id = ANY($2)',
-        [system_id, allowed]
+      // Check if site exists and user has access
+      const siteResult = await db.query(
+        'SELECT id, name FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+        [site_id, allowed]
       );
 
-      if (systemResult.rows.length === 0) {
-        res.status(404).json({ detail: 'System not found or access denied' });
+      if (siteResult.rows.length === 0) {
+        res.status(404).json({ detail: 'Site not found or access denied' });
         return;
       }
 
-      const system = systemResult.rows[0];
+      const site = siteResult.rows[0];
 
       // Get the specific notification channel
       const channelResult = await db.query<NotificationChannel>(
         `SELECT nc.* FROM notification_channels nc
-         INNER JOIN systems s ON nc.system_id = s.id
-         WHERE nc.id = $1 AND nc.system_id = $2 AND s.tenant_id = ANY($3)`,
-        [channel_id, system_id, allowed]
+         INNER JOIN sites s ON nc.site_id = s.id
+         WHERE nc.id = $1 AND nc.site_id = $2 AND s.tenant_id = ANY($3)`,
+        [channel_id, site_id, allowed]
       );
 
       if (channelResult.rows.length === 0) {
@@ -866,16 +856,16 @@ router.post(
       // Create a test alert in history
       const alertResult = await db.query<AlertHistory>(
         `INSERT INTO alert_history (
-          system_id, alert_rule_id, state, metric_value, threshold_value,
+          site_id, alert_rule_id, state, metric_value, threshold_value,
           message, triggered_at
         ) VALUES ($1, NULL, $2, $3, $4, $5, NOW())
         RETURNING *`,
         [
-          system_id,
+          site_id,
           'firing',
           95.0,
           80.0,
-          `TEST ALERT: High CPU Usage on ${system.name} - This is a test alert for channel "${channel.name}"`
+          `TEST ALERT: High CPU Usage on ${site.name} - This is a test alert for channel "${channel.name}"`
         ]
       );
 
@@ -887,7 +877,7 @@ router.post(
       try {
         if (channel.channel_type === 'email') {
           // Send email notification
-          const subject = `[LogRadar Test Alert] High CPU Usage on ${system.name}`;
+          const subject = `[LogRadar Test Alert] High CPU Usage on ${site.name}`;
           const htmlBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -898,7 +888,7 @@ router.post(
                 <p style="color: #4b5563; font-size: 16px;">This is a <strong>test alert</strong> triggered manually from LogRadar Admin Settings.</p>
 
                 <div style="background: white; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-                  <p style="margin: 5px 0; color: #374151;"><strong>System:</strong> ${system.name}</p>
+                  <p style="margin: 5px 0; color: #374151;"><strong>Site:</strong> ${site.name}</p>
                   <p style="margin: 5px 0; color: #374151;"><strong>Metric:</strong> CPU Usage</p>
                   <p style="margin: 5px 0; color: #374151;"><strong>Current Value:</strong> 95.0%</p>
                   <p style="margin: 5px 0; color: #374151;"><strong>Threshold:</strong> > 80.0%</p>
@@ -918,7 +908,7 @@ TEST ALERT - High CPU Usage
 
 This is a test alert triggered manually from LogRadar Admin Settings.
 
-System: ${system.name}
+Site: ${site.name}
 Metric: CPU Usage
 Current Value: 95.0%
 Threshold: > 80.0%
@@ -933,12 +923,12 @@ This is a test notification. No action is required.
           // Send webhook notification
           const payload = {
             alert_type: 'test',
-            system: system.name,
+            site: site.name,
             metric: 'cpu_percent',
             current_value: 95.0,
             threshold: 80.0,
             severity: 'warning',
-            message: `TEST ALERT: High CPU Usage on ${system.name}`,
+            message: `TEST ALERT: High CPU Usage on ${site.name}`,
             channel: channel.name,
             triggered_at: new Date().toISOString()
           };
@@ -956,7 +946,7 @@ This is a test notification. No action is required.
 
           await new Promise<void>((resolve, reject) => {
             const req = protocol.request(url, {
-              method: channel.webhook_method || 'POST',
+              method: 'POST',
               headers
             }, (res) => {
               if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {

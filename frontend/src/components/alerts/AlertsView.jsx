@@ -4,7 +4,7 @@ import AlertRuleList from './AlertRuleList';
 import NotificationChannelList from './NotificationChannelList';
 import AlertHistoryList from './AlertHistoryList';
 
-export default function AlertsView({ systemId }) {
+export default function AlertsView({ siteId }) {
   const [activeSubTab, setActiveSubTab] = useState('rules');
 
   const tabs = [
@@ -43,9 +43,9 @@ export default function AlertsView({ systemId }) {
 
       {/* Content */}
       <div>
-        {activeSubTab === 'rules' && <AlertRuleList systemId={systemId} />}
-        {activeSubTab === 'channels' && <NotificationChannelList systemId={systemId} />}
-        {activeSubTab === 'history' && <AlertHistoryList systemId={systemId} />}
+        {activeSubTab === 'rules' && <AlertRuleList siteId={siteId} />}
+        {activeSubTab === 'channels' && <NotificationChannelList siteId={siteId} />}
+        {activeSubTab === 'history' && <AlertHistoryList siteId={siteId} />}
       </div>
     </div>
   );

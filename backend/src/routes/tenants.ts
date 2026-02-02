@@ -5,34 +5,6 @@ import { AuthRequest, Tenant } from '../types/index.js';
 
 const router = Router();
 
-// Get distinct system types from applications table (must be before /:id route)
-router.get('/metadata/system-types', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { tenant } = req.query;
-
-    let whereClause = '';
-    const params: any[] = [];
-
-    if (tenant) {
-      whereClause = 'WHERE t.name = $1';
-      params.push(tenant);
-    }
-
-    const result = await db.query<{ system_type: string }>(
-      `SELECT DISTINCT a.system_type
-       FROM applications a
-       JOIN tenants t ON a.tenant_id = t.id
-       ${whereClause}
-       ORDER BY a.system_type`,
-      params
-    );
-    res.json(result.rows.map(r => r.system_type));
-  } catch (error) {
-    console.error('Error fetching system types:', error);
-    res.status(500).json({ error: 'Failed to fetch system types' });
-  }
-});
-
 // Get all tenants
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -148,23 +120,6 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response): P
   } catch (error) {
     console.error('Error deleting tenant:', error);
     res.status(500).json({ error: 'Failed to delete tenant' });
-  }
-});
-
-// Get applications for a specific tenant
-router.get('/:id/applications', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const result = await db.query(
-      `SELECT * FROM applications
-       WHERE tenant_id = $1
-       ORDER BY system_type, environment, name`,
-      [id]
-    );
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching tenant applications:', error);
-    res.status(500).json({ error: 'Failed to fetch applications' });
   }
 });
 

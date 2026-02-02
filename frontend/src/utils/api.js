@@ -43,8 +43,8 @@ class ApiClient {
     return response.json();
   }
 
-  get(endpoint) {
-    return this.request(endpoint);
+  get(endpoint, options = {}) {
+    return this.request(endpoint, options);
   }
 
   post(endpoint, data) {

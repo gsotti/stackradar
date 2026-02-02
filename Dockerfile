@@ -24,7 +24,7 @@ RUN corepack enable && yarn install --frozen-lockfile
 COPY backend/src ./src
 COPY backend/tsconfig.json ./
 COPY backend/obfuscate.mjs ./
-RUN yarn build
+RUN NODE_OPTIONS="--max-old-space-size=8192" yarn build
 
 # Stage 3: Production Image
 FROM node:20-alpine

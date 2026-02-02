@@ -3,10 +3,13 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [selectedSystemId, setSelectedSystemId] = useState('');
-  const [selectedApplicationId, setSelectedApplicationId] = useState(() => {
-    return localStorage.getItem('selectedApplicationId') || '';
+  // Detail page ID state
+  const [selectedSiteId, setSelectedSiteId] = useState('');
+  const [selectedSystemId, setSelectedSystemId] = useState(() => {
+    return localStorage.getItem('selectedSystemId') || '';
   });
+
+  // UI state
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved !== null ? saved === 'true' : false;
@@ -16,19 +19,20 @@ export function AppProvider({ children }) {
     return saved !== null ? saved === 'true' : false;
   });
 
-  // Hierarchy filters (global context)
+  // Hierarchy filters for logs (global context)
+  // New hierarchy: Tenant → Site → Environment → System
   const [selectedTenant, setSelectedTenant] = useState(() => {
     const saved = localStorage.getItem('selectedTenant');
     return saved || '';
   });
-  const [selectedSystemType, setSelectedSystemType] = useState(() => {
-    return localStorage.getItem('selectedSystemType') || '';
+  const [selectedSite, setSelectedSite] = useState(() => {
+    return localStorage.getItem('selectedSite') || '';
   });
   const [selectedEnvironment, setSelectedEnvironment] = useState(() => {
     return localStorage.getItem('selectedEnvironment') || '';
   });
-  const [selectedApplication, setSelectedApplication] = useState(() => {
-    return localStorage.getItem('selectedApplication') || '';
+  const [selectedSystem, setSelectedSystem] = useState(() => {
+    return localStorage.getItem('selectedSystem') || '';
   });
 
   useEffect(() => {
@@ -49,39 +53,39 @@ export function AppProvider({ children }) {
   }, [selectedTenant]);
 
   useEffect(() => {
-    localStorage.setItem('selectedSystemType', selectedSystemType);
-  }, [selectedSystemType]);
+    localStorage.setItem('selectedSite', selectedSite);
+  }, [selectedSite]);
 
   useEffect(() => {
     localStorage.setItem('selectedEnvironment', selectedEnvironment);
   }, [selectedEnvironment]);
 
   useEffect(() => {
-    localStorage.setItem('selectedApplication', selectedApplication);
-  }, [selectedApplication]);
+    localStorage.setItem('selectedSystem', selectedSystem);
+  }, [selectedSystem]);
 
   useEffect(() => {
-    localStorage.setItem('selectedApplicationId', selectedApplicationId);
-  }, [selectedApplicationId]);
+    localStorage.setItem('selectedSystemId', selectedSystemId);
+  }, [selectedSystemId]);
 
   return (
     <AppContext.Provider value={{
+      selectedSiteId,
+      setSelectedSiteId,
       selectedSystemId,
       setSelectedSystemId,
-      selectedApplicationId,
-      setSelectedApplicationId,
       darkMode,
       setDarkMode,
       sidebarCollapsed,
       setSidebarCollapsed,
       selectedTenant,
       setSelectedTenant,
-      selectedSystemType,
-      setSelectedSystemType,
+      selectedSite,
+      setSelectedSite,
       selectedEnvironment,
       setSelectedEnvironment,
-      selectedApplication,
-      setSelectedApplication
+      selectedSystem,
+      setSelectedSystem
     }}>
       {children}
     </AppContext.Provider>

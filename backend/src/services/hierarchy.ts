@@ -1,44 +1,44 @@
 import { PoolClient } from 'pg';
 
 /**
- * Resolves or creates an application for a given system.
- * Returns the application ID.
- * New hierarchy: Application belongs to System
+ * Resolves or creates a system for a given environment.
+ * Returns the system ID.
+ * New hierarchy: Tenant → Site → Environment → System
  */
-export async function resolveApplicationId(
+export async function resolveSystemId(
   client: PoolClient,
-  systemId: number,
-  applicationName: string | null | undefined
+  environmentId: number,
+  systemName: string | null | undefined
 ): Promise<number> {
   // Default value
-  const name = applicationName?.trim() || 'unknown';
+  const name = systemName?.trim() || 'unknown';
 
-  // Try to find existing application
+  // Try to find existing system
   const result = await client.query(
-    `SELECT id FROM applications
-     WHERE system_id = $1 AND name = $2`,
-    [systemId, name]
+    `SELECT id FROM systems
+     WHERE environment_id = $1 AND name = $2`,
+    [environmentId, name]
   );
 
   if (result.rows.length > 0) {
     return result.rows[0].id;
   }
 
-  // Create new application if it doesn't exist
+  // Create new system if it doesn't exist
   try {
     const insertResult = await client.query(
-      `INSERT INTO applications (system_id, name, description)
+      `INSERT INTO systems (environment_id, name, description)
        VALUES ($1, $2, $3)
        RETURNING id`,
-      [systemId, name, 'Auto-created from log/metrics ingestion']
+      [environmentId, name, 'Auto-created from log ingestion']
     );
     return insertResult.rows[0].id;
   } catch (error: any) {
     // Handle race condition: another process might have created it
     if (error.code === '23505') {
       const retryResult = await client.query(
-        `SELECT id FROM applications WHERE system_id = $1 AND name = $2`,
-        [systemId, name]
+        `SELECT id FROM systems WHERE environment_id = $1 AND name = $2`,
+        [environmentId, name]
       );
       if (retryResult.rows.length > 0) {
         return retryResult.rows[0].id;
@@ -49,52 +49,55 @@ export async function resolveApplicationId(
 }
 
 /**
- * Resolves or creates an environment for a given application.
+ * Resolves or creates an environment for a given site.
  * Returns the environment ID.
- * New hierarchy: Environment belongs to Application
+ * New hierarchy: Tenant → Site → Environment → System
  */
 export async function resolveEnvironmentId(
   client: PoolClient,
-  applicationId: number,
+  siteId: number,
   environmentName: string | null | undefined
 ): Promise<number> {
-  const name = environmentName?.trim() || 'unknown';
+  const name = environmentName?.trim() || 'dev';
 
   // Try to find existing environment
   const existing = await client.query(
-    'SELECT id FROM environments WHERE application_id = $1 AND name = $2',
-    [applicationId, name]
+    'SELECT id FROM environments WHERE site_id = $1 AND name = $2',
+    [siteId, name]
   );
   if (existing.rows.length > 0) {
     return existing.rows[0].id;
   }
 
-  // Create if not exists (unique on (application_id, name))
+  // Create if not exists (unique on (site_id, name))
   const inserted = await client.query(
-    `INSERT INTO environments (application_id, name)
+    `INSERT INTO environments (site_id, name)
      VALUES ($1, $2)
-     ON CONFLICT (application_id, name)
+     ON CONFLICT (site_id, name)
      DO UPDATE SET name = EXCLUDED.name
      RETURNING id`,
-    [applicationId, name]
+    [siteId, name]
   );
   return inserted.rows[0].id;
 }
 
 /**
- * Resolves hierarchy for a system: application and environment.
- * Returns environment_id and application_id.
- * New hierarchy: System -> Application -> Environment
+ * Resolves hierarchy for a site: environment and system.
+ * Returns environment_id and system_id.
+ * New hierarchy: Tenant → Site → Environment → System
+ *
+ * Note: The siteId parameter is actually passed as the system_id from the API token,
+ * but in the new structure it represents the site_id.
  */
 export async function resolveHierarchy(
   client: PoolClient,
-  systemId: number,
+  siteId: number,
   environmentName: string | null | undefined,
-  applicationName: string | null | undefined
-): Promise<{ environmentId: number; applicationId: number }> {
-  // Resolve application first (from system), then environment (from application)
-  const applicationId = await resolveApplicationId(client, systemId, applicationName);
-  const environmentId = await resolveEnvironmentId(client, applicationId, environmentName);
+  systemName: string | null | undefined
+): Promise<{ environmentId: number; systemId: number }> {
+  // Resolve environment first (from site), then system (from environment)
+  const environmentId = await resolveEnvironmentId(client, siteId, environmentName);
+  const systemId = await resolveSystemId(client, environmentId, systemName);
 
-  return { environmentId, applicationId };
+  return { environmentId, systemId };
 }

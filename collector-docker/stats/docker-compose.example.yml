@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # LogRadar Docker Stats Collector
+  logradar-docker-stats-collector:
+    build: .
+    container_name: logradar-docker-stats-collector
+    restart: unless-stopped
+    environment:
+      # Required: LogRadar API configuration
+      LOGRADAR_API_URL: "https://logradar.example.com"
+      API_TOKEN: "your-api-token-here"
+
+      # Optional: Collection interval in milliseconds (default: 60000 = 1 minute)
+      COLLECTION_INTERVAL_MS: "60000"
+
+      # Optional: Filter which containers to monitor (regex pattern)
+      # Leave empty to monitor all containers
+      CONTAINER_FILTER: ""
+
+    volumes:
+      # Mount Docker socket to access container stats
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # Optional: Limit resources
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          memory: 64M

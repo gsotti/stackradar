@@ -4,7 +4,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import AlertRuleForm from './AlertRuleForm';
 
-export default function AlertRuleList({ systemId }) {
+export default function AlertRuleList({ siteId }) {
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -13,12 +13,12 @@ export default function AlertRuleList({ systemId }) {
 
   useEffect(() => {
     loadRules();
-  }, [systemId]);
+  }, [siteId]);
 
   const loadRules = async () => {
     try {
       setLoading(true);
-      const data = await api.get(`/alerts/rules?system_id=${systemId}`);
+      const data = await api.get(`/alerts/rules?site_id=${siteId}`);
       setRules(data);
     } catch (error) {
       showError(error.message || 'Failed to load alert rules');
@@ -244,7 +244,7 @@ export default function AlertRuleList({ systemId }) {
       {/* Form Modal */}
       {showForm && (
         <AlertRuleForm
-          systemId={systemId}
+          siteId={siteId}
           rule={editingRule}
           onClose={handleFormClose}
         />

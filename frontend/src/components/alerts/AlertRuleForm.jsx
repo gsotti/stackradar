@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 
-export default function AlertRuleForm({ systemId, rule, onClose }) {
+export default function AlertRuleForm({ siteId, rule, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -38,7 +38,7 @@ export default function AlertRuleForm({ systemId, rule, onClose }) {
 
   const loadChannels = async () => {
     try {
-      const data = await api.get(`/alerts/channels?system_id=${systemId}`);
+      const data = await api.get(`/alerts/channels?site_id=${siteId}`);
       setChannels(data.filter((c) => c.enabled));
     } catch (error) {
       console.error('Failed to load channels:', error);
@@ -57,7 +57,7 @@ export default function AlertRuleForm({ systemId, rule, onClose }) {
       setLoading(true);
       const payload = {
         ...formData,
-        system_id: systemId,
+        site_id: siteId,
         threshold_value: parseFloat(formData.threshold_value),
       };
 

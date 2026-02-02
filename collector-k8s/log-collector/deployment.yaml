@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logradar-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: logradar-log-collector-__APP_NAME__
+  namespace: logradar-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logradar-log-collector-__APP_NAME__
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logradar-log-collector-__APP_NAME__
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logradar-log-collector-__APP_NAME__
+subjects:
+  - kind: ServiceAccount
+    name: logradar-log-collector-__APP_NAME__
+    namespace: logradar-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: logradar-log-config-__APP_NAME__
+  namespace: logradar-system
+type: Opaque
+stringData:
+  # REQUIRED: Replace with your LogRadar URL
+  LOGRADAR_URL: "https://your-logradar-instance.com"
+  # REQUIRED: Replace with your API token from LogRadar
+  API_TOKEN: "your-api-token-here"
+  # OPTIONAL: Name your cluster
+  CLUSTER_NAME: "my-cluster"
+  # OPTIONAL: Number of log lines to collect (default: 100)
+  LOG_TAIL_LINES: "100"
+  # OPTIONAL: Polling interval in milliseconds (default: 10000)
+  POLL_INTERVAL: "1000"
+  # OPTIONAL: Whether to continuously follow logs (default: true)
+  FOLLOW_LOGS: "true"
+---
+# Example: Deployment to collect logs from a specific pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logradar-log-collector-__APP_NAME__
+  namespace: logradar-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logradar-log-collector
+      target: example-app
+  template:
+    metadata:
+      labels:
+        app: logradar-log-collector
+        target: example-app
+    spec:
+      serviceAccountName: logradar-log-collector-__APP_NAME__
+      containers:
+        - name: log-collector
+          # REQUIRED: Build and push this image to your registry
+          # Example: docker build -t ghcr.io/gsotti/logradar-k8s-logs-collector:latest .
+          #          docker push ghcr.io/gsotti/logradar-k8s-logs-collector:latest
+          image: ghcr.io/gsotti/logradar-k8s-logs-collector:latest
+          imagePullPolicy: Always
+          env:
+            # REQUIRED: Specify the pod to collect logs from
+            - name: POD_NAMESPACE
+              value: "pod_namespace"
+            - name: POD_LABEL_SELECTOR
+              value: "pod_label_selector"
+            - name: POD_NAME
+              value: "pod_name"
+            - name: APP_NAME
+              value: "__APP_NAME__"
+            - name: ENVIRONMENT
+              value: "environment"
+          envFrom:
+            - secretRef:
+                name: logradar-log-config-__APP_NAME__
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"

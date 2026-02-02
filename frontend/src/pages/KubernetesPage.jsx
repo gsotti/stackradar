@@ -40,7 +40,8 @@ export default function KubernetesPage() {
         deployment_ready: parseInt(m.deployment_ready) || 0,
         service_count: parseInt(m.service_count) || 0,
         pvc_count: parseInt(m.pvc_count) || 0,
-        pvc_bound: parseInt(m.pvc_bound) || 0
+        pvc_bound: parseInt(m.pvc_bound) || 0,
+        pv_count: parseInt(m.pv_count) || 0
       }));
       setMetrics(parsedMetrics);
       setLastFetchTime(fetchTime);
@@ -210,7 +211,7 @@ export default function KubernetesPage() {
             </div>
 
             {/* Workloads */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300 hover:scale-105">
                 <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Deployments</h3>
                 <div className="flex items-center gap-4">
@@ -235,6 +236,12 @@ export default function KubernetesPage() {
                   <div className="text-3xl text-gray-500 dark:text-gray-400">{m.pvc_count}</div>
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-medium">Bound / Total</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">PVs</h3>
+                <div className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{m.pv_count}</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-medium">Total PVs</p>
               </div>
             </div>
 

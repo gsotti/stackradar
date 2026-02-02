@@ -33,8 +33,17 @@ export default function LoginPage() {
           throw new Error(error.detail || 'Registration failed');
         }
 
+        // Store credentials for login
+        const userEmail = email;
+        const userPassword = password;
+
+        // Reset form after successful registration
+        setEmail('');
+        setPassword('');
+        setName('');
+
         // After successful registration, login
-        await login(email, password);
+        await login(userEmail, userPassword);
       } else {
         await login(email, password);
       }

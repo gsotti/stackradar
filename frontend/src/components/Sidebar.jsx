@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Server, Activity, Users, LogOut, Menu, X,
-  Moon, Sun, ChevronLeft, ChevronRight, Package, Settings
+  Moon, Sun, ChevronLeft, ChevronRight, Package, Settings, Globe
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -19,28 +19,25 @@ export default function Sidebar() {
     setSidebarCollapsed,
     selectedTenant,
     setSelectedTenant,
-    selectedSystemType,
-    setSelectedSystemType,
-    selectedSystemId,
-    setSelectedSystemId,
+    selectedSite,
+    setSelectedSite,
     selectedEnvironment,
     setSelectedEnvironment,
-    selectedApplication,
-    setSelectedApplication,
-    selectedApplicationId,
-    setSelectedApplicationId
+    selectedSystem,
+    setSelectedSystem
   } = useApp();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tenants, setTenants] = useState([]);
-  const [systems, setSystems] = useState([]);
-  const [applications, setApplications] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [environments, setEnvironments] = useState([]);
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Logs', href: '/logs/live', icon: Activity },
-    { name: 'Systems', href: '/systems', icon: Server },
-    { name: 'Applications', href: '/applications', icon: Package },
+    { name: 'Sites', href: '/sites', icon: Server },
+    { name: 'Environments', href: '/environments', icon: Globe },
+    { name: 'Systems', href: '/systems', icon: Package },
     ...(user?.is_admin ? [
       { name: 'Users', href: '/users', icon: Users },
       { name: 'Admin Settings', href: '/admin/settings', icon: Settings }
@@ -63,48 +60,66 @@ export default function Sidebar() {
     }
   }, [user]);
 
-  // Fetch systems based on selected tenant
+  // Fetch sites based on selected tenant
   useEffect(() => {
-    const fetchSystems = async () => {
+    const fetchSites = async () => {
       try {
         const params = new URLSearchParams();
         if (selectedTenant) params.append('tenant_id', selectedTenant);
-        const systemsData = await api.get(`/systems?${params}`);
-        setSystems(systemsData);
-      } catch (error) {
-        console.error('Error fetching systems:', error);
-      }
-    };
+        const sitesData = await api.get(`/sites?${params}`);
+        setSites(Array.isArray(sitesData) ? sitesData : []);
 
-    if (user) {
-      fetchSystems();
-    }
-  }, [user, selectedTenant]);
-
-  // Fetch applications based on selected tenant and system
-  useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (selectedTenant) params.append('tenant_id', selectedTenant);
-        if (selectedSystemType) {
-          // Find the system ID from the selected system name
-          const system = systems.find(s => s.name === selectedSystemType);
-          if (system) params.append('system_id', system.id);
+        // Clear site selection if current site is not in the new list
+        if (selectedSite && sitesData.length > 0) {
+          const siteIds = sitesData.map(s => String(s.id));
+          if (!siteIds.includes(String(selectedSite))) {
+            setSelectedSite('');
+          }
+        } else if (!selectedTenant) {
+          // Clear site when tenant is cleared (for admin users)
+          setSelectedSite('');
         }
-        const applicationsData = await api.get(`/applications?${params}`);
-        setApplications(applicationsData);
       } catch (error) {
-        console.error('Error fetching applications:', error);
+        console.error('Error fetching sites:', error);
+        setSites([]);
       }
     };
 
     if (user) {
-      fetchApplications();
+      fetchSites();
     }
-  }, [user, selectedTenant, selectedSystemType, systems]);
+  }, [user, selectedTenant, selectedSite, setSelectedSite]);
 
-  // Environment filter moved inline to Logs pages; Sidebar no longer fetches or renders it
+  // Fetch environments based on selected site (or all if no site selected)
+  useEffect(() => {
+    const fetchEnvironments = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (selectedSite) params.append('site_id', selectedSite);
+        const environmentsData = await api.get(`/environments?${params}`);
+        setEnvironments(Array.isArray(environmentsData) ? environmentsData : []);
+
+        // Clear environment selection if current environment is not in the new list
+        if (selectedEnvironment && environmentsData.length > 0) {
+          const envIds = environmentsData.map(e => String(e.id));
+          if (!envIds.includes(String(selectedEnvironment))) {
+            setSelectedEnvironment('');
+          }
+        } else if (!selectedSite) {
+          // Clear environment when site is cleared
+          setSelectedEnvironment('');
+        }
+      } catch (error) {
+        console.error('Error fetching environments:', error);
+        setEnvironments([]);
+      }
+    };
+
+    if (user) {
+      fetchEnvironments();
+    }
+  }, [user, selectedSite, selectedEnvironment, setSelectedEnvironment]);
+
 
   return (
     <>
@@ -132,12 +147,18 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Tenant Selector - Minimalistic */}
-        {!sidebarCollapsed && (
+        {/* Tenant Selector - Only for admins */}
+        {!sidebarCollapsed && user?.is_admin && (
           <div className="px-4 pt-3 pb-2">
             <select
               value={selectedTenant}
-              onChange={(e) => setSelectedTenant(e.target.value)}
+              onChange={(e) => {
+                setSelectedTenant(e.target.value);
+                // Clear all dependent filters when tenant changes
+                setSelectedSite('');
+                setSelectedEnvironment('');
+                setSelectedSystem('');
+              }}
               className="w-full px-3 py-2 text-sm border-0 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500 transition-all appearance-none cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
             >
@@ -183,59 +204,48 @@ export default function Sidebar() {
           <div className="px-4 py-3 space-y-3 border-t border-gray-200 dark:border-gray-700">
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2">Context</h3>
 
-            {/* System */}
+            {/* Site */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 px-2">System</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 px-2">Site</label>
               <select
-                value={selectedSystemType}
+                value={selectedSite}
                 onChange={(e) => {
-                  const name = e.target.value;
-                  setSelectedSystemType(name);
-                  if (!name) {
-                    setSelectedSystemId('');
-                  } else {
-                    const sys = systems.find(s => s.name === name);
-                    setSelectedSystemId(sys ? String(sys.id) : '');
-                  }
+                  setSelectedSite(e.target.value);
+                  // Clear dependent filters when site changes
+                  setSelectedEnvironment('');
+                  setSelectedSystem('');
                 }}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
               >
-                <option value="">All systems</option>
-                {systems.map((system) => (
-                  <option key={system.id} value={system.name}>
-                    {system.name}
+                <option value="">All sites</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Application */}
+            {/* Environment */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 px-2">Application</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 px-2">Environment</label>
               <select
-                value={selectedApplicationId}
+                value={selectedEnvironment}
                 onChange={(e) => {
-                  const id = e.target.value;
-                  setSelectedApplicationId(id);
-                  if (!id) {
-                    setSelectedApplication('');
-                    return;
-                  }
-                  const app = applications.find(a => String(a.id) === String(id));
-                  setSelectedApplication(app ? app.name : '');
+                  setSelectedEnvironment(e.target.value);
+                  // Clear dependent filters when environment changes
+                  setSelectedSystem('');
                 }}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
               >
-                <option value="">All applications</option>
-                {applications.map((app) => (
-                  <option key={app.id} value={app.id}>
-                    {app.name}
+                <option value="">All environments</option>
+                {environments.map((env) => (
+                  <option key={env.id} value={env.id}>
+                    {env.display_name || env.name}
                   </option>
                 ))}
               </select>
             </div>
-
-            {/* Environment selector removed from Sidebar; use inline on Logs pages */}
           </div>
         )}
 

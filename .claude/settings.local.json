@@ -9,7 +9,10 @@
       "Bash(npm run build:*)",
       "Bash(docker build:*)",
       "Bash(docker push:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(test:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

@@ -4,10 +4,10 @@ import { format } from 'date-fns';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
 import { getLogLevelConfig } from '../utils/logLevels';
-import EnvironmentFilter from '../components/EnvironmentFilter';
+import SystemFilter from '../components/SystemFilter';
 
 export default function LogsLivePage() {
-  const { selectedSystemId, selectedTenant, selectedApplication, selectedApplicationId, sidebarCollapsed, selectedEnvironment, setSelectedEnvironment } = useApp();
+  const { selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem, setSelectedSystem, sidebarCollapsed } = useApp();
   const [liveLogs, setLiveLogs] = useState([]);
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [liveSearchTerm, setLiveSearchTerm] = useState('');
@@ -21,124 +21,166 @@ export default function LogsLivePage() {
   // Guard to drop stale responses when filters change quickly
   const requestKeyRef = useRef(0);
 
+  // Reset system filter on initial load
+  useEffect(() => {
+    setSelectedSystem('');
+  }, []);
+
   // Live mode polling with smooth log addition
   useEffect(() => {
-    // Clear logs and reset oldest log ID when filters change
-    setLiveLogs([]);
-    oldestLogIdRef.current = null;
-    setHasMoreLogs(true);
-
     if (isLiveMode) {
       let isActive = true;
-      let timeoutIds = [];
+      let pollingInterval = null;
       const myKey = ++requestKeyRef.current;
+      const abortController = new AbortController();
 
-      const addLogsSequentially = async (logs) => {
-        // Sort new logs by timestamp to ensure correct order
-        const sortedNewLogs = [...logs].sort((a, b) =>
-          new Date(a.timestamp) - new Date(b.timestamp)
-        );
+      // Debounce: wait 1.5 seconds THEN clear and fetch
+      const debounceTimeout = setTimeout(() => {
+        if (!isActive) return;
 
-        // Add all logs at once to avoid sorting issues
-        setLiveLogs(prev => {
-          const existingIds = new Set(prev.map(log => log.id));
-          const newUniqueLogs = sortedNewLogs.filter(log => !existingIds.has(log.id));
+        // NOW clear logs and reset state after debounce period
+        setLiveLogs([]);
+        oldestLogIdRef.current = null;
+        setHasMoreLogs(true);
 
-          if (newUniqueLogs.length === 0) return prev;
+        // REPLACE logs on initial fetch (don't merge with old data)
+        const replaceLogsInitial = (logs) => {
+          if (!isActive || requestKeyRef.current !== myKey) return; // Double-check before replacing
 
-          const updated = [...prev, ...newUniqueLogs];
-          // Sort all logs by timestamp
-          const sorted = updated.sort((a, b) =>
+          const sortedLogs = [...logs].sort((a, b) =>
             new Date(a.timestamp) - new Date(b.timestamp)
           );
 
-          // Keep only last 500 logs
-          const final = sorted.slice(-500);
+          const final = sortedLogs.slice(-500);
 
-          // ONLY set oldest log ID if we don't have one yet (initial load)
-          // Don't update it when streaming new logs, as that would make us lose track of older logs
-          if (!oldestLogIdRef.current && final.length > 0) {
+          if (final.length > 0) {
             oldestLogIdRef.current = final[0].id;
           }
 
-          return final;
-        });
-      };
+          setLiveLogs(final); // REPLACE, not merge
+        };
 
-      const pollLogs = async () => {
-        const params = new URLSearchParams();
-        if (selectedSystemId) params.append('system_id', selectedSystemId);
-        if (selectedTenant) params.append('tenant', selectedTenant);
-        if (selectedEnvironment) params.append('environment', selectedEnvironment);
-        if (selectedApplicationId) {
-          params.append('application_id', selectedApplicationId);
-        } else if (selectedApplication) {
-          params.append('application', selectedApplication);
-        }
-        params.append('limit', '20');
+        // ADD logs for polling updates (merge with existing)
+        const addLogsSequentially = async (logs) => {
+          if (!isActive || requestKeyRef.current !== myKey) return; // Safety check
 
-        try {
-          const data = await api.get(`/logs?${params}`);
-          if (isActive && requestKeyRef.current === myKey && data.logs && data.logs.length > 0) {
-            await addLogsSequentially(data.logs);
+          // Sort new logs by timestamp to ensure correct order
+          const sortedNewLogs = [...logs].sort((a, b) =>
+            new Date(a.timestamp) - new Date(b.timestamp)
+          );
+
+          // Add all logs at once to avoid sorting issues
+          setLiveLogs(prev => {
+            const existingIds = new Set(prev.map(log => log.id));
+            const newUniqueLogs = sortedNewLogs.filter(log => !existingIds.has(log.id));
+
+            if (newUniqueLogs.length === 0) return prev;
+
+            const updated = [...prev, ...newUniqueLogs];
+            // Sort all logs by timestamp
+            const sorted = updated.sort((a, b) =>
+              new Date(a.timestamp) - new Date(b.timestamp)
+            );
+
+            // Keep only last 500 logs
+            const final = sorted.slice(-500);
+
+            return final;
+          });
+        };
+
+        const pollLogs = async () => {
+          const params = new URLSearchParams();
+          if (selectedTenant) params.append('tenant', selectedTenant);
+          if (selectedSite) params.append('site', selectedSite);
+          if (selectedEnvironment) params.append('environment', selectedEnvironment);
+          if (selectedSystem) params.append('system', selectedSystem);
+          if (selectedSystemId) params.append('system_id', selectedSystemId);
+          params.append('limit', '20');
+
+          try {
+            const data = await api.get(`/logs?${params}`, { signal: abortController.signal });
+            if (isActive && requestKeyRef.current === myKey && data.logs && data.logs.length > 0) {
+              await addLogsSequentially(data.logs);
+            }
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              // Request was cancelled, ignore
+              return;
+            }
+            console.error('Failed to fetch live logs:', error);
           }
-        } catch (error) {
-          console.error('Failed to fetch live logs:', error);
-        }
-      };
+        };
 
-      // Initial fetch with more logs to fill the screen
-      const initialFetch = async () => {
-        const params = new URLSearchParams();
-        if (selectedSystemId) params.append('system_id', selectedSystemId);
-        if (selectedTenant) params.append('tenant', selectedTenant);
-        if (selectedEnvironment) params.append('environment', selectedEnvironment);
-        if (selectedApplicationId) {
-          params.append('application_id', selectedApplicationId);
-        } else if (selectedApplication) {
-          params.append('application', selectedApplication);
-        }
-        params.append('limit', '100');
+        // Initial fetch with more logs to fill the screen
+        const initialFetch = async () => {
+          const params = new URLSearchParams();
+          if (selectedTenant) params.append('tenant', selectedTenant);
+          if (selectedSite) params.append('site', selectedSite);
+          if (selectedEnvironment) params.append('environment', selectedEnvironment);
+          if (selectedSystem) params.append('system', selectedSystem);
+          if (selectedSystemId) params.append('system_id', selectedSystemId);
+          params.append('limit', '100');
 
-        try {
-          const data = await api.get(`/logs?${params}`);
-          if (isActive && requestKeyRef.current === myKey && data.logs && data.logs.length > 0) {
-            await addLogsSequentially(data.logs);
+          // Debug: Log filter parameters
+          console.log('🔍 [LogsLive] Fetching with filters:', {
+            tenant: selectedTenant,
+            site: selectedSite,
+            environment: selectedEnvironment,
+            system: selectedSystem,
+            requestKey: myKey,
+            url: `/logs?${params}`
+          });
+
+          try {
+            const data = await api.get(`/logs?${params}`, { signal: abortController.signal });
+            console.log('✅ [LogsLive] Received logs:', data.logs?.length || 0, 'logs');
+            // Use REPLACE function for initial fetch to prevent old data contamination
+            if (data.logs && data.logs.length > 0) {
+              replaceLogsInitial(data.logs);
+            }
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              // Request was cancelled, ignore
+              console.log('⚠️ [LogsLive] Request aborted (filter changed)');
+              return;
+            }
+            console.error('❌ [LogsLive] Failed to fetch initial logs:', error);
           }
-        } catch (error) {
-          console.error('Failed to fetch initial logs:', error);
-        }
-      };
+        };
 
-      // Initial fetch
-      initialFetch();
+        // Fetch new logs with new filter
+        initialFetch();
 
-      // Poll every 3 seconds (increased to account for sequential delays)
-      const interval = setInterval(pollLogs, 3000);
+        // Start polling every 3 seconds AFTER initial fetch
+        pollingInterval = setInterval(pollLogs, 3000);
+      }, 1500); // Wait 1.5 seconds before clearing and fetching
 
+      // Cleanup: Stop polling immediately when filters change
       return () => {
         isActive = false;
-        clearInterval(interval);
-        timeoutIds.forEach(id => clearTimeout(id));
+        abortController.abort(); // Cancel all in-flight requests immediately
+        clearTimeout(debounceTimeout); // Cancel debounce if still waiting
+        if (pollingInterval) {
+          clearInterval(pollingInterval); // Stop polling interval immediately
+        }
       };
     }
-  }, [isLiveMode, selectedSystemId, selectedTenant, selectedEnvironment, selectedApplication, selectedApplicationId]);
+  }, [isLiveMode, selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem]);
 
   // Load older logs function
   const loadOlderLogs = async () => {
     if (isLoadingOlder || !hasMoreLogs) return;
 
     setIsLoadingOlder(true);
+    const myKey = requestKeyRef.current; // Capture current request key
     try {
       const params = new URLSearchParams();
-      if (selectedSystemId) params.append('system_id', selectedSystemId);
       if (selectedTenant) params.append('tenant', selectedTenant);
+      if (selectedSite) params.append('site', selectedSite);
       if (selectedEnvironment) params.append('environment', selectedEnvironment);
-      if (selectedApplicationId) {
-        params.append('application_id', selectedApplicationId);
-      } else if (selectedApplication) {
-        params.append('application', selectedApplication);
-      }
+      if (selectedSystem) params.append('system', selectedSystem);
+      if (selectedSystemId) params.append('system_id', selectedSystemId);
       params.append('limit', '50');
 
       // Get logs older than the oldest log we currently have
@@ -147,6 +189,11 @@ export default function LogsLivePage() {
       }
 
       const data = await api.get(`/logs?${params}`);
+
+      // Drop stale responses - if filters changed, don't update
+      if (requestKeyRef.current !== myKey) {
+        return;
+      }
 
       if (data.logs && data.logs.length > 0) {
         // Save scroll position
@@ -302,7 +349,7 @@ export default function LogsLivePage() {
       <div className={`fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 px-4 py-3 z-20 transition-all shadow-xl ${sidebarCollapsed ? 'lg:left-20' : 'lg:left-64'}`}>
         <div className="flex items-center gap-3 flex-wrap">
           {/* Environment Filter (inline) */}
-          <EnvironmentFilter />
+          <SystemFilter />
 
           {/* Search Filter */}
           <div className="relative flex-1">

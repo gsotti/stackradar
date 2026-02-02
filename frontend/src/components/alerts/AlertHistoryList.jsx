@@ -3,7 +3,7 @@ import { Clock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 
-export default function AlertHistoryList({ systemId }) {
+export default function AlertHistoryList({ siteId }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -11,12 +11,12 @@ export default function AlertHistoryList({ systemId }) {
 
   useEffect(() => {
     loadHistory();
-  }, [systemId, filter]);
+  }, [siteId, filter]);
 
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({ system_id: systemId, limit: '50' });
+      const params = new URLSearchParams({ site_id: siteId, limit: '50' });
       if (filter !== 'all') {
         params.append('state', filter);
       }

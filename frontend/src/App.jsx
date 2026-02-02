@@ -9,9 +9,10 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import LogsLivePage from './pages/LogsLivePage';
 import LogsTablePage from './pages/LogsTablePage';
+import SitesPage from './pages/SitesPage';
+import SiteDetailsPage from './pages/SiteDetailsPage';
+import EnvironmentsPage from './pages/EnvironmentsPage';
 import SystemsPage from './pages/SystemsPage';
-import SystemDetailsPage from './pages/SystemDetailsPage';
-import ApplicationsPage from './pages/ApplicationsPage';
 import UsersPage from './pages/UsersPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 
@@ -33,9 +34,10 @@ export default function App() {
               <Route path="/logs/live" element={<ProtectedRoute><LogsLivePage /></ProtectedRoute>} />
               <Route path="/logs/table" element={<ProtectedRoute><LogsTablePage /></ProtectedRoute>} />
               <Route path="/logs" element={<Navigate to="/logs/live" replace />} />
+              <Route path="/sites" element={<ProtectedRoute><SitesPage /></ProtectedRoute>} />
+              <Route path="/sites/:id" element={<ProtectedRoute><SiteDetailsPage /></ProtectedRoute>} />
+              <Route path="/environments" element={<ProtectedRoute><EnvironmentsPage /></ProtectedRoute>} />
               <Route path="/systems" element={<ProtectedRoute><SystemsPage /></ProtectedRoute>} />
-              <Route path="/systems/:id" element={<ProtectedRoute><SystemDetailsPage /></ProtectedRoute>} />
-              <Route path="/applications" element={<ProtectedRoute><ApplicationsPage /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
             </Routes>

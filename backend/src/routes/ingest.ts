@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import db from '../db/database.js';
 import { IngestLogRequest, IngestLogsRequest } from '../types/index.js';
-import { validateApiToken, SystemRequest } from '../middleware/validateApiToken.js';
+import { validateApiToken, SiteRequest } from '../middleware/validateApiToken.js';
 import { resolveHierarchy } from '../services/hierarchy.js';
 
 const router = Router();
@@ -17,7 +17,7 @@ const ingestLimiter = rateLimit({
 
 // Ingest multiple logs
 router.post('/:apiToken', ingestLimiter, validateApiToken, async (
-  req: SystemRequest,
+  req: SiteRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -32,41 +32,37 @@ router.post('/:apiToken', ingestLimiter, validateApiToken, async (
     try {
       await client.query('BEGIN');
 
-      // Get system's tenant_id once for all logs
-      const systemResult = await client.query<{ tenant_id: number }>(
-        'SELECT tenant_id FROM systems WHERE id = $1',
-        [req.system!.id]
-      );
-      const tenantId = systemResult.rows[0]?.tenant_id || null;
+      // Get tenant_id from the site
+      const tenantId = req.site!.tenant_id;
 
       let count = 0;
       for (const log of logs) {
-        // Resolve hierarchy (environment_id and application_id)
-        const { environmentId, applicationId } = await resolveHierarchy(
+        // Resolve hierarchy (site_id, environment, and system)
+        const { systemId } = await resolveHierarchy(
           client,
-          req.system!.id,
+          req.site!.id,
           log.environment,
-          log.application
+          log.system
         );
 
         await client.query(
           `INSERT INTO log_entries (
-            environment_id, timestamp, level, message, source, metadata,
-            tenant, application,
-            tenant_id, application_id
+            system_id, timestamp, level, message, source, metadata,
+            tenant, site, environment, system, tenant_id
           )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
-            environmentId,
+            systemId,
             log.timestamp || new Date().toISOString(),
             (log.level || 'INFO').toUpperCase(),
             log.message,
             log.source || null,
             log.metadata ? (typeof log.metadata === 'string' ? log.metadata : JSON.stringify(log.metadata)) : null,
             log.tenant || null,
-            log.application || null,
-            tenantId,
-            applicationId
+            log.site || null,
+            log.environment || null,
+            log.system || null,
+            tenantId
           ]
         );
         count++;
@@ -88,11 +84,11 @@ router.post('/:apiToken', ingestLimiter, validateApiToken, async (
 
 // Ingest single log
 router.post('/:apiToken/single', ingestLimiter, validateApiToken, async (
-  req: SystemRequest,
+  req: SiteRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const { level = 'INFO', message, source, metadata, timestamp, tenant, environment, application }: IngestLogRequest = req.body;
+    const { level = 'INFO', message, source, metadata, timestamp, tenant, environment, system }: IngestLogRequest = req.body;
 
     if (!message) {
       res.status(400).json({ detail: 'message is required' });
@@ -101,39 +97,35 @@ router.post('/:apiToken/single', ingestLimiter, validateApiToken, async (
 
     const client = await db.connect();
     try {
-      // Get system's tenant_id
-      const systemResult = await client.query<{ tenant_id: number }>(
-        'SELECT tenant_id FROM systems WHERE id = $1',
-        [req.system!.id]
-      );
-      const tenantId = systemResult.rows[0]?.tenant_id || null;
+      // Get tenant_id from the site
+      const tenantId = req.site!.tenant_id;
 
-      // Resolve hierarchy (environment_id and application_id)
-      const { environmentId, applicationId } = await resolveHierarchy(
+      // Resolve hierarchy (site_id, environment, and system)
+      const { systemId } = await resolveHierarchy(
         client,
-        req.system!.id,
+        req.site!.id,
         environment,
-        application
+        system
       );
 
       const result = await client.query<{ id: number }>(
         `INSERT INTO log_entries (
-          environment_id, timestamp, level, message, source, metadata,
-          tenant, application,
-          tenant_id, application_id
+          system_id, timestamp, level, message, source, metadata,
+          tenant, site, environment, system, tenant_id
         )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
         [
-          environmentId,
+          systemId,
           timestamp || new Date().toISOString(),
           level.toUpperCase(),
           message,
           source || null,
           metadata ? (typeof metadata === 'string' ? metadata : JSON.stringify(metadata)) : null,
           tenant || null,
-          application || null,
-          tenantId,
-          applicationId
+          null, // site (text) - can be populated if needed
+          environment || null,
+          system || null,
+          tenantId
         ]
       );
 

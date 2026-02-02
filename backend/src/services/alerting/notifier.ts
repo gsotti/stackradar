@@ -6,7 +6,6 @@ import {
   AlertHistory,
   AlertRule,
   NotificationChannel,
-  System,
 } from '../../types/index.js';
 
 /**
@@ -43,18 +42,18 @@ export async function sendNotifications(
 
     const rule = ruleResult.rows[0];
 
-    // Get system details
-    const systemResult = await db.query<System>(
-      'SELECT * FROM systems WHERE id = $1',
-      [alert.system_id]
+    // Get site details
+    const siteResult = await db.query<{ id: number; name: string }>(
+      'SELECT id, name FROM sites WHERE id = $1',
+      [alert.site_id]
     );
 
-    if (systemResult.rows.length === 0) {
-      console.error('System not found:', alert.system_id);
+    if (siteResult.rows.length === 0) {
+      console.error('Site not found:', alert.site_id);
       return;
     }
 
-    const system = systemResult.rows[0];
+    const site = siteResult.rows[0];
 
     // Get notification channels for this rule
     const channelsResult = await db.query<NotificationChannel>(
@@ -77,9 +76,9 @@ export async function sendNotifications(
     for (const channel of channels) {
       try {
         if (channel.channel_type === 'email') {
-          await sendEmailNotification(channel, alert, rule, system);
+          await sendEmailNotification(channel, alert, rule, site);
         } else if (channel.channel_type === 'webhook') {
-          await sendWebhookNotification(channel, alert, rule, system);
+          await sendWebhookNotification(channel, alert, rule, site);
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
@@ -108,15 +107,15 @@ async function sendEmailNotification(
   channel: NotificationChannel,
   alert: AlertHistory,
   rule: AlertRule,
-  system: System
+  site: { id: number; name: string }
 ): Promise<void> {
   if (!channel.email_recipients || channel.email_recipients.length === 0) {
     throw new Error('No email recipients configured');
   }
 
-  const subject = formatEmailSubject(alert, rule, system);
-  const htmlBody = formatEmailTemplate(alert, rule, system);
-  const textBody = formatTextTemplate(alert, rule, system);
+  const subject = formatEmailSubject(alert, rule, site);
+  const htmlBody = formatEmailTemplate(alert, rule, site);
+  const textBody = formatTextTemplate(alert, rule, site);
 
   await sendEmail(channel.email_recipients, subject, htmlBody, textBody);
 }
@@ -128,18 +127,17 @@ async function sendWebhookNotification(
   channel: NotificationChannel,
   alert: AlertHistory,
   rule: AlertRule,
-  system: System
+  site: { id: number; name: string }
 ): Promise<void> {
   if (!channel.webhook_url) {
     throw new Error('No webhook URL configured');
   }
 
-  const payload = formatWebhookPayload(alert, rule, system);
-  const method = channel.webhook_method || 'POST';
+  const payload = formatWebhookPayload(alert, rule, site);
 
   await sendHttpRequest(
     channel.webhook_url,
-    method,
+    'POST',
     payload,
     channel.webhook_headers || {}
   );
@@ -151,11 +149,11 @@ async function sendWebhookNotification(
 function formatEmailSubject(
   alert: AlertHistory,
   rule: AlertRule,
-  system: System
+  site: { id: number; name: string }
 ): string {
   const severity = rule.severity.toUpperCase();
   const state = alert.state === 'firing' ? 'ALERT' : 'RESOLVED';
-  return `[LogRadar ${severity}] ${state}: ${rule.name} - ${system.name}`;
+  return `[LogRadar ${severity}] ${state}: ${rule.name} - ${site.name}`;
 }
 
 /**
@@ -164,7 +162,7 @@ function formatEmailSubject(
 function formatEmailTemplate(
   alert: AlertHistory,
   rule: AlertRule,
-  system: System
+  site: { id: number; name: string }
 ): string {
   const metricTypeLabel = getMetricTypeLabel(rule.metric_type);
   const stateColor = alert.state === 'firing' ? '#ef4444' : '#10b981';
@@ -199,8 +197,8 @@ function formatEmailTemplate(
     </div>
     <div class="content">
       <div class="field">
-        <span class="label">System:</span>
-        <span class="value">${system.name}</span>
+        <span class="label">Site:</span>
+        <span class="value">${site.name}</span>
       </div>
       <div class="field">
         <span class="label">Alert Rule:</span>
@@ -250,7 +248,7 @@ function formatEmailTemplate(
 function formatTextTemplate(
   alert: AlertHistory,
   rule: AlertRule,
-  system: System
+  site: { id: number; name: string }
 ): string {
   const metricTypeLabel = getMetricTypeLabel(rule.metric_type);
 
@@ -259,7 +257,7 @@ LogRadar Alert Notification
 ${alert.state === 'firing' ? 'ALERT TRIGGERED' : 'ALERT RESOLVED'}
 ${'='.repeat(50)}
 
-System: ${system.name}
+Site: ${site.name}
 Alert Rule: ${rule.name}
 ${rule.description ? `Description: ${rule.description}` : ''}
 Severity: ${rule.severity.toUpperCase()}
@@ -285,12 +283,12 @@ This is an automated message from LogRadar
 function formatWebhookPayload(
   alert: AlertHistory,
   rule: AlertRule,
-  system: System
+  site: { id: number; name: string }
 ): Record<string, any> {
   return {
     alert_id: alert.id,
-    system_id: system.id,
-    system_name: system.name,
+    site_id: site.id,
+    site_name: site.name,
     rule_id: rule.id,
     rule_name: rule.name,
     rule_description: rule.description,

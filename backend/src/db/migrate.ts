@@ -3,7 +3,7 @@ import pkg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Migration, User } from '../types/index.js';
+import { Migration, User } from '../types';
 
 const { Pool } = pkg;
 
@@ -26,7 +26,7 @@ async function runMigrations(): Promise<void> {
   try {
     console.log('🔄 Running database migrations...\n');
 
-    // Create migrations table if it doesn't exist
+    // Create a migrations table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS migrations (
         id SERIAL PRIMARY KEY,

@@ -12,7 +12,7 @@ export async function evaluateAllAlerts(): Promise<void> {
   try {
     // Get all enabled alert rules
     const result = await db.query<AlertRule>(
-      'SELECT * FROM alert_rules WHERE enabled = TRUE ORDER BY system_id'
+      'SELECT * FROM alert_rules WHERE enabled = TRUE ORDER BY site_id'
     );
 
     const rules = result.rows;
@@ -54,7 +54,7 @@ export async function evaluateAllAlerts(): Promise<void> {
 export async function evaluateRule(rule: AlertRule): Promise<string> {
   // Get current metric value
   const currentValue = await getCurrentMetricValue(
-    rule.system_id,
+    rule.site_id,
     rule.metric_type,
     rule.time_window_minutes
   );
@@ -127,10 +127,10 @@ export async function evaluateRule(rule: AlertRule): Promise<string> {
 }
 
 /**
- * Get current metric value for a system
+ * Get current metric value for a site
  */
 export async function getCurrentMetricValue(
-  systemId: number,
+  siteId: number,
   metricType: MetricType,
   timeWindowMinutes?: number
 ): Promise<number | null> {
@@ -140,9 +140,9 @@ export async function getCurrentMetricValue(
       case 'memory_percent': {
         const result = await db.query<{ value: number }>(
           `SELECT ${metricType === 'cpu_percent' ? 'cpu_usage_percent' : 'memory_usage_percent'} as value
-           FROM k8s_metrics
-           WHERE system_id = $1`,
-          [systemId]
+           FROM site_metrics
+           WHERE site_id = $1`,
+          [siteId]
         );
         return result.rows.length > 0 ? Number(result.rows[0].value) : null;
       }
@@ -152,12 +152,12 @@ export async function getCurrentMetricValue(
         const result = await db.query<{ count: string }>(
           `SELECT COUNT(*)::text as count
            FROM log_entries le
-           LEFT JOIN environments e ON e.id = le.environment_id
-           LEFT JOIN applications a ON a.id = e.application_id
-           WHERE a.system_id = $1
+           LEFT JOIN systems sys ON sys.id = le.system_id
+           LEFT JOIN environments e ON e.id = sys.environment_id
+           WHERE e.site_id = $1
              AND le.level = 'ERROR'
              AND le.timestamp >= NOW() - INTERVAL '${window} minutes'`,
-          [systemId]
+          [siteId]
         );
         return result.rows.length > 0 ? parseInt(result.rows[0].count) : 0;
       }
@@ -166,8 +166,8 @@ export async function getCurrentMetricValue(
       case 'pod_pending': {
         const field = metricType === 'pod_failed' ? 'pod_failed' : 'pod_pending';
         const result = await db.query<{ value: number }>(
-          `SELECT ${field} as value FROM k8s_metrics WHERE system_id = $1`,
-          [systemId]
+          `SELECT ${field} as value FROM site_metrics WHERE site_id = $1`,
+          [siteId]
         );
         return result.rows.length > 0 ? Number(result.rows[0].value) : null;
       }
@@ -175,9 +175,9 @@ export async function getCurrentMetricValue(
       case 'deployment_readiness': {
         const result = await db.query<K8sMetrics>(
           `SELECT deployment_ready, deployment_count
-           FROM k8s_metrics
-           WHERE system_id = $1`,
-          [systemId]
+           FROM site_metrics
+           WHERE site_id = $1`,
+          [siteId]
         );
         if (result.rows.length === 0 || result.rows[0].deployment_count === 0) {
           return null;
@@ -190,9 +190,9 @@ export async function getCurrentMetricValue(
       case 'pvc_bound': {
         const result = await db.query<K8sMetrics>(
           `SELECT pvc_bound, pvc_count
-           FROM k8s_metrics
-           WHERE system_id = $1`,
-          [systemId]
+           FROM site_metrics
+           WHERE site_id = $1`,
+          [siteId]
         );
         if (result.rows.length === 0 || result.rows[0].pvc_count === 0) {
           return null;
@@ -205,9 +205,9 @@ export async function getCurrentMetricValue(
       case 'node_health': {
         const result = await db.query<K8sMetrics>(
           `SELECT node_ready, node_count
-           FROM k8s_metrics
-           WHERE system_id = $1`,
-          [systemId]
+           FROM site_metrics
+           WHERE site_id = $1`,
+          [siteId]
         );
         if (result.rows.length === 0 || result.rows[0].node_count === 0) {
           return null;
@@ -307,10 +307,10 @@ export async function createAlertHistory(
 ): Promise<number> {
   const result = await db.query<{ id: number }>(
     `INSERT INTO alert_history (
-      alert_rule_id, system_id, state, metric_value, threshold_value, message
+      alert_rule_id, site_id, state, metric_value, threshold_value, message
     ) VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING id`,
-    [rule.id, rule.system_id, state, metricValue, rule.threshold_value, message]
+    [rule.id, rule.site_id, state, metricValue, rule.threshold_value, message]
   );
 
   return result.rows[0].id;

@@ -4,7 +4,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import NotificationChannelForm from './NotificationChannelForm';
 
-export default function NotificationChannelList({ systemId }) {
+export default function NotificationChannelList({ siteId }) {
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -14,12 +14,12 @@ export default function NotificationChannelList({ systemId }) {
 
   useEffect(() => {
     loadChannels();
-  }, [systemId]);
+  }, [siteId]);
 
   const loadChannels = async () => {
     try {
       setLoading(true);
-      const data = await api.get(`/alerts/channels?system_id=${systemId}`);
+      const data = await api.get(`/alerts/channels?site_id=${siteId}`);
       setChannels(data);
     } catch (error) {
       showError(error.message || 'Failed to load notification channels');
@@ -67,7 +67,7 @@ export default function NotificationChannelList({ systemId }) {
       setTestingChannelId(channelId);
       const result = await api.post('/alerts/trigger-test', {
         channel_id: channelId,
-        system_id: systemId
+        site_id: siteId
       });
       showSuccess(result.message || 'Test alert sent successfully');
       if (result.alert_name) {
@@ -222,7 +222,7 @@ export default function NotificationChannelList({ systemId }) {
       {/* Form Modal */}
       {showForm && (
         <NotificationChannelForm
-          systemId={systemId}
+          siteId={siteId}
           channel={editingChannel}
           onClose={handleFormClose}
         />

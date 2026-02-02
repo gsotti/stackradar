@@ -1,33 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
 import db from '../db/database.js';
-import { System } from '../types/index.js';
+import { Site } from '../types/index.js';
 
-// Extended request type for system
-export interface SystemRequest extends Request {
-  system?: System;
+// Extended request type for site
+export interface SiteRequest extends Request {
+  site?: Site;
 }
 
 // Validate API token middleware (for ingestion)
 export async function validateApiToken(
-  req: SystemRequest,
+  req: SiteRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
     const { apiToken } = req.params;
 
-    const result = await db.query<System>(
-      'SELECT * FROM systems WHERE api_token = $1',
+    const result = await db.query<Site>(
+      'SELECT * FROM sites WHERE api_token = $1',
       [apiToken]
     );
-    const system = result.rows[0];
+    const site = result.rows[0];
 
-    if (!system) {
+    if (!site) {
       res.status(401).json({ detail: 'Invalid API token' });
       return;
     }
 
-    req.system = system;
+    req.site = site;
     next();
   } catch (error) {
     console.error('API token validation error:', error);

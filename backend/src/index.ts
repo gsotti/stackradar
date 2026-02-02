@@ -9,13 +9,13 @@ import cluster from 'cluster';
 
 import { initDatabase } from './db/database.js';
 import authRoutes from './routes/auth.js';
+import siteRoutes from './routes/sites.js';
 import systemRoutes from './routes/systems.js';
 import logRoutes from './routes/logs.js';
 import ingestRoutes from './routes/ingest.js';
 import k8sRoutes from './routes/k8s.js';
 import adminRoutes from './routes/admin.js';
 import tenantRoutes from './routes/tenants.js';
-import applicationRoutes from './routes/applications.js';
 import environmentRoutes from './routes/environments.js';
 import alertRoutes from './routes/alerts.js';
 import { cleanupOldLogs } from './services/cleanup.js';
@@ -40,14 +40,14 @@ initDatabase();
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/sites', siteRoutes);
 app.use('/api/systems', systemRoutes);
+app.use('/api/environments', environmentRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/ingest', ingestRoutes);
 app.use('/api/k8s', k8sRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tenants', tenantRoutes);
-app.use('/api/applications', applicationRoutes);
-app.use('/api/environments', environmentRoutes);
 app.use('/api/alerts', alertRoutes);
 
 // Health check

@@ -3,42 +3,63 @@ import { Search, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
-import EnvironmentFilter from '../components/EnvironmentFilter';
+import SystemFilter from '../components/SystemFilter';
 
 export default function LogsTablePage() {
   const {
     selectedSystemId,
     selectedTenant,
-    selectedSystemType,
+    selectedSite,
     selectedEnvironment,
-    selectedApplication,
-    selectedApplicationId
+    selectedSystem
   } = useApp();
   const [logs, setLogs] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   // Incrementing key to guard against stale async responses
   const requestKeyRef = React.useRef(0);
+  // Track if we're waiting for context filter debounce
+  const isDebouncingRef = React.useRef(false);
   const [filters, setFilters] = useState({
     level: '',
     search: '',
-    application: '',
     limit: 100,
     offset: 0
   });
   const [expandedLog, setExpandedLog] = useState(null);
 
+  // Handle context filter changes (site, tenant, etc.) with debounce
   useEffect(() => {
-    fetchLogs();
-  }, [filters, selectedSystemId, selectedTenant, selectedSystemType, selectedEnvironment, selectedApplication, selectedApplicationId]);
+    // Mark that we're debouncing to prevent immediate fetch
+    isDebouncingRef.current = true;
 
-  // When context filters change, clear list immediately and reset pagination
-  useEffect(() => {
-    setLogs([]);
-    setTotal(0);
+    // Reset pagination when context filters change
     setFilters(prev => ({ ...prev, offset: 0 }));
+
+    // Debounce: wait 1.5 seconds THEN clear and fetch
+    const debounceTimeout = setTimeout(() => {
+      // Clear list just before fetching new data
+      setLogs([]);
+      setTotal(0);
+      isDebouncingRef.current = false; // Done debouncing
+      fetchLogs();
+    }, 1500);
+
+    return () => {
+      clearTimeout(debounceTimeout);
+      isDebouncingRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSystemId, selectedTenant, selectedSystemType, selectedEnvironment, selectedApplication, selectedApplicationId]);
+  }, [selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem]);
+
+  // Handle local filter changes (level, search, pagination) without debounce
+  useEffect(() => {
+    // Skip if we're waiting for context filter debounce
+    if (isDebouncingRef.current) return;
+
+    fetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -48,29 +69,35 @@ export default function LogsTablePage() {
 
     // Add global hierarchy filters from sidebar
     if (selectedTenant) params.append('tenant', selectedTenant);
-    if (selectedSystemType) params.append('system_type', selectedSystemType);
+    if (selectedSite) params.append('site', selectedSite);
     if (selectedEnvironment) params.append('environment', selectedEnvironment);
+    if (selectedSystem) params.append('system', selectedSystem);
 
     // Add local filters
     Object.entries(filters).forEach(([k, v]) => {
       if (v) params.append(k, v);
     });
 
-    // Prefer application_id from context over name
-    if (selectedApplicationId) {
-      params.delete('application'); // ensure no conflicting name filter
-      params.append('application_id', selectedApplicationId);
-    } else if (selectedApplication && !filters.application) {
-      // If no ID, and no local application filter set, apply name from context
-      params.append('application', selectedApplication);
-    }
+    // Debug: Log filter parameters
+    console.log('🔍 [LogsTable] Fetching with filters:', {
+      tenant: selectedTenant,
+      site: selectedSite,
+      environment: selectedEnvironment,
+      system: selectedSystem,
+      localFilters: filters,
+      requestKey: myKey,
+      url: `/logs?${params}`
+    });
 
     try {
       const data = await api.get(`/logs?${params}`);
+      console.log('✅ [LogsTable] Received logs:', data.logs?.length || 0, 'logs, requestKey:', myKey, 'current:', requestKeyRef.current);
       // Drop stale responses
       if (requestKeyRef.current === myKey) {
         setLogs(data.logs);
         setTotal(data.total);
+      } else {
+        console.log('⚠️ [LogsTable] Dropped stale response (keys don\'t match)');
       }
     } finally {
       setLoading(false);
@@ -93,7 +120,7 @@ export default function LogsTablePage() {
       {/* Filters Bar */}
       <div className="flex items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <EnvironmentFilter />
+          <SystemFilter />
         </div>
         <button
           onClick={fetchLogs}
@@ -166,10 +193,10 @@ export default function LogsTablePage() {
                               <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs font-medium">{log.environment}</span>
                             </div>
                           )}
-                          {log.application && (
+                          {log.system && (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">App:</span>
-                              <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded text-xs font-medium">{log.application}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">System:</span>
+                              <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded text-xs font-medium">{log.system}</span>
                             </div>
                           )}
                         </div>
@@ -227,18 +254,6 @@ export default function LogsTablePage() {
               <option value="ERROR">ERROR</option>
               <option value="CRITICAL">CRITICAL</option>
             </select>
-          </div>
-
-          {/* Application Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Application:</label>
-            <input
-              type="text"
-              value={filters.application}
-              onChange={(e) => setFilters({ ...filters, application: e.target.value, offset: 0 })}
-              placeholder="All applications"
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-orange-400 dark:hover:border-orange-500 shadow-sm w-40"
-            />
           </div>
 
           {/* Search */}

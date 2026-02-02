@@ -1,9 +1,9 @@
 import { Router, Response } from 'express';
 import db from '../db/database.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { validateApiToken, SystemRequest } from '../middleware/validateApiToken.js';
-import { AuthRequest, System, K8sMetrics } from '../types/index.js';
-// Note: stats ingest is system-scoped only; do NOT resolve or create applications/environments here
+import { validateApiToken, SiteRequest } from '../middleware/validateApiToken.js';
+import { AuthRequest, K8sMetrics } from '../types/index.js';
+// Note: stats ingest is site-scoped only; do NOT resolve or create environments/systems here
 
 const router = Router();
 
@@ -26,6 +26,7 @@ interface K8sMetricsInput {
   service_count?: number;
   pvc_count?: number;
   pvc_bound?: number;
+  pv_count?: number;
   namespaces?: string[] | string;
   alerts?: any[] | string;
   tenant?: string;
@@ -35,169 +36,118 @@ interface K8sMetricsInput {
 }
 
 // Ingest K8s metrics
-// System-scoped stats ingest (back-compat endpoint)
+// Site-scoped stats ingest (back-compat endpoint)
 router.post('/metrics/:apiToken', validateApiToken, async (
-  req: SystemRequest,
+  req: SiteRequest,
   res: Response
 ): Promise<void> => {
   try {
     const metrics: K8sMetricsInput = req.body;
-    const systemId = req.system!.id;
+    const siteId = req.site!.id;
+    const tenantId = req.site!.tenant_id;
 
     const client = await db.connect();
     try {
-      // Get system's tenant_id
-      const systemResult = await client.query<{ tenant_id: number }>(
-        'SELECT tenant_id FROM systems WHERE id = $1',
-        [systemId]
-      );
-      const tenantId = systemResult.rows[0]?.tenant_id || null;
-
-      // For cluster stats we do NOT resolve or create applications/environments
-      const applicationId: number | null = null;
-
-      // Check if metrics exist for this system
+      // Check if metrics exist for this site
       const existingResult = await client.query<Pick<K8sMetrics, 'id'>>(
-        'SELECT id FROM k8s_metrics WHERE system_id = $1',
-        [systemId]
+        'SELECT id FROM site_metrics WHERE site_id = $1',
+        [siteId]
       );
 
       if (existingResult.rows.length > 0) {
         // Update existing metrics
         await client.query(
-          `UPDATE k8s_metrics SET
-            cluster_name = $1,
-            node_count = $2,
-            node_ready = $3,
-            pod_count = $4,
-            pod_running = $5,
-            pod_pending = $6,
-            pod_failed = $7,
-            cpu_usage_percent = $8,
-            memory_usage_percent = $9,
-            cpu_requests = $10,
-            cpu_limits = $11,
-            memory_requests = $12,
-            memory_limits = $13,
-            deployment_count = $14,
-            deployment_ready = $15,
-            service_count = $16,
-            pvc_count = $17,
-            pvc_bound = $18,
-            namespaces = $19,
-            alerts = $20,
-            tenant = $21,
-            application = $22,
-            tenant_id = $23,
-            application_id = $24,
+          `UPDATE site_metrics SET
+            node_count = $1,
+            node_ready = $2,
+            pod_count = $3,
+            pod_running = $4,
+            pod_pending = $5,
+            pod_failed = $6,
+            deployment_count = $7,
+            deployment_ready = $8,
+            service_count = $9,
+            cpu_usage_percent = $10,
+            memory_usage_percent = $11,
+            pvc_count = $12,
+            pvc_bound = $13,
+            pv_count = $14,
+            tenant_id = $15,
             updated_at = CURRENT_TIMESTAMP
-          WHERE system_id = $25`,
+          WHERE site_id = $16`,
           [
-            metrics.cluster_name || null,
             metrics.node_count || 0,
             metrics.node_ready || 0,
             metrics.pod_count || 0,
             metrics.pod_running || 0,
             metrics.pod_pending || 0,
             metrics.pod_failed || 0,
-            metrics.cpu_usage_percent || 0,
-            metrics.memory_usage_percent || 0,
-            metrics.cpu_requests || 0,
-            metrics.cpu_limits || 0,
-            metrics.memory_requests || 0,
-            metrics.memory_limits || 0,
             metrics.deployment_count || 0,
             metrics.deployment_ready || 0,
             metrics.service_count || 0,
+            metrics.cpu_usage_percent || 0,
+            metrics.memory_usage_percent || 0,
             metrics.pvc_count || 0,
             metrics.pvc_bound || 0,
-            metrics.namespaces ? JSON.stringify(metrics.namespaces) : null,
-            metrics.alerts ? JSON.stringify(metrics.alerts) : null,
-            metrics.tenant || null,
-            null, // application (text) intentionally ignored for cluster stats
+            metrics.pv_count || 0,
             tenantId,
-            applicationId,
-            systemId
+            siteId
           ]
         );
       } else {
         // Insert new metrics
         await client.query(
-          `INSERT INTO k8s_metrics (
-            system_id, cluster_name, node_count, node_ready, pod_count, pod_running,
-            pod_pending, pod_failed, cpu_usage_percent, memory_usage_percent,
-            cpu_requests, cpu_limits, memory_requests, memory_limits,
-            deployment_count, deployment_ready, service_count, pvc_count, pvc_bound,
-            namespaces, alerts, tenant, application,
-            tenant_id, application_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
+          `INSERT INTO site_metrics (
+            site_id, node_count, node_ready, pod_count, pod_running,
+            pod_pending, pod_failed, deployment_count, deployment_ready,
+            service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, tenant_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
           [
-            systemId,
-            metrics.cluster_name || null,
+            siteId,
             metrics.node_count || 0,
             metrics.node_ready || 0,
             metrics.pod_count || 0,
             metrics.pod_running || 0,
             metrics.pod_pending || 0,
             metrics.pod_failed || 0,
-            metrics.cpu_usage_percent || 0,
-            metrics.memory_usage_percent || 0,
-            metrics.cpu_requests || 0,
-            metrics.cpu_limits || 0,
-            metrics.memory_requests || 0,
-            metrics.memory_limits || 0,
             metrics.deployment_count || 0,
             metrics.deployment_ready || 0,
             metrics.service_count || 0,
+            metrics.cpu_usage_percent || 0,
+            metrics.memory_usage_percent || 0,
             metrics.pvc_count || 0,
             metrics.pvc_bound || 0,
-            metrics.namespaces ? JSON.stringify(metrics.namespaces) : null,
-            metrics.alerts ? JSON.stringify(metrics.alerts) : null,
-            metrics.tenant || null,
-            null, // application (text) intentionally ignored for cluster stats
-            tenantId,
-            applicationId
+            metrics.pv_count || 0,
+            tenantId
           ]
         );
       }
 
       // Also insert a historical snapshot
       await client.query(
-        `INSERT INTO k8s_metrics_history (
-           system_id, cluster_name, node_count, node_ready, pod_count, pod_running,
-           pod_pending, pod_failed, cpu_usage_percent, memory_usage_percent,
-           cpu_requests, cpu_limits, memory_requests, memory_limits,
-           deployment_count, deployment_ready, service_count, pvc_count, pvc_bound,
-           namespaces, alerts, tenant_id, application_id, timestamp
+        `INSERT INTO site_metrics_history (
+           site_id, node_count, node_ready, pod_count, pod_running,
+           pod_pending, pod_failed, deployment_count, deployment_ready,
+           service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, timestamp
          ) VALUES (
-           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-           $11, $12, $13, $14, $15, $16, $17, $18, $19,
-           $20, $21, $22, $23, CURRENT_TIMESTAMP
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP
          )`,
         [
-          systemId,
-          metrics.cluster_name || null,
+          siteId,
           metrics.node_count || 0,
           metrics.node_ready || 0,
           metrics.pod_count || 0,
           metrics.pod_running || 0,
           metrics.pod_pending || 0,
           metrics.pod_failed || 0,
-          metrics.cpu_usage_percent || 0,
-          metrics.memory_usage_percent || 0,
-          metrics.cpu_requests || 0,
-          metrics.cpu_limits || 0,
-          metrics.memory_requests || 0,
-          metrics.memory_limits || 0,
           metrics.deployment_count || 0,
           metrics.deployment_ready || 0,
           metrics.service_count || 0,
+          metrics.cpu_usage_percent || 0,
+          metrics.memory_usage_percent || 0,
           metrics.pvc_count || 0,
           metrics.pvc_bound || 0,
-          metrics.namespaces ? JSON.stringify(metrics.namespaces) : null,
-          metrics.alerts ? JSON.stringify(metrics.alerts) : null,
-          tenantId,
-          applicationId
+          metrics.pv_count || 0
         ]
       );
 
@@ -211,9 +161,9 @@ router.post('/metrics/:apiToken', validateApiToken, async (
   }
 });
 
-// Preferred system-scoped stats ingest endpoint (alias of /metrics)
+// Preferred site-scoped stats ingest endpoint (alias of /metrics)
 router.post('/stats/:apiToken', validateApiToken, async (
-  req: SystemRequest,
+  req: SiteRequest,
   res: Response
 ): Promise<void> => {
   // Delegate to the same logic as /metrics by reusing the handler above
@@ -221,155 +171,107 @@ router.post('/stats/:apiToken', validateApiToken, async (
   // duplicate minimal logic to keep behavior identical without app/env resolution.
   try {
     const metrics: K8sMetricsInput = req.body;
-    const systemId = req.system!.id;
+    const siteId = req.site!.id;
+    const tenantId = req.site!.tenant_id;
 
     const client = await db.connect();
     try {
-      const systemResult = await client.query<{ tenant_id: number }>(
-        'SELECT tenant_id FROM systems WHERE id = $1',
-        [systemId]
-      );
-      const tenantId = systemResult.rows[0]?.tenant_id || null;
-      const applicationId: number | null = null;
-
       const existingResult = await client.query<Pick<K8sMetrics, 'id'>>(
-        'SELECT id FROM k8s_metrics WHERE system_id = $1',
-        [systemId]
+        'SELECT id FROM site_metrics WHERE site_id = $1',
+        [siteId]
       );
 
       if (existingResult.rows.length > 0) {
         await client.query(
-          `UPDATE k8s_metrics SET
-            cluster_name = $1,
-            node_count = $2,
-            node_ready = $3,
-            pod_count = $4,
-            pod_running = $5,
-            pod_pending = $6,
-            pod_failed = $7,
-            cpu_usage_percent = $8,
-            memory_usage_percent = $9,
-            cpu_requests = $10,
-            cpu_limits = $11,
-            memory_requests = $12,
-            memory_limits = $13,
-            deployment_count = $14,
-            deployment_ready = $15,
-            service_count = $16,
-            pvc_count = $17,
-            pvc_bound = $18,
-            namespaces = $19,
-            alerts = $20,
-            tenant = $21,
-            application = $22,
-            tenant_id = $23,
-            application_id = $24,
+          `UPDATE site_metrics SET
+            node_count = $1,
+            node_ready = $2,
+            pod_count = $3,
+            pod_running = $4,
+            pod_pending = $5,
+            pod_failed = $6,
+            deployment_count = $7,
+            deployment_ready = $8,
+            service_count = $9,
+            cpu_usage_percent = $10,
+            memory_usage_percent = $11,
+            pvc_count = $12,
+            pvc_bound = $13,
+            pv_count = $14,
+            tenant_id = $15,
             updated_at = CURRENT_TIMESTAMP
-          WHERE system_id = $25`,
+          WHERE site_id = $16`,
           [
-            metrics.cluster_name || null,
             metrics.node_count || 0,
             metrics.node_ready || 0,
             metrics.pod_count || 0,
             metrics.pod_running || 0,
             metrics.pod_pending || 0,
             metrics.pod_failed || 0,
-            metrics.cpu_usage_percent || 0,
-            metrics.memory_usage_percent || 0,
-            metrics.cpu_requests || 0,
-            metrics.cpu_limits || 0,
-            metrics.memory_requests || 0,
-            metrics.memory_limits || 0,
             metrics.deployment_count || 0,
             metrics.deployment_ready || 0,
             metrics.service_count || 0,
+            metrics.cpu_usage_percent || 0,
+            metrics.memory_usage_percent || 0,
             metrics.pvc_count || 0,
             metrics.pvc_bound || 0,
-            metrics.namespaces ? JSON.stringify(metrics.namespaces) : null,
-            metrics.alerts ? JSON.stringify(metrics.alerts) : null,
-            metrics.tenant || null,
-            null,
+            metrics.pv_count || 0,
             tenantId,
-            applicationId,
-            systemId
+            siteId
           ]
         );
       } else {
         await client.query(
-          `INSERT INTO k8s_metrics (
-            system_id, cluster_name, node_count, node_ready, pod_count, pod_running,
-            pod_pending, pod_failed, cpu_usage_percent, memory_usage_percent,
-            cpu_requests, cpu_limits, memory_requests, memory_limits,
-            deployment_count, deployment_ready, service_count, pvc_count, pvc_bound,
-            namespaces, alerts, tenant, application,
-            tenant_id, application_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
+          `INSERT INTO site_metrics (
+            site_id, node_count, node_ready, pod_count, pod_running,
+            pod_pending, pod_failed, deployment_count, deployment_ready,
+            service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, tenant_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
           [
-            systemId,
-            metrics.cluster_name || null,
+            siteId,
             metrics.node_count || 0,
             metrics.node_ready || 0,
             metrics.pod_count || 0,
             metrics.pod_running || 0,
             metrics.pod_pending || 0,
             metrics.pod_failed || 0,
-            metrics.cpu_usage_percent || 0,
-            metrics.memory_usage_percent || 0,
-            metrics.cpu_requests || 0,
-            metrics.cpu_limits || 0,
-            metrics.memory_requests || 0,
-            metrics.memory_limits || 0,
             metrics.deployment_count || 0,
             metrics.deployment_ready || 0,
             metrics.service_count || 0,
+            metrics.cpu_usage_percent || 0,
+            metrics.memory_usage_percent || 0,
             metrics.pvc_count || 0,
             metrics.pvc_bound || 0,
-            metrics.namespaces ? JSON.stringify(metrics.namespaces) : null,
-            metrics.alerts ? JSON.stringify(metrics.alerts) : null,
-            metrics.tenant || null,
-            null,
-            tenantId,
-            applicationId
+            metrics.pv_count || 0,
+            tenantId
           ]
         );
       }
 
       await client.query(
-        `INSERT INTO k8s_metrics_history (
-           system_id, cluster_name, node_count, node_ready, pod_count, pod_running,
-           pod_pending, pod_failed, cpu_usage_percent, memory_usage_percent,
-           cpu_requests, cpu_limits, memory_requests, memory_limits,
-           deployment_count, deployment_ready, service_count, pvc_count, pvc_bound,
-           namespaces, alerts, tenant_id, application_id, timestamp
+        `INSERT INTO site_metrics_history (
+           site_id, node_count, node_ready, pod_count, pod_running,
+           pod_pending, pod_failed, deployment_count, deployment_ready,
+           service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, timestamp
          ) VALUES (
-           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-           $11, $12, $13, $14, $15, $16, $17, $18, $19,
-           $20, $21, $22, $23, CURRENT_TIMESTAMP
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP
          )`,
         [
-          systemId,
-          metrics.cluster_name || null,
+          siteId,
           metrics.node_count || 0,
           metrics.node_ready || 0,
           metrics.pod_count || 0,
           metrics.pod_running || 0,
           metrics.pod_pending || 0,
           metrics.pod_failed || 0,
-          metrics.cpu_usage_percent || 0,
-          metrics.memory_usage_percent || 0,
-          metrics.cpu_requests || 0,
-          metrics.cpu_limits || 0,
-          metrics.memory_requests || 0,
-          metrics.memory_limits || 0,
           metrics.deployment_count || 0,
           metrics.deployment_ready || 0,
           metrics.service_count || 0,
+          metrics.cpu_usage_percent || 0,
+          metrics.memory_usage_percent || 0,
           metrics.pvc_count || 0,
           metrics.pvc_bound || 0,
-          metrics.namespaces ? JSON.stringify(metrics.namespaces) : null,
-          metrics.alerts ? JSON.stringify(metrics.alerts) : null,
-          tenantId,
-          null
+          metrics.pv_count || 0
         ]
       );
 
@@ -383,13 +285,13 @@ router.post('/stats/:apiToken', validateApiToken, async (
   }
 });
 
-interface K8sMetricsWithSystemName extends K8sMetrics {
-  system_name: string;
+interface K8sMetricsWithSiteName extends K8sMetrics {
+  site_name: string;
 }
 
 interface MetricsQueryParams {
-  system_id?: string;
-  tenant?: string;
+  site_id?: string;
+  tenant_id?: string;
 }
 
 // Get K8s metrics
@@ -400,43 +302,43 @@ router.get('/metrics', authMiddleware, async (
   res: Response
 ): Promise<void> => {
   try {
-    const { system_id, tenant } = req.query;
+    const { site_id, tenant_id } = req.query;
 
-    // Get all system IDs limited to the user's tenant mappings
+    // Get all site IDs limited to the user's tenant mappings
     const tenantIds = req.userTenantIds || [];
-    const userSystemsResult = await db.query<Pick<System, 'id'>>(
-      'SELECT id FROM systems WHERE tenant_id = ANY($1)'
-      , [tenantIds]
+    const userSitesResult = await db.query<{ id: number }>(
+      'SELECT id FROM sites WHERE tenant_id = ANY($1)',
+      [tenantIds]
     );
-    const userSystemIds = userSystemsResult.rows.map((s: { id: any; }) => s.id);
+    const userSiteIds = userSitesResult.rows.map(s => s.id);
 
-    if (userSystemIds.length === 0) {
+    if (userSiteIds.length === 0) {
       res.json([]);
       return;
     }
 
-    if (system_id && !userSystemIds.includes(parseInt(system_id))) {
+    if (site_id && !userSiteIds.includes(parseInt(site_id))) {
       res.status(403).json({ detail: 'Access denied' });
       return;
     }
 
-    const filterSystemIds = system_id ? [parseInt(system_id)] : userSystemIds;
+    const filterSiteIds = site_id ? [parseInt(site_id)] : userSiteIds;
 
     // Build filter conditions
-    const params: any[] = [filterSystemIds];
+    const params: any[] = [filterSiteIds];
     let paramIndex = 2;
     let filterClause = '';
 
-    if (tenant) {
-      filterClause += ` AND k.tenant = $${paramIndex}`;
-      params.push(tenant);
+    if (tenant_id) {
+      filterClause += ` AND k.tenant_id = $${paramIndex}`;
+      params.push(parseInt(tenant_id));
       paramIndex++;
     }
 
-    const metricsResult = await db.query<K8sMetricsWithSystemName>(
-      `SELECT k.*, s.name as system_name FROM k8s_metrics k
-       JOIN systems s ON k.system_id = s.id
-       WHERE k.system_id = ANY($1)${filterClause}`,
+    const metricsResult = await db.query<K8sMetricsWithSiteName>(
+      `SELECT k.*, s.name as site_name FROM site_metrics k
+       JOIN sites s ON k.site_id = s.id
+       WHERE k.site_id = ANY($1)${filterClause}`,
       params
     );
 

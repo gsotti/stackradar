@@ -1,0 +1,50 @@
+# LogRadar Helm Chart Values
+
+replicaCount: 1
+
+image:
+  repository: logradar
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Domain where LogRadar will be accessible
+domain: logradar.example.com
+
+# Cert-manager ClusterIssuer name
+certIssuer: letsencrypt-prod
+
+# Database connection
+database:
+  host: postgres
+  port: 5432
+  name: logradar
+  user: logradar
+  password: changeme
+
+# Admin user credentials (created on first startup)
+admin:
+  email: admin@logradar.local
+  password: changeme
+  name: Admin User
+
+# Security secrets
+secrets:
+  jwtSecret: change-this-to-a-secure-random-string
+  adminApiKey: change-this-to-a-secure-random-string
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+
+# Optional: Image pull secrets
+imagePullSecrets: []

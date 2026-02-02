@@ -1,19 +1,19 @@
 import db from '../db/database.js';
-import { System } from '../types/index.js';
+import { Site } from '../types/index.js';
 
 export async function cleanupOldLogs(): Promise<number> {
-  // Get all systems with their retention settings
-  const systemsResult = await db.query<Pick<System, 'id' | 'retention_days'>>(
-    'SELECT id, retention_days FROM systems'
+  // Get all sites with their retention settings
+  const sitesResult = await db.query<Pick<Site, 'id' | 'retention_days'>>(
+    'SELECT id, retention_days FROM sites'
   );
-  const systems = systemsResult.rows;
+  const sites = sitesResult.rows;
 
   let totalDeleted = 0;
 
-  for (const system of systems) {
-    const days = Number(system.retention_days ?? 0);
+  for (const site of sites) {
+    const days = Number(site.retention_days ?? 0);
     if (!Number.isFinite(days) || days <= 0) {
-      // Skip systems without a positive retention policy
+      // Skip sites without a positive retention policy
       continue;
     }
     const retentionDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -23,28 +23,29 @@ export async function cleanupOldLogs(): Promise<number> {
          DELETE FROM log_entries le
          WHERE le.timestamp < $2
            AND EXISTS (
-             SELECT 1 FROM environments e
-             WHERE e.id = le.environment_id
-               AND e.system_id = $1
+             SELECT 1 FROM systems s
+             INNER JOIN environments e ON e.id = s.environment_id
+             WHERE s.id = le.system_id
+               AND e.site_id = $1
            )
          RETURNING le.*
        )
        SELECT COUNT(*)::text as deleted_count FROM deleted`,
-      [system.id, retentionDate.toISOString()]
+      [site.id, retentionDate.toISOString()]
     );
 
     totalDeleted += parseInt(result.rows[0]?.deleted_count || '0');
 
-    // Cleanup k8s metrics history for this system
+    // Cleanup site metrics history for this site
     const historyResult = await db.query<{ deleted_count: string }>(
       `WITH deleted AS (
-         DELETE FROM k8s_metrics_history h
-         WHERE h.system_id = $1
+         DELETE FROM site_metrics_history h
+         WHERE h.site_id = $1
          AND h.timestamp < $2
          RETURNING h.*
        )
        SELECT COUNT(*)::text as deleted_count FROM deleted`,
-      [system.id, retentionDate.toISOString()]
+      [site.id, retentionDate.toISOString()]
     );
 
     totalDeleted += parseInt(historyResult.rows[0]?.deleted_count || '0');

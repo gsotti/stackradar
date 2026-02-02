@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 
-export default function NotificationChannelForm({ systemId, channel, onClose }) {
+export default function NotificationChannelForm({ siteId, channel, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
     channel_type: 'email',
@@ -51,7 +51,7 @@ export default function NotificationChannelForm({ systemId, channel, onClose }) 
     try {
       setLoading(true);
       const payload = {
-        system_id: systemId,
+        site_id: siteId,
         name: formData.name,
         channel_type: formData.channel_type,
       };
