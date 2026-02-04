@@ -394,8 +394,14 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
     result.errorMessage
   );
 
-  // Use monitor's failure_threshold (set when monitor is created)
-  const failureThreshold = monitor.failure_threshold || 3;
+  // Get failure threshold: prefer alert rule, fall back to monitor, default to 3
+  const alertRuleResult = await db.query<{ failure_threshold: number }>(
+    `SELECT failure_threshold FROM alert_rules
+     WHERE monitor_id = $1 AND alert_type = 'uptime' AND enabled = TRUE
+     LIMIT 1`,
+    [monitor.id]
+  );
+  const failureThreshold = alertRuleResult.rows[0]?.failure_threshold || monitor.failure_threshold || 3;
 
   const now = new Date();
 
