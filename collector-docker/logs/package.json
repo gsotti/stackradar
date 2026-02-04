@@ -1,0 +1,17 @@
+{
+  "name": "logradar-docker-log-collector",
+  "version": "1.0.0",
+  "description": "Docker log collector for LogRadar",
+  "main": "log-collector.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node log-collector.mjs"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

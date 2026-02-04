@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # LogRadar Docker Log Collector
+  logradar-docker-logs-collector:
+    build: .
+    container_name: logradar-docker-logs-collector
+    restart: unless-stopped
+    environment:
+      # Required: LogRadar API configuration
+      LOGRADAR_API_URL: "https://logradar.example.com"
+      API_TOKEN: "your-api-token-here"
+
+      # Hierarchy configuration
+      TENANT: "my-company"
+      SITE: "docker-host-1"
+      ENVIRONMENT: "production"
+
+      # Optional: Filter which containers to monitor (regex pattern)
+      # Leave empty to monitor all containers
+      CONTAINER_FILTER: ""
+
+      # Optional: Try to parse log levels from messages
+      LOG_LEVEL_MAPPING: "true"
+
+      # Optional: Batching configuration
+      BATCH_SIZE: "10"
+      BATCH_INTERVAL_MS: "5000"
+
+    volumes:
+      # Mount Docker socket to access container logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # Optional: Limit resources
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          memory: 128M
