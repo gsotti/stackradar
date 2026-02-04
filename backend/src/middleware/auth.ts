@@ -92,3 +92,28 @@ export async function adminMiddleware(
     res.status(500).json({ detail: 'Internal server error' });
   }
 }
+
+// Editor middleware - blocks viewers from write operations
+export async function editorMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const result = await db.query<Pick<User, 'is_viewer'>>(
+      'SELECT is_viewer FROM users WHERE id = $1',
+      [req.userId]
+    );
+    const user = result.rows[0];
+
+    if (user?.is_viewer) {
+      res.status(403).json({ detail: 'Viewers cannot modify data' });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Editor middleware error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+}

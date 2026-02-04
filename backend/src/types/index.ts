@@ -9,6 +9,7 @@ export interface User {
   is_active: boolean;
   is_approved: boolean;
   is_admin: boolean;
+  is_viewer: boolean;
   created_at: Date;
 }
 
@@ -186,6 +187,8 @@ export type MetricType =
   | 'pvc_bound'
   | 'node_health';
 
+export type AlertType = 'metric' | 'uptime';
+
 export type ThresholdOperator = '>' | '>=' | '<' | '<=' | '=';
 export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertState = 'firing' | 'resolved';
@@ -196,12 +199,17 @@ export interface AlertRule {
   site_id: number;
   name: string;
   description: string | null;
-  metric_type: MetricType;
-  threshold_operator: ThresholdOperator;
-  threshold_value: number;
+  alert_type: AlertType;
+  metric_type: MetricType | null;
+  threshold_operator: ThresholdOperator | null;
+  threshold_value: number | null;
   time_window_minutes: number;
+  cooldown_minutes: number;
+  failure_threshold: number;
   severity: AlertSeverity;
   enabled: boolean;
+  monitor_id: number | null;
+  created_by: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -256,24 +264,32 @@ export interface CreateAlertRuleRequest {
   site_id: number;
   name: string;
   description?: string;
-  metric_type: MetricType;
-  threshold_operator: ThresholdOperator;
-  threshold_value: number;
+  alert_type?: AlertType;
+  metric_type?: MetricType;
+  threshold_operator?: ThresholdOperator;
+  threshold_value?: number;
   time_window_minutes?: number;
+  cooldown_minutes?: number;
+  failure_threshold?: number;
   severity?: AlertSeverity;
   notification_channel_ids?: number[];
+  monitor_id?: number;
 }
 
 export interface UpdateAlertRuleRequest {
   name?: string;
   description?: string;
+  alert_type?: AlertType;
   metric_type?: MetricType;
   threshold_operator?: ThresholdOperator;
   threshold_value?: number;
   time_window_minutes?: number;
+  cooldown_minutes?: number;
+  failure_threshold?: number;
   severity?: AlertSeverity;
   enabled?: boolean;
   notification_channel_ids?: number[];
+  monitor_id?: number;
 }
 
 export interface CreateNotificationChannelRequest {
@@ -311,4 +327,62 @@ export interface UpdateSmtpConfigRequest {
   auth_password?: string;
   from_email?: string;
   from_name?: string;
+}
+
+// Uptime Monitoring Types
+export type UptimeStatus = 'up' | 'down' | 'degraded' | 'unknown';
+export type HttpMethod = 'GET' | 'HEAD' | 'POST';
+
+export interface UptimeMonitor {
+  id: number;
+  site_id: number;
+  name: string;
+  url: string;
+  method: HttpMethod;
+  interval_seconds: number;
+  timeout_ms: number;
+  expected_status: number;
+  failure_threshold: number;
+  is_main: boolean;
+  enabled: boolean;
+  current_status: UptimeStatus;
+  consecutive_failures: number;
+  last_status_change: Date | null;
+  last_checked_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface UptimeCheck {
+  id: number;
+  monitor_id: number;
+  status: UptimeStatus;
+  response_time_ms: number | null;
+  status_code: number | null;
+  error_message: string | null;
+  checked_at: Date;
+}
+
+export interface CreateUptimeMonitorRequest {
+  site_id: number;
+  name: string;
+  url: string;
+  method?: HttpMethod;
+  interval_seconds?: number;
+  timeout_ms?: number;
+  expected_status?: number;
+  failure_threshold?: number;
+  is_main?: boolean;
+}
+
+export interface UpdateUptimeMonitorRequest {
+  name?: string;
+  url?: string;
+  method?: HttpMethod;
+  interval_seconds?: number;
+  timeout_ms?: number;
+  expected_status?: number;
+  failure_threshold?: number;
+  is_main?: boolean;
+  enabled?: boolean;
 }

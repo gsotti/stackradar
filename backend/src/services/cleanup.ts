@@ -49,6 +49,24 @@ export async function cleanupOldLogs(): Promise<number> {
     );
 
     totalDeleted += parseInt(historyResult.rows[0]?.deleted_count || '0');
+
+    // Cleanup uptime checks for monitors in this site
+    const uptimeResult = await db.query<{ deleted_count: string }>(
+      `WITH deleted AS (
+         DELETE FROM uptime_checks uc
+         WHERE uc.checked_at < $2
+           AND EXISTS (
+             SELECT 1 FROM uptime_monitors um
+             WHERE um.id = uc.monitor_id
+               AND um.site_id = $1
+           )
+         RETURNING uc.*
+       )
+       SELECT COUNT(*)::text as deleted_count FROM deleted`,
+      [site.id, retentionDate.toISOString()]
+    );
+
+    totalDeleted += parseInt(uptimeResult.rows[0]?.deleted_count || '0');
   }
 
   return totalDeleted;

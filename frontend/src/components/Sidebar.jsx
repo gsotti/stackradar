@@ -139,7 +139,7 @@ export default function Sidebar() {
           </div>
           {!sidebarCollapsed && (
             <span className="font-bold text-xl bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-              LogRadar
+              StackRadar
             </span>
           )}
           <button className="lg:hidden ml-auto text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setSidebarOpen(false)}>

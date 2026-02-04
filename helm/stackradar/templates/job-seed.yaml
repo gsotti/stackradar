@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "logradar.fullname" . }}-seed
+  name: {{ include "stackradar.fullname" . }}-seed
   labels:
-    {{- include "logradar.labels" . | nindent 4 }}
+    {{- include "stackradar.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1"
@@ -12,7 +12,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "logradar.selectorLabels" . | nindent 8 }}
+        {{- include "stackradar.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -35,14 +35,14 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "logradar.fullname" . }}
+                  name: {{ include "stackradar.fullname" . }}
                   key: POSTGRES_PASSWORD
             - name: ADMIN_EMAIL
               value: {{ .Values.admin.email | quote }}
             - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "logradar.fullname" . }}
+                  name: {{ include "stackradar.fullname" . }}
                   key: ADMIN_PASSWORD
             - name: ADMIN_NAME
               value: {{ .Values.admin.name | quote }}

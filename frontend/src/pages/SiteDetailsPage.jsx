@@ -1,18 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, Server, Activity, CheckCircle, AlertTriangle, Bell, BarChart2 } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { RefreshCw, ArrowLeft, Server, Activity, CheckCircle, AlertTriangle, Bell, BarChart2, Settings, Eye, EyeOff, Copy, Trash2, Terminal, Clock, Box, Radio } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { api } from '../utils/api';
+import { useNotification } from '../contexts/NotificationContext';
 import AlertsView from '../components/alerts/AlertsView';
+import SiteSetupInstructions from '../components/SiteSetupInstructions';
+import UptimeMonitorsView from '../components/uptime/UptimeMonitorsView';
 
 export default function SiteDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
   const [site, setSite] = useState(null);
   const [live, setLive] = useState({ points: [] });
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [activeTab, setActiveTab] = useState('metrics');
+  const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' });
+  const [tokenVisible, setTokenVisible] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showSetupInstructions, setShowSetupInstructions] = useState(false);
 
   const fetchAll = async () => {
     try {
@@ -24,8 +33,57 @@ export default function SiteDetailsPage() {
       setSite(st);
       setLive(l || { points: [] });
       setSummary(s || null);
+      setForm({
+        name: st.name || '',
+        description: st.description || '',
+        retention_days: st.retention_days || 30,
+        site_type: st.site_type || 'kubernetes'
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const updated = await api.put(`/sites/${id}`, form);
+      setSite(updated);
+      showSuccess('Site settings saved');
+    } catch (error) {
+      showError(error.message || 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRegenerateToken = async () => {
+    if (confirm('Are you sure? This will invalidate the current token.')) {
+      try {
+        const updated = await api.post(`/sites/${id}/regenerate-token`);
+        setSite(updated);
+        showSuccess('API token regenerated');
+      } catch (error) {
+        showError(error.message || 'Failed to regenerate token');
+      }
+    }
+  };
+
+  const copyToken = () => {
+    navigator.clipboard.writeText(site.api_token);
+    showSuccess('Token copied to clipboard');
+  };
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this site? This action cannot be undone.')) {
+      try {
+        await api.delete(`/sites/${id}`);
+        showSuccess('Site deleted');
+        navigate('/sites');
+      } catch (error) {
+        showError(error.message || 'Failed to delete site');
+      }
     }
   };
 
@@ -121,6 +179,20 @@ export default function SiteDetailsPage() {
             Metrics
           </button>
           <button
+            onClick={() => setActiveTab('monitors')}
+            className={`
+              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+              ${
+                activeTab === 'monitors'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+              }
+            `}
+          >
+            <Radio className="w-4 h-4" />
+            Monitors
+          </button>
+          <button
             onClick={() => setActiveTab('alerts')}
             className={`
               flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
@@ -134,12 +206,61 @@ export default function SiteDetailsPage() {
             <Bell className="w-4 h-4" />
             Alerts
           </button>
+          <button
+            onClick={() => setActiveTab('setup')}
+            className={`
+              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+              ${
+                activeTab === 'setup'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+              }
+            `}
+          >
+            <Terminal className="w-4 h-4" />
+            Setup
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`
+              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+              ${
+                activeTab === 'settings'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+              }
+            `}
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </button>
         </nav>
       </div>
 
       {/* Content based on active tab */}
       {activeTab === 'metrics' ? (
         <>
+          {/* Site Info Bar */}
+          <div className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Box className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-500 dark:text-gray-400">Type:</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{labels.platform}</span>
+            </div>
+            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-500 dark:text-gray-400">Retention:</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{site?.retention_days} days</span>
+            </div>
+            {site?.description && (
+              <>
+                <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
+                <span className="text-sm text-gray-500 dark:text-gray-400 truncate">{site.description}</span>
+              </>
+            )}
+          </div>
+
           {/* Summary grid styled like KubernetesPage */}
           {summary ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -294,8 +415,124 @@ export default function SiteDetailsPage() {
             </div>
           </div>
         </>
-      ) : (
+      ) : activeTab === 'monitors' ? (
+        <UptimeMonitorsView siteId={id} />
+      ) : activeTab === 'alerts' ? (
         <AlertsView siteId={id} />
+      ) : activeTab === 'setup' ? (
+        <SiteSetupInstructions site={site} embedded />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Site Settings Form */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Site Settings</h2>
+            <form onSubmit={handleSaveSettings} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  rows={4}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site Type</label>
+                  <select
+                    value={form.site_type}
+                    onChange={(e) => setForm({ ...form, site_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="docker">Docker Host</option>
+                    <option value="kubernetes">Kubernetes Cluster</option>
+                    <option value="generic">Generic Host</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Retention (days)</label>
+                  <input
+                    type="number"
+                    value={form.retention_days}
+                    onChange={(e) => setForm({ ...form, retention_days: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    min={1}
+                    max={365}
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl font-medium disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
+            </form>
+          </div>
+
+          {/* Right Column - API Token & Danger Zone */}
+          <div className="space-y-6">
+            {/* API Token */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">API Token</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Use this token to authenticate log ingestion from collectors.
+              </p>
+              <div className="flex items-center gap-2 mb-4">
+                <code className={`flex-1 text-sm bg-gray-50 dark:bg-gray-900 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 break-all font-mono ${tokenVisible ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600 tracking-wider'}`}>
+                  {tokenVisible ? site?.api_token : '••••••••••••••••••••••••••••••••'}
+                </code>
+                <button
+                  onClick={() => setTokenVisible(!tokenVisible)}
+                  className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                  title={tokenVisible ? 'Hide token' : 'Show token'}
+                >
+                  {tokenVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={copyToken}
+                  className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                  title="Copy token"
+                >
+                  <Copy className="w-5 h-5" />
+                </button>
+              </div>
+              <button
+                onClick={handleRegenerateToken}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-xl transition-all font-medium"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Regenerate Token
+              </button>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-red-200 dark:border-red-900">
+              <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Danger Zone</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Deleting this site will permanently remove all associated environments, systems, logs, and metrics. This action cannot be undone.
+              </p>
+              <button
+                onClick={handleDelete}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Site
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

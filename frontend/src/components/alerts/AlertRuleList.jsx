@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Power, AlertTriangle, Info, Zap, Bell } from 'lucide-react';
+import { Plus, Edit2, Trash2, Power, AlertTriangle, Info, Zap, Bell, BarChart2, Radio } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import AlertRuleForm from './AlertRuleForm';
@@ -105,6 +105,16 @@ export default function AlertRuleList({ siteId }) {
     return labels[metricType] || metricType;
   };
 
+  const getAlertTypeIcon = (alertType) => {
+    return alertType === 'uptime' ? Radio : BarChart2;
+  };
+
+  const getAlertTypeBadge = (alertType) => {
+    return alertType === 'uptime'
+      ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400'
+      : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -148,10 +158,12 @@ export default function AlertRuleList({ siteId }) {
           </div>
         ) : (
           <div className="grid gap-4">
-            {rules.map((rule) => (
+            {rules.map((rule) => {
+              const AlertTypeIcon = getAlertTypeIcon(rule.alert_type);
+              return (
               <div
                 key={rule.id}
-                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -161,14 +173,20 @@ export default function AlertRuleList({ siteId }) {
                         {rule.name}
                       </h4>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${getAlertTypeBadge(rule.alert_type)}`}
+                      >
+                        <AlertTypeIcon className="w-3 h-3 inline mr-1" />
+                        {rule.alert_type === 'uptime' ? 'Uptime' : 'Metric'}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(
                           rule.severity
                         )}`}
                       >
                         {rule.severity.toUpperCase()}
                       </span>
                       {!rule.enabled && (
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
                           DISABLED
                         </span>
                       )}
@@ -179,25 +197,36 @@ export default function AlertRuleList({ siteId }) {
                       </p>
                     )}
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-400">Metric:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                          {getMetricLabel(rule.metric_type)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-400">Condition:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                          {rule.threshold_operator} {rule.threshold_value}
-                        </span>
-                      </div>
+                      {rule.alert_type === 'metric' ? (
+                        <>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">Metric:</span>
+                            <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                              {getMetricLabel(rule.metric_type)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">Condition:</span>
+                            <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                              {rule.threshold_operator} {rule.threshold_value}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="col-span-2">
+                          <span className="text-gray-500 dark:text-gray-400">Monitor:</span>
+                          <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                            {rule.monitor_name || `Monitor #${rule.monitor_id}`}
+                          </span>
+                        </div>
+                      )}
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Cooldown:</span>
                         <span className="ml-2 font-medium text-gray-900 dark:text-white">
                           {rule.cooldown_minutes} minutes
                         </span>
                       </div>
-                      {rule.metric_type === 'error_logs' && (
+                      {rule.alert_type === 'metric' && rule.metric_type === 'error_logs' && (
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">Time Window:</span>
                           <span className="ml-2 font-medium text-gray-900 dark:text-white">
@@ -236,7 +265,8 @@ export default function AlertRuleList({ siteId }) {
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

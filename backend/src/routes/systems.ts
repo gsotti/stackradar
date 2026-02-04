@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, editorMiddleware } from '../middleware/auth.js';
 import db from '../db/database.js';
 import { AuthRequest, System } from '../types/index.js';
 
@@ -88,7 +88,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
 });
 
 // Create a new system
-router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/', authMiddleware, editorMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { environment_id, name, description } = req.body;
 
@@ -141,7 +141,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
 });
 
 // Update a system
-router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+router.put('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { environment_id, name, description } = req.body;
@@ -190,7 +190,7 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
 });
 
 // Delete a system
-router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+router.delete('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 

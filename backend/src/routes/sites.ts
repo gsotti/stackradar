@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/database.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, editorMiddleware } from '../middleware/auth.js';
 import { AuthRequest, Site, CreateSiteRequest } from '../types/index.js';
 
 const router = Router();
@@ -76,7 +76,7 @@ interface CreateSiteRequestWithTenant extends CreateSiteRequest {
 }
 
 // Create site
-router.post('/', authMiddleware, async (
+router.post('/', authMiddleware, editorMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -123,7 +123,7 @@ router.post('/', authMiddleware, async (
 });
 
 // Update site
-router.put('/:id', authMiddleware, async (
+router.put('/:id', authMiddleware, editorMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -168,7 +168,7 @@ router.put('/:id', authMiddleware, async (
 });
 
 // Delete site
-router.delete('/:id', authMiddleware, async (
+router.delete('/:id', authMiddleware, editorMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -193,7 +193,7 @@ router.delete('/:id', authMiddleware, async (
 });
 
 // Regenerate API token
-router.post('/:id/regenerate-token', authMiddleware, async (
+router.post('/:id/regenerate-token', authMiddleware, editorMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {

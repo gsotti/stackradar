@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS smtp_config (
   auth_user VARCHAR(255),
   auth_password VARCHAR(255),
   from_email VARCHAR(255) NOT NULL,
-  from_name VARCHAR(255) DEFAULT 'LogRadar Alerts',
+  from_name VARCHAR(255) DEFAULT 'StackRadar Alerts',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

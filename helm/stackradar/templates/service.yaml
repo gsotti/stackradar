@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "logradar.fullname" . }}
+  name: {{ include "stackradar.fullname" . }}
   labels:
-    {{- include "logradar.labels" . | nindent 4 }}
+    {{- include "stackradar.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,4 +12,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "logradar.selectorLabels" . | nindent 4 }}
+    {{- include "stackradar.selectorLabels" . | nindent 4 }}

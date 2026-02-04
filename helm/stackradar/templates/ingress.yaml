@@ -1,17 +1,17 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "logradar.fullname" . }}
+  name: {{ include "stackradar.fullname" . }}
   labels:
-    {{- include "logradar.labels" . | nindent 4 }}
+    {{- include "stackradar.labels" . | nindent 4 }}
   annotations:
     cert-manager.io/cluster-issuer: {{ .Values.certIssuer | quote }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.ingress.className }}
   tls:
     - hosts:
         - {{ .Values.domain }}
-      secretName: {{ include "logradar.fullname" . }}-tls
+      secretName: {{ include "stackradar.fullname" . }}-tls
   rules:
     - host: {{ .Values.domain }}
       http:
@@ -20,6 +20,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "logradar.fullname" . }}
+                name: {{ include "stackradar.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}

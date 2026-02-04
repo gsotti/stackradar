@@ -130,8 +130,8 @@ export async function testSmtpConfig(testEmail: string): Promise<void> {
   // Send test email
   await sendEmail(
     testEmail,
-    'LogRadar SMTP Test',
-    '<h1>SMTP Configuration Test</h1><p>This is a test email from LogRadar. If you received this, your SMTP configuration is working correctly.</p>',
-    'SMTP Configuration Test\n\nThis is a test email from LogRadar. If you received this, your SMTP configuration is working correctly.'
+    'StackRadar SMTP Test',
+    '<h1>SMTP Configuration Test</h1><p>This is a test email from StackRadar. If you received this, your SMTP configuration is working correctly.</p>',
+    'SMTP Configuration Test\n\nThis is a test email from StackRadar. If you received this, your SMTP configuration is working correctly.'
   );
 }

@@ -10,13 +10,13 @@ export async function evaluateAllAlerts(): Promise<void> {
   console.log('🔔 Starting alert evaluation...');
 
   try {
-    // Get all enabled alert rules
+    // Get all enabled metric-based alert rules (uptime alerts are handled by the uptime checker)
     const result = await db.query<AlertRule>(
-      'SELECT * FROM alert_rules WHERE enabled = TRUE ORDER BY site_id'
+      `SELECT * FROM alert_rules WHERE enabled = TRUE AND alert_type = 'metric' ORDER BY site_id`
     );
 
     const rules = result.rows;
-    console.log(`Found ${rules.length} enabled alert rules`);
+    console.log(`Found ${rules.length} enabled metric alert rules`);
 
     if (rules.length === 0) {
       return;
@@ -52,6 +52,11 @@ export async function evaluateAllAlerts(): Promise<void> {
  * Returns: 'fired' | 'resolved' | 'skipped'
  */
 export async function evaluateRule(rule: AlertRule): Promise<string> {
+  // Skip non-metric alerts (uptime alerts are handled separately)
+  if (rule.alert_type !== 'metric' || !rule.metric_type || !rule.threshold_operator || rule.threshold_value === null) {
+    return 'skipped';
+  }
+
   // Get current metric value
   const currentValue = await getCurrentMetricValue(
     rule.site_id,
@@ -347,15 +352,14 @@ function formatAlertMessage(
     node_health: 'Node health percentage',
   };
 
-  const metricLabel = metricLabels[rule.metric_type] || rule.metric_type;
-  const valueStr = ['deployment_readiness', 'pvc_bound', 'node_health'].includes(
-    rule.metric_type
-  )
+  const metricType = rule.metric_type || 'unknown';
+  const metricLabel = metricLabels[metricType] || metricType;
+  const valueStr = ['deployment_readiness', 'pvc_bound', 'node_health'].includes(metricType)
     ? `${value.toFixed(1)}%`
     : value.toString();
 
   if (state === 'firing') {
-    return `${metricLabel} is ${valueStr}, which ${getOperatorText(rule.threshold_operator)} threshold of ${rule.threshold_value}`;
+    return `${metricLabel} is ${valueStr}, which ${getOperatorText(rule.threshold_operator || '>')} threshold of ${rule.threshold_value}`;
   } else {
     return `${metricLabel} has returned to normal (${valueStr})`;
   }

@@ -18,8 +18,10 @@ import adminRoutes from './routes/admin.js';
 import tenantRoutes from './routes/tenants.js';
 import environmentRoutes from './routes/environments.js';
 import alertRoutes from './routes/alerts.js';
+import uptimeRoutes from './routes/uptime.js';
 import { cleanupOldLogs } from './services/cleanup.js';
 import { evaluateAllAlerts } from './services/alerting/evaluator.js';
+import { runUptimeChecks } from './services/uptime/checker.js';
 
 dotenv.config();
 
@@ -49,6 +51,7 @@ app.use('/api/k8s', k8sRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/uptime', uptimeRoutes);
 
 // Health check
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -78,7 +81,7 @@ app.use((err: any, _req: Request, res: Response) => {
 
 function startHttpServer() {
   app.listen(PORT, () => {
-    console.log(`🚀 LogRadar server PID ${process.pid} listening on port ${PORT}`);
+    console.log(`🚀 StackRadar server PID ${process.pid} listening on port ${PORT}`);
   });
 }
 
@@ -113,6 +116,20 @@ function scheduleAlertJobOnce() {
   console.log('📅 Alert evaluation cron job scheduled (every 5 minutes)');
 }
 
+// Uptime Monitoring Cron Job (runs every minute)
+function scheduleUptimeJobOnce() {
+  const job = new CronJob('* * * * *', async () => {
+    try {
+      await runUptimeChecks();
+    } catch (error) {
+      console.error('Uptime check failed:', error);
+    }
+  });
+
+  job.start();
+  console.log('📅 Uptime monitoring cron job scheduled (every minute)');
+}
+
 // Cluster bootstrap: utilize multiple CPU cores if enabled
 if (CLUSTER_MODE && cluster.isPrimary) {
   // Primary/master process
@@ -121,6 +138,7 @@ if (CLUSTER_MODE && cluster.isPrimary) {
   // Schedule cleanup and alerts only once in primary
   scheduleCleanupJobOnce();
   scheduleAlertJobOnce();
+  scheduleUptimeJobOnce();
 
   for (let i = 0; i < WORKERS; i++) {
     cluster.fork();
@@ -138,6 +156,7 @@ if (CLUSTER_MODE && cluster.isPrimary) {
   if (!CLUSTER_MODE) {
     scheduleCleanupJobOnce();
     scheduleAlertJobOnce();
+    scheduleUptimeJobOnce();
   }
 }
 

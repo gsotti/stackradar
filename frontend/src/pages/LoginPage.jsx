@@ -69,8 +69,8 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center mb-4 hover:scale-110 transition-transform duration-300">
             <Logo size={80} />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">LogRadar</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Log Aggregation Made Simple</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">StackRadar</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Full Stack Observability</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">

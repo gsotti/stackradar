@@ -19,9 +19,9 @@ services:
   #     timeout: 5s
   #     retries: 5
 
-  logpilot:
+  stackradar:
     build: .
-    #image:  ghcr.io/gsotti/logradar:latest
+    #image:  ghcr.io/gsotti/stackradar:latest
     ports:
       - "8000:8000"
     environment:
@@ -37,7 +37,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - logpilot-data:/app/data
+      - stackradar-data:/app/data
     # depends_on:
     #   postgres:
     #     condition: service_healthy
@@ -49,5 +49,5 @@ services:
       retries: 3
 
 volumes:
-  logpilot-data:
+  stackradar-data:
   # postgres-data:

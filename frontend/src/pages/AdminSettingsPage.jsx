@@ -11,7 +11,7 @@ export default function AdminSettingsPage() {
     auth_user: '',
     auth_password: '',
     from_email: '',
-    from_name: 'LogRadar Alerts',
+    from_name: 'StackRadar Alerts',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,7 +35,7 @@ export default function AdminSettingsPage() {
         auth_user: config.auth_user || '',
         auth_password: '', // Never send password from server
         from_email: config.from_email || '',
-        from_name: config.from_name || 'LogRadar Alerts',
+        from_name: config.from_name || 'StackRadar Alerts',
       });
       setConfigExists(true);
     } catch (error) {
@@ -252,7 +252,7 @@ export default function AdminSettingsPage() {
                 value={smtpConfig.from_name}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
-                placeholder="LogRadar Alerts"
+                placeholder="StackRadar Alerts"
               />
             </div>
           </div>

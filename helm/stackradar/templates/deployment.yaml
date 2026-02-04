@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "logradar.fullname" . }}
+  name: {{ include "stackradar.fullname" . }}
   labels:
-    {{- include "logradar.labels" . | nindent 4 }}
+    {{- include "stackradar.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "logradar.selectorLabels" . | nindent 6 }}
+      {{- include "stackradar.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "logradar.selectorLabels" . | nindent 8 }}
+        {{- include "stackradar.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: logradar
+        - name: stackradar
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -42,24 +42,24 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "logradar.fullname" . }}
+                  name: {{ include "stackradar.fullname" . }}
                   key: POSTGRES_PASSWORD
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "logradar.fullname" . }}
+                  name: {{ include "stackradar.fullname" . }}
                   key: JWT_SECRET
             - name: ADMIN_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "logradar.fullname" . }}
+                  name: {{ include "stackradar.fullname" . }}
                   key: ADMIN_API_KEY
             - name: ADMIN_EMAIL
               value: {{ .Values.admin.email | quote }}
             - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "logradar.fullname" . }}
+                  name: {{ include "stackradar.fullname" . }}
                   key: ADMIN_PASSWORD
             - name: ADMIN_NAME
               value: {{ .Values.admin.name | quote }}

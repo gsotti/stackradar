@@ -47,17 +47,19 @@ router.get(
         return;
       }
 
-      // Get alert rules with channel associations
-      const result = await db.query<AlertRule & { channel_ids: number[] }>(
+      // Get alert rules with channel associations and monitor name
+      const result = await db.query<AlertRule & { channel_ids: number[]; monitor_name: string | null }>(
         `SELECT ar.*,
           COALESCE(
             (SELECT array_agg(arc.notification_channel_id)
              FROM alert_rule_channels arc
              WHERE arc.alert_rule_id = ar.id),
             '{}'::int[]
-          ) as channel_ids
+          ) as channel_ids,
+          um.name as monitor_name
          FROM alert_rules ar
          INNER JOIN sites s ON ar.site_id = s.id
+         LEFT JOIN uptime_monitors um ON ar.monitor_id = um.id
          WHERE ar.site_id = $1 AND s.tenant_id = ANY($2)
          ORDER BY ar.created_at DESC`,
         [site_id, allowed]
@@ -115,11 +117,24 @@ router.post(
     try {
       const body = req.body as CreateAlertRuleRequest;
       const allowed = req.userTenantIds || [];
+      const alertType = body.alert_type || 'metric';
 
-      // Validate required fields
-      if (!body.site_id || !body.name || !body.metric_type || !body.threshold_operator || body.threshold_value === undefined) {
-        res.status(400).json({ detail: 'Missing required fields' });
+      // Validate required fields based on alert type
+      if (!body.site_id || !body.name) {
+        res.status(400).json({ detail: 'Missing required fields: site_id and name are required' });
         return;
+      }
+
+      if (alertType === 'metric') {
+        if (!body.metric_type || !body.threshold_operator || body.threshold_value === undefined) {
+          res.status(400).json({ detail: 'Missing required fields for metric alert' });
+          return;
+        }
+      } else if (alertType === 'uptime') {
+        if (!body.monitor_id) {
+          res.status(400).json({ detail: 'Missing required fields: monitor_id is required for uptime alert' });
+          return;
+        }
       }
 
       // Check site access
@@ -133,22 +148,38 @@ router.post(
         return;
       }
 
+      // If uptime alert, verify monitor belongs to site
+      if (alertType === 'uptime' && body.monitor_id) {
+        const monitorCheck = await db.query(
+          'SELECT id FROM uptime_monitors WHERE id = $1 AND site_id = $2',
+          [body.monitor_id, body.site_id]
+        );
+        if (monitorCheck.rows.length === 0) {
+          res.status(400).json({ detail: 'Monitor not found or does not belong to this site' });
+          return;
+        }
+      }
+
       // Create alert rule
       const result = await db.query<AlertRule>(
         `INSERT INTO alert_rules (
-          site_id, name, description, metric_type, threshold_operator,
-          threshold_value, time_window_minutes, severity, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          site_id, name, description, alert_type, metric_type, threshold_operator,
+          threshold_value, time_window_minutes, cooldown_minutes, failure_threshold, severity, monitor_id, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *`,
         [
           body.site_id,
           body.name,
           body.description || null,
-          body.metric_type,
-          body.threshold_operator,
-          body.threshold_value,
+          alertType,
+          alertType === 'metric' ? body.metric_type : null,
+          alertType === 'metric' ? body.threshold_operator : null,
+          alertType === 'metric' ? body.threshold_value : null,
           body.time_window_minutes || 5,
+          body.cooldown_minutes || 30,
+          alertType === 'uptime' ? (body.failure_threshold || 3) : null,
           body.severity || 'warning',
+          alertType === 'uptime' ? body.monitor_id : null,
           req.userId,
         ]
       );
@@ -209,6 +240,10 @@ router.put(
         updates.push(`description = $${paramCount++}`);
         values.push(body.description);
       }
+      if (body.alert_type !== undefined) {
+        updates.push(`alert_type = $${paramCount++}`);
+        values.push(body.alert_type);
+      }
       if (body.metric_type !== undefined) {
         updates.push(`metric_type = $${paramCount++}`);
         values.push(body.metric_type);
@@ -232,6 +267,18 @@ router.put(
       if (body.enabled !== undefined) {
         updates.push(`enabled = $${paramCount++}`);
         values.push(body.enabled);
+      }
+      if (body.cooldown_minutes !== undefined) {
+        updates.push(`cooldown_minutes = $${paramCount++}`);
+        values.push(body.cooldown_minutes);
+      }
+      if (body.failure_threshold !== undefined) {
+        updates.push(`failure_threshold = $${paramCount++}`);
+        values.push(body.failure_threshold);
+      }
+      if (body.monitor_id !== undefined) {
+        updates.push(`monitor_id = $${paramCount++}`);
+        values.push(body.monitor_id);
       }
 
       updates.push(`updated_at = NOW()`);
@@ -314,6 +361,17 @@ router.post(
       }
 
       const rule = ruleResult.rows[0];
+
+      // Only metric alerts can be tested this way
+      if (rule.alert_type === 'uptime') {
+        res.status(400).json({ detail: 'Uptime alerts cannot be tested manually. Use the monitor check endpoint instead.' });
+        return;
+      }
+
+      if (!rule.metric_type) {
+        res.status(400).json({ detail: 'Alert rule has no metric type configured' });
+        return;
+      }
 
       // Get current metric value
       const metricValue = await getCurrentMetricValue(
@@ -711,7 +769,7 @@ router.post(
           body.auth_user || null,
           body.auth_password || null,
           body.from_email,
-          body.from_name || 'LogRadar Alerts',
+          body.from_name || 'StackRadar Alerts',
         ]
       );
 
@@ -877,7 +935,7 @@ router.post(
       try {
         if (channel.channel_type === 'email') {
           // Send email notification
-          const subject = `[LogRadar Test Alert] High CPU Usage on ${site.name}`;
+          const subject = `[StackRadar Test Alert] High CPU Usage on ${site.name}`;
           const htmlBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -885,7 +943,7 @@ router.post(
               </div>
               <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
                 <h2 style="color: #111827; margin-top: 0;">High CPU Usage</h2>
-                <p style="color: #4b5563; font-size: 16px;">This is a <strong>test alert</strong> triggered manually from LogRadar Admin Settings.</p>
+                <p style="color: #4b5563; font-size: 16px;">This is a <strong>test alert</strong> triggered manually from StackRadar Admin Settings.</p>
 
                 <div style="background: white; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b;">
                   <p style="margin: 5px 0; color: #374151;"><strong>Site:</strong> ${site.name}</p>
@@ -906,7 +964,7 @@ router.post(
           const textBody = `
 TEST ALERT - High CPU Usage
 
-This is a test alert triggered manually from LogRadar Admin Settings.
+This is a test alert triggered manually from StackRadar Admin Settings.
 
 Site: ${site.name}
 Metric: CPU Usage
@@ -937,7 +995,7 @@ This is a test notification. No action is required.
           const protocol = url.protocol === 'https:' ? https : http;
           const headers: any = {
             'Content-Type': 'application/json',
-            'User-Agent': 'LogRadar-Alert-System'
+            'User-Agent': 'StackRadar-Alert-System'
           };
 
           if (channel.webhook_headers) {

@@ -1,14 +1,14 @@
-# LogRadar Helm Chart Values
+# StackRadar Helm Chart Values
 
 replicaCount: 1
 
 image:
-  repository: logradar
+  repository: ghcr.io/gsotti/stackradar
   tag: latest
   pullPolicy: IfNotPresent
 
-# Domain where LogRadar will be accessible
-domain: logradar.example.com
+# Domain where StackRadar will be accessible
+domain: stackradar.example.com
 
 # Cert-manager ClusterIssuer name
 certIssuer: letsencrypt-prod
@@ -17,13 +17,13 @@ certIssuer: letsencrypt-prod
 database:
   host: postgres
   port: 5432
-  name: logradar
-  user: logradar
+  name: stackradar
+  user: stackradar
   password: changeme
 
 # Admin user credentials (created on first startup)
 admin:
-  email: admin@logradar.local
+  email: admin@stackradar.local
   password: changeme
   name: Admin User
 
@@ -45,6 +45,10 @@ resources:
 service:
   type: ClusterIP
   port: 80
+
+# Ingress configuration
+ingress:
+  className: traefik
 
 # Optional: Image pull secrets
 imagePullSecrets: []

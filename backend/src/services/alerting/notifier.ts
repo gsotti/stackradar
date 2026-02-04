@@ -153,7 +153,7 @@ function formatEmailSubject(
 ): string {
   const severity = rule.severity.toUpperCase();
   const state = alert.state === 'firing' ? 'ALERT' : 'RESOLVED';
-  return `[LogRadar ${severity}] ${state}: ${rule.name} - ${site.name}`;
+  return `[StackRadar ${severity}] ${state}: ${rule.name} - ${site.name}`;
 }
 
 /**
@@ -234,7 +234,7 @@ function formatEmailTemplate(
       ${alert.resolved_at ? `<div class="field"><span class="label">Resolved At:</span><span class="value">${new Date(alert.resolved_at).toLocaleString()}</span></div>` : ''}
     </div>
     <div class="footer">
-      <p>This is an automated message from LogRadar</p>
+      <p>This is an automated message from StackRadar</p>
     </div>
   </div>
 </body>
@@ -253,7 +253,7 @@ function formatTextTemplate(
   const metricTypeLabel = getMetricTypeLabel(rule.metric_type);
 
   return `
-LogRadar Alert Notification
+StackRadar Alert Notification
 ${alert.state === 'firing' ? 'ALERT TRIGGERED' : 'ALERT RESOLVED'}
 ${'='.repeat(50)}
 
@@ -273,7 +273,7 @@ Timestamps:
 ${alert.resolved_at ? `- Resolved At: ${new Date(alert.resolved_at).toLocaleString()}` : ''}
 
 ${'='.repeat(50)}
-This is an automated message from LogRadar
+This is an automated message from StackRadar
   `.trim();
 }
 
@@ -327,7 +327,7 @@ function sendHttpRequest(
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': 'LogRadar-Alerting/1.0',
+        'User-Agent': 'StackRadar-Alerting/1.0',
         ...headers,
       },
       timeout: 5000, // 5 second timeout
@@ -364,7 +364,8 @@ function sendHttpRequest(
 /**
  * Get human-readable label for metric type
  */
-function getMetricTypeLabel(metricType: string): string {
+function getMetricTypeLabel(metricType: string | null): string {
+  if (!metricType) return 'N/A';
   const labels: Record<string, string> = {
     cpu_percent: 'CPU Usage',
     memory_percent: 'Memory Usage',
