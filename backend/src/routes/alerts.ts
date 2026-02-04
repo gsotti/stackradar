@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import https from 'https';
 import http from 'http';
 import db from '../db/database.js';
-import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
+import { authMiddleware, adminMiddleware, editorMiddleware } from '../middleware/auth.js';
 import {
   testSmtpConfig,
   clearSmtpConfigCache,
@@ -113,6 +113,7 @@ router.get(
 router.post(
   '/rules',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const body = req.body as CreateAlertRuleRequest;
@@ -208,6 +209,7 @@ router.post(
 router.put(
   '/rules/:id',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -312,6 +314,7 @@ router.put(
 router.delete(
   '/rules/:id',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -342,6 +345,7 @@ router.delete(
 router.post(
   '/rules/:id/test',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -439,6 +443,7 @@ router.get(
 router.post(
   '/channels',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const body = req.body as CreateNotificationChannelRequest;
@@ -501,6 +506,7 @@ router.post(
 router.put(
   '/channels/:id',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -566,6 +572,7 @@ router.put(
 router.delete(
   '/channels/:id',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -677,6 +684,7 @@ router.get(
 router.post(
   '/history/:id/resolve',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -867,6 +875,7 @@ router.post(
 router.post(
   '/trigger-test',
   authMiddleware,
+  editorMiddleware,
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { channel_id, site_id } = req.body;

@@ -142,6 +142,14 @@ export default function LoginPage() {
           </button>
         </div>
       </div>
+
+      {/* Version footer */}
+      <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-gray-400 dark:text-gray-500">
+        <span>v{__BUILD_VERSION__}</span>
+        {__BUILD_COMMIT__ !== 'local' && (
+          <span className="ml-2">({__BUILD_COMMIT__.substring(0, 7)})</span>
+        )}
+      </div>
     </div>
   );
 }

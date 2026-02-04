@@ -409,7 +409,7 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
   } else {
     // Increment consecutive failures
     const newFailures = monitor.consecutive_failures + 1;
-    const wasAlreadyDown = monitor.current_status === 'down' || monitor.current_status === 'degraded';
+    const hadAlreadyReachedThreshold = monitor.consecutive_failures >= failureThreshold;
 
     await updateMonitorStatus(monitor.id, {
       consecutive_failures: newFailures,
@@ -418,7 +418,7 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
     });
 
     // Only notify when threshold is first reached
-    if (newFailures === failureThreshold && !wasAlreadyDown) {
+    if (newFailures >= failureThreshold && !hadAlreadyReachedThreshold) {
       await updateMonitorStatus(monitor.id, { last_status_change: now });
       await sendUptimeNotification(monitor, 'down');
     }

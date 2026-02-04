@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Zap, ExternalLink, Clock, RefreshCw, CheckCircle, XCircle, AlertTriangle, Radio, TrendingUp, Activity } from 'lucide-react';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import UptimeMonitorForm from './UptimeMonitorForm';
 
 const statusConfig = {
@@ -83,7 +84,7 @@ function UptimeBar({ checks }) {
   );
 }
 
-function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checking }) {
+function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checking, isViewer }) {
   const config = statusConfig[monitor.current_status] || statusConfig.unknown;
   const Icon = config.icon;
 
@@ -187,34 +188,36 @@ function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checkin
           <div className="text-xs text-gray-400">
             Expected: {monitor.expected_status} · Timeout: {monitor.timeout_ms / 1000}s
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onManualCheck(monitor)}
-              disabled={checking}
-              className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-all disabled:opacity-50"
-              title="Run check now"
-            >
-              {checking ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Zap className="w-4 h-4" />
-              )}
-            </button>
-            <button
-              onClick={() => onEdit(monitor)}
-              className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
-              title="Edit monitor"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onDelete(monitor)}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-              title="Delete monitor"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
+          {!isViewer && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onManualCheck(monitor)}
+                disabled={checking}
+                className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-all disabled:opacity-50"
+                title="Run check now"
+              >
+                {checking ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={() => onEdit(monitor)}
+                className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
+                title="Edit monitor"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onDelete(monitor)}
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                title="Delete monitor"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -223,6 +226,8 @@ function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checkin
 
 export default function UptimeMonitorsView({ siteId }) {
   const { showSuccess, showError } = useNotification();
+  const { user } = useAuth();
+  const isViewer = user?.is_viewer;
   const [monitors, setMonitors] = useState([]);
   const [checksMap, setChecksMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -373,13 +378,15 @@ export default function UptimeMonitorsView({ siteId }) {
                   </span>
                 </div>
               )}
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all font-medium text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add Monitor
-              </button>
+              {!isViewer && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all font-medium text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Monitor
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -393,15 +400,17 @@ export default function UptimeMonitorsView({ siteId }) {
           </div>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Monitors Yet</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-            Start monitoring your endpoints to track uptime and receive alerts when they go down.
+            {isViewer ? 'No uptime monitors have been configured for this site.' : 'Start monitoring your endpoints to track uptime and receive alerts when they go down.'}
           </p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all font-semibold"
-          >
-            <Plus className="w-5 h-5" />
-            Create Your First Monitor
-          </button>
+          {!isViewer && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all font-semibold"
+            >
+              <Plus className="w-5 h-5" />
+              Create Your First Monitor
+            </button>
+          )}
         </div>
       ) : (
         /* Monitor Cards Grid */
@@ -415,6 +424,7 @@ export default function UptimeMonitorsView({ siteId }) {
               onDelete={handleDelete}
               onManualCheck={handleManualCheck}
               checking={checkingId === monitor.id}
+              isViewer={isViewer}
             />
           ))}
         </div>

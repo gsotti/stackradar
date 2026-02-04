@@ -131,7 +131,7 @@ router.get('/me', authMiddleware, async (
 ): Promise<void> => {
   try {
     const result = await db.query<Omit<User, 'password_hash'>>(
-      'SELECT id, email, name, is_active, is_admin, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, is_active, is_admin, is_viewer, created_at FROM users WHERE id = $1',
       [req.userId]
     );
 

@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __BUILD_VERSION__: JSON.stringify(process.env.BUILD_VERSION || 'dev'),
+    __BUILD_COMMIT__: JSON.stringify(process.env.BUILD_COMMIT || 'local'),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8000'

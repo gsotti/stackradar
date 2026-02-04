@@ -1,11 +1,15 @@
 # Stage 1: Build Frontend
 FROM node:20-alpine AS frontend-builder
 
+# Build args for version info
+ARG BUILD_VERSION=1.0.0
+ARG BUILD_COMMIT=unknown
+
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/yarn.lock ./
 RUN corepack enable && yarn install --frozen-lockfile
 COPY frontend/ ./
-RUN yarn build
+RUN BUILD_VERSION=${BUILD_VERSION} BUILD_COMMIT=${BUILD_COMMIT} yarn build
 
 # Stage 2: Build Backend
 FROM node:20-alpine AS backend-builder

@@ -103,7 +103,7 @@ function scheduleCleanupJobOnce() {
 
 // Alert Evaluation Cron Job (runs every 5 minutes)
 function scheduleAlertJobOnce() {
-  const job = new CronJob('*/5 * * * *', async () => {
+  const job = new CronJob('* * * * *', async () => {
     console.log('Running alert evaluation...');
     try {
       await evaluateAllAlerts();
@@ -113,8 +113,10 @@ function scheduleAlertJobOnce() {
   });
 
   job.start();
-  console.log('📅 Alert evaluation cron job scheduled (every 5 minutes)');
+  console.log('📅 Alert evaluation cron job scheduled (every minute)');
 }
+
+
 
 // Uptime Monitoring Cron Job (runs every minute)
 function scheduleUptimeJobOnce() {

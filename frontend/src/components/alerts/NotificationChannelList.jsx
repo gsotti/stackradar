@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Mail, Webhook, Power, Zap } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
 import NotificationChannelForm from './NotificationChannelForm';
 
@@ -11,6 +12,8 @@ export default function NotificationChannelList({ siteId }) {
   const [editingChannel, setEditingChannel] = useState(null);
   const [testingChannelId, setTestingChannelId] = useState(null);
   const { showError, showSuccess, showInfo } = useNotification();
+  const { user } = useAuth();
+  const isViewer = user?.is_viewer;
 
   useEffect(() => {
     loadChannels();
@@ -104,13 +107,15 @@ export default function NotificationChannelList({ siteId }) {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Notification Channels
           </h3>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create Channel
-          </button>
+          {!isViewer && (
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create Channel
+            </button>
+          )}
         </div>
 
         {/* Channels List */}
@@ -121,15 +126,17 @@ export default function NotificationChannelList({ siteId }) {
               No Notification Channels Yet
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Create a notification channel to receive alerts via email or webhook
+              {isViewer ? 'No notification channels have been configured for this site.' : 'Create a notification channel to receive alerts via email or webhook'}
             </p>
-            <button
-              onClick={handleCreate}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
-            >
-              <Plus className="w-4 h-4 inline mr-2" />
-              Create Channel
-            </button>
+            {!isViewer && (
+              <button
+                onClick={handleCreate}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4 inline mr-2" />
+                Create Channel
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid gap-4">
@@ -174,43 +181,47 @@ export default function NotificationChannelList({ siteId }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => handleTest(channel.id)}
-                      disabled={!channel.enabled || testingChannelId === channel.id}
-                      className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Send Test Alert"
-                    >
-                      {testingChannelId === channel.id ? (
-                        <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <Zap className="w-5 h-5" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleToggle(channel)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        channel.enabled
-                          ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                      title={channel.enabled ? 'Disable' : 'Enable'}
-                    >
-                      <Power className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleEdit(channel)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(channel.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    {!isViewer && (
+                      <>
+                        <button
+                          onClick={() => handleTest(channel.id)}
+                          disabled={!channel.enabled || testingChannelId === channel.id}
+                          className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Send Test Alert"
+                        >
+                          {testingChannelId === channel.id ? (
+                            <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Zap className="w-5 h-5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleToggle(channel)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            channel.enabled
+                              ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                              : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                          title={channel.enabled ? 'Disable' : 'Enable'}
+                        >
+                          <Power className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(channel)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(channel.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

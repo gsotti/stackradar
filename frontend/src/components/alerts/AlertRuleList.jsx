@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Power, AlertTriangle, Info, Zap, Bell, BarChart2, Radio } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
 import AlertRuleForm from './AlertRuleForm';
 
@@ -10,6 +11,8 @@ export default function AlertRuleList({ siteId }) {
   const [showForm, setShowForm] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const { showError, showSuccess } = useNotification();
+  const { user } = useAuth();
+  const isViewer = user?.is_viewer;
 
   useEffect(() => {
     loadRules();
@@ -129,13 +132,15 @@ export default function AlertRuleList({ siteId }) {
         {/* Header */}
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alert Rules</h3>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create Alert Rule
-          </button>
+          {!isViewer && (
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create Alert Rule
+            </button>
+          )}
         </div>
 
         {/* Rules List */}
@@ -146,15 +151,17 @@ export default function AlertRuleList({ siteId }) {
               No Alert Rules Yet
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Create your first alert rule to monitor your system metrics
+              {isViewer ? 'No alert rules have been configured for this site.' : 'Create your first alert rule to monitor your system metrics'}
             </p>
-            <button
-              onClick={handleCreate}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
-            >
-              <Plus className="w-4 h-4 inline mr-2" />
-              Create Alert Rule
-            </button>
+            {!isViewer && (
+              <button
+                onClick={handleCreate}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4 inline mr-2" />
+                Create Alert Rule
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid gap-4">
@@ -236,33 +243,35 @@ export default function AlertRuleList({ siteId }) {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => handleToggle(rule)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        rule.enabled
-                          ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                      title={rule.enabled ? 'Disable' : 'Enable'}
-                    >
-                      <Power className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleEdit(rule)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(rule.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
+                  {!isViewer && (
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => handleToggle(rule)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          rule.enabled
+                            ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                            : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        title={rule.enabled ? 'Disable' : 'Enable'}
+                      >
+                        <Power className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(rule)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(rule.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
