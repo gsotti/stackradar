@@ -2,18 +2,18 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: logradar-system
+  name: stackradar-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: logradar-log-collector-__APP_NAME__
-  namespace: logradar-system
+  name: stackradar-log-collector-__APP_NAME__
+  namespace: stackradar-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: logradar-log-collector-__APP_NAME__
+  name: stackradar-log-collector-__APP_NAME__
 rules:
   - apiGroups: [""]
     resources:
@@ -24,26 +24,26 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: logradar-log-collector-__APP_NAME__
+  name: stackradar-log-collector-__APP_NAME__
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: logradar-log-collector-__APP_NAME__
+  name: stackradar-log-collector-__APP_NAME__
 subjects:
   - kind: ServiceAccount
-    name: logradar-log-collector-__APP_NAME__
-    namespace: logradar-system
+    name: stackradar-log-collector-__APP_NAME__
+    namespace: stackradar-system
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: logradar-log-config-__APP_NAME__
-  namespace: logradar-system
+  name: stackradar-log-config-__APP_NAME__
+  namespace: stackradar-system
 type: Opaque
 stringData:
-  # REQUIRED: Replace with your LogRadar URL
-  LOGRADAR_URL: "https://your-logradar-instance.com"
-  # REQUIRED: Replace with your API token from LogRadar
+  # REQUIRED: Replace with your stackradar URL
+  STACKRADAR_URL: "https://your-stackradar-instance.com"
+  # REQUIRED: Replace with your API token from stackradar
   API_TOKEN: "your-api-token-here"
   # OPTIONAL: Name your cluster
   CLUSTER_NAME: "my-cluster"
@@ -58,27 +58,27 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: logradar-log-collector-__APP_NAME__
-  namespace: logradar-system
+  name: stackradar-log-collector-__APP_NAME__
+  namespace: stackradar-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: logradar-log-collector
+      app: stackradar-log-collector
       target: example-app
   template:
     metadata:
       labels:
-        app: logradar-log-collector
+        app: stackradar-log-collector
         target: example-app
     spec:
-      serviceAccountName: logradar-log-collector-__APP_NAME__
+      serviceAccountName: stackradar-log-collector-__APP_NAME__
       containers:
         - name: log-collector
           # REQUIRED: Build and push this image to your registry
-          # Example: docker build -t ghcr.io/gsotti/logradar-k8s-logs-collector:latest .
-          #          docker push ghcr.io/gsotti/logradar-k8s-logs-collector:latest
-          image: ghcr.io/gsotti/logradar-k8s-logs-collector:latest
+          # Example: docker build -t ghcr.io/gsotti/stackradar-k8s-logs-collector:latest .
+          #          docker push ghcr.io/gsotti/stackradar-k8s-logs-collector:latest
+          image: ghcr.io/gsotti/stackradar-k8s-logs-collector:latest
           imagePullPolicy: Always
           env:
             # REQUIRED: Specify the pod to collect logs from
@@ -94,7 +94,7 @@ spec:
               value: "environment"
           envFrom:
             - secretRef:
-                name: logradar-log-config-__APP_NAME__
+                name: stackradar-log-config-__APP_NAME__
           resources:
             requests:
               memory: "32Mi"

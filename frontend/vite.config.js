@@ -12,7 +12,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8000'
     },
-    allowedHosts: ['localhost', '127.0.0.1', "logradar.denovo-share.com", "logradarapi.denovo-share.com"],
+    allowedHosts: ['localhost', '127.0.0.1', "stackradar.denovo-share.com"],
   },
   build: {
     outDir: 'dist',

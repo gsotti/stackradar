@@ -1,6 +1,6 @@
-# LogRadar Kubernetes Collectors
+# stackradar Kubernetes Collectors
 
-Two specialized collectors for comprehensive Kubernetes monitoring with LogRadar.
+Two specialized collectors for comprehensive Kubernetes monitoring with stackradar.
 
 ## Directory Structure
 
@@ -35,7 +35,7 @@ cp .env.example .env
 Edit `.env` and set your values:
 
 ```bash
-LOGRADAR_URL=https://your-logradar-instance.com
+STACKRADAR_URL=https://your-stackradar-instance.com
 API_TOKEN=your-api-token-here
 CLUSTER_NAME=my-cluster  # optional
 ```
@@ -56,7 +56,7 @@ This will:
 - Load configuration from `.env` file
 - Build both Docker images
 - Push to your registry
-- Deploy to your Kubernetes cluster with your LogRadar credentials
+- Deploy to your Kubernetes cluster with your stackradar credentials
 
 ### 3. Deploy Only Stats Collector
 
@@ -147,7 +147,7 @@ The deployment script automatically loads configuration from a `.env` file:
 
 ```bash
 # Required
-LOGRADAR_URL=https://your-logradar-instance.com
+STACKRADAR_URL=https://your-stackradar-instance.com
 API_TOKEN=your-api-token-here
 
 # Optional
@@ -167,7 +167,7 @@ FOLLOW_LOGS=true            # Log collector follow mode
 3. Run `./deploy-collectors.sh`
 
 The script will:
-- ✅ Validate required variables (LOGRADAR_URL, API_TOKEN)
+- ✅ Validate required variables (STACKRADAR_URL, API_TOKEN)
 - ✅ Automatically inject them into Kubernetes Secrets
 - ✅ Use CLUSTER_NAME if provided, or default to "my-cluster"
 - ✅ Show first 8 characters of API_TOKEN for verification (security)
@@ -179,7 +179,7 @@ If you prefer to manually edit deployment files instead of using `.env`:
 **Stats Collector Secret** (`stats-collector/deployment.yaml`):
 ```yaml
 stringData:
-  LOGRADAR_URL: "https://your-logradar.com"
+  STACKRADAR_URL: "https://your-stackradar.com"
   API_TOKEN: "your-api-token"
   CLUSTER_NAME: "production-cluster"
 ```
@@ -187,7 +187,7 @@ stringData:
 **Log Collector Secret** (`log-collector/deployment.yaml`):
 ```yaml
 stringData:
-  LOGRADAR_URL: "https://your-logradar.com"
+  STACKRADAR_URL: "https://your-stackradar.com"
   API_TOKEN: "your-api-token"
   CLUSTER_NAME: "production-cluster"
   LOG_TAIL_LINES: "100"
@@ -201,26 +201,26 @@ stringData:
 
 ```bash
 # View deployment
-kubectl get deployment -n logradar-system -l app=logradar-stats-collector
+kubectl get deployment -n stackradar-system -l app=stackradar-stats-collector
 
 # View pods
-kubectl get pods -n logradar-system -l app=logradar-stats-collector
+kubectl get pods -n stackradar-system -l app=stackradar-stats-collector
 
 # View logs (follow for continuous updates)
-kubectl logs -n logradar-system -l app=logradar-stats-collector --tail=50 -f
+kubectl logs -n stackradar-system -l app=stackradar-stats-collector --tail=50 -f
 ```
 
 ### Log Collector
 
 ```bash
 # View deployment
-kubectl get deployment -n logradar-system -l app=logradar-log-collector
+kubectl get deployment -n stackradar-system -l app=stackradar-log-collector
 
 # View pods
-kubectl get pods -n logradar-system -l app=logradar-log-collector
+kubectl get pods -n stackradar-system -l app=stackradar-log-collector
 
 # Follow logs
-kubectl logs -n logradar-system -l app=logradar-log-collector --tail=50 -f
+kubectl logs -n stackradar-system -l app=stackradar-log-collector --tail=50 -f
 ```
 
 ## Architecture
@@ -245,7 +245,7 @@ kubectl logs -n logradar-system -l app=logradar-log-collector --tail=50 -f
                                                │
                                                ▼
                                     ┌──────────────────┐
-                                    │   LogRadar API   │
+                                    │   stackradar API   │
                                     │                  │
                                     │  /api/k8s/metrics│
                                     │  /api/ingest     │
@@ -280,21 +280,21 @@ docker login your-registry
 
 Check if namespace exists:
 ```bash
-kubectl get namespace logradar-system
+kubectl get namespace stackradar-system
 ```
 
 View deployment errors:
 ```bash
-kubectl describe deployment -n logradar-system -l app=logradar-stats-collector
-kubectl describe deployment -n logradar-system -l app=logradar-log-collector
+kubectl describe deployment -n stackradar-system -l app=stackradar-stats-collector
+kubectl describe deployment -n stackradar-system -l app=stackradar-log-collector
 ```
 
-### No logs appearing in LogRadar
+### No logs appearing in stackradar
 
 1. Check collector logs for errors
-2. Verify `LOGRADAR_URL` is correct and accessible
+2. Verify `STACKRADAR_URL` is correct and accessible
 3. Verify `API_TOKEN` is valid
-4. Check network policies allow egress to LogRadar
+4. Check network policies allow egress to stackradar
 
 ## Migration from Old Setup
 
@@ -307,10 +307,10 @@ If you were using the old `collect.mjs`:
 
 ## Notes
 
-- Namespace used by both collectors: `logradar-system`
+- Namespace used by both collectors: `stackradar-system`
 - Labels:
-  - Stats: `app=logradar-stats-collector`
-  - Logs: `app=logradar-log-collector`, plus optional `target=<your-label>`
+  - Stats: `app=stackradar-stats-collector`
+  - Logs: `app=stackradar-log-collector`, plus optional `target=<your-label>`
 - Log collector requires you to set at least `POD_NAMESPACE` and either `POD_NAME` or `POD_LABEL_SELECTOR` in the deployment or via environment before deploying.
 
 ## Contributing

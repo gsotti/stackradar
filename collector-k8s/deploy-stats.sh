@@ -1,6 +1,6 @@
 ./#!/bin/bash
 
-# LogRadar Stats Collector Deployment Script
+# stackradar Stats Collector Deployment Script
 #
 # This script builds, pushes, and deploys the stats collector to Kubernetes
 #
@@ -39,7 +39,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 show_help() {
     cat << EOF
-LogRadar Stats Collector Deployment Script
+stackradar Stats Collector Deployment Script
 
 Usage:
     ./deploy-stats.sh [OPTIONS]
@@ -75,10 +75,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 REGISTRY="${REGISTRY%/}"
-STATS_IMAGE="${REGISTRY}/logradar-stats-collector:${TAG}"
+STATS_IMAGE="${REGISTRY}/stackradar-stats-collector:${TAG}"
 
 log_info "=========================================="
-log_info "LogRadar Stats Collector Deployment"
+log_info "stackradar Stats Collector Deployment"
 log_info "=========================================="
 log_info "Image: ${STATS_IMAGE}"
 log_info "App Name: ${APP_NAME}"
@@ -86,8 +86,8 @@ log_info "=========================================="
 
 # Validate deployment requirements
 if [ "$DO_DEPLOY" = true ]; then
-    if [ -z "$LOGRADAR_URL" ]; then
-        log_error "LOGRADAR_URL is not set. Set it in .env or export it."
+    if [ -z "$STACKRADAR_URL" ]; then
+        log_error "STACKRADAR_URL is not set. Set it in .env or export it."
         exit 1
     fi
     if [ -z "$API_TOKEN" ]; then
@@ -96,7 +96,7 @@ if [ "$DO_DEPLOY" = true ]; then
     fi
 
     log_info "Environment:"
-    log_info "  LOGRADAR_URL: ${LOGRADAR_URL}"
+    log_info "  STACKRADAR_URL: ${STACKRADAR_URL}"
     log_info "  CLUSTER_NAME: ${CLUSTER_NAME:-my-cluster}"
     log_info "  COLLECTION_INTERVAL: ${COLLECTION_INTERVAL:-10000}ms"
 fi
@@ -151,8 +151,8 @@ if [ "$DO_DEPLOY" = true ]; then
 
     log_info "Preparing deployment..."
     cat stats-collector/deployment.yaml | \
-        sed "s|image: your-registry/logradar-stats-collector:latest|image: ${STATS_IMAGE}|g" | \
-        sed "s|LOGRADAR_URL: \"https://your-logradar-instance.com\"|LOGRADAR_URL: \"${LOGRADAR_URL}\"|g" | \
+        sed "s|image: your-registry/stackradar-stats-collector:latest|image: ${STATS_IMAGE}|g" | \
+        sed "s|STACKRADAR_URL: \"https://your-stackradar-instance.com\"|STACKRADAR_URL: \"${STACKRADAR_URL}\"|g" | \
         sed "s|API_TOKEN: \"your-api-token-here\"|API_TOKEN: \"${API_TOKEN}\"|g" | \
         sed "s|CLUSTER_NAME: \"my-cluster\"|CLUSTER_NAME: \"${CLUSTER_NAME:-my-cluster}\"|g" | \
         sed "s|COLLECTION_INTERVAL: \"10000\"|COLLECTION_INTERVAL: \"${COLLECTION_INTERVAL:-10000}\"|g" \
@@ -164,13 +164,13 @@ if [ "$DO_DEPLOY" = true ]; then
 
     log_info "=========================================="
     log_info "Deployment Status:"
-    kubectl get deployment -n logradar-system "logradar-stats-collector"
+    kubectl get deployment -n stackradar-system "stackradar-stats-collector"
 
     echo ""
     log_info "Useful commands:"
-    echo "  kubectl get pods -n logradar-system -l app=logradar-stats-collector"
-    echo "  kubectl logs -n logradar-system -l app=logradar-stats-collector --tail=50 -f"
-    echo "  kubectl describe deployment -n logradar-system logradar-stats-collector"
+    echo "  kubectl get pods -n stackradar-system -l app=stackradar-stats-collector"
+    echo "  kubectl logs -n stackradar-system -l app=stackradar-stats-collector --tail=50 -f"
+    echo "  kubectl describe deployment -n stackradar-system stackradar-stats-collector"
 else
     log_info "Skipping deployment"
 fi

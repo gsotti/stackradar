@@ -62,7 +62,7 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
   --name stackradar-docker-logs-collector \\
   --restart unless-stopped \\
   -v /var/run/docker.sock:/var/run/docker.sock:ro \\
-  -e LOGRADAR_API_URL="${window.location.origin}" \\
+  -e STACKRADAR_API_URL="${window.location.origin}" \\
   -e API_TOKEN="${site.api_token}" \\
   -e TENANT="${site.tenant_name || 'default'}" \\
   -e SITE="${site.name}" \\
@@ -74,7 +74,7 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
   --name stackradar-docker-stats-collector \\
   --restart unless-stopped \\
   -v /var/run/docker.sock:/var/run/docker.sock:ro \\
-  -e LOGRADAR_API_URL="${window.location.origin}" \\
+  -e STACKRADAR_API_URL="${window.location.origin}" \\
   -e API_TOKEN="${site.api_token}" \\
   -e COLLECTION_INTERVAL_MS="60000" \\
   ghcr.io/gsotti/stackradar-docker-stats-collector:latest`;
@@ -87,7 +87,7 @@ services:
     container_name: stackradar-docker-logs-collector
     restart: unless-stopped
     environment:
-      LOGRADAR_API_URL: "${window.location.origin}"
+      STACKRADAR_API_URL: "${window.location.origin}"
       API_TOKEN: "${site.api_token}"
       TENANT: "${site.tenant_name || 'default'}"
       SITE: "${site.name}"
@@ -100,7 +100,7 @@ services:
     container_name: stackradar-docker-stats-collector
     restart: unless-stopped
     environment:
-      LOGRADAR_API_URL: "${window.location.origin}"
+      STACKRADAR_API_URL: "${window.location.origin}"
       API_TOKEN: "${site.api_token}"
       COLLECTION_INTERVAL_MS: "60000"
     volumes:

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * LogRadar Kubernetes Pod Log Collector
+ * stackradar Kubernetes Pod Log Collector
  *
- * Collects logs from a single specified pod and sends them to LogRadar
+ * Collects logs from a single specified pod and sends them to stackradar
  * Run as a sidecar container or deployment
  */
 
@@ -11,7 +11,7 @@ import https from 'https';
 import http from 'http';
 import fs from 'fs';
 
-const LOGRADAR_URL = process.env.LOGRADAR_URL;
+const STACKRADAR_URL = process.env.STACKRADAR_URL;
 const API_TOKEN = process.env.API_TOKEN;
 const KUBERNETES_SERVICE_HOST = process.env.KUBERNETES_SERVICE_HOST;
 const KUBERNETES_SERVICE_PORT = process.env.KUBERNETES_SERVICE_PORT || '443';
@@ -24,7 +24,7 @@ const LOG_TAIL_LINES = parseInt(process.env.LOG_TAIL_LINES) || 100;
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL) || 10000; // Default 10 seconds
 const FOLLOW_LOGS = process.env.FOLLOW_LOGS !== 'false'; // Default true
 
-// LogRadar metadata
+// stackradar metadata
 const TENANT = process.env.TENANT || 'default';
 const SITE = process.env.SITE || 'kubernetes';
 const ENVIRONMENT = process.env.ENVIRONMENT || 'production';
@@ -132,7 +132,7 @@ async function collectPodLogs(sinceTime = null) {
       // Auto-detect application from pod name if not set
       const appName = targetPodName.split('-').slice(0, 2).join('-');
 
-      // Send each log line to LogRadar
+      // Send each log line to stackradar
       let successCount = 0;
       for (const logLine of logLines) {
         if (logLine.trim()) {
@@ -173,7 +173,7 @@ function detectLogLevel(logLine) {
 }
 
 async function sendLog(log) {
-  const url = new URL(`/api/ingest/${API_TOKEN}/single`, LOGRADAR_URL);
+  const url = new URL(`/api/ingest/${API_TOKEN}/single`, STACKRADAR_URL);
 
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(log);
@@ -209,8 +209,8 @@ async function sendLog(log) {
 
 async function main() {
   // Validate required environment variables
-  if (!LOGRADAR_URL || !API_TOKEN) {
-    console.error('Missing LOGRADAR_URL or API_TOKEN environment variables');
+  if (!STACKRADAR_URL || !API_TOKEN) {
+    console.error('Missing STACKRADAR_URL or API_TOKEN environment variables');
     process.exit(1);
   }
 
@@ -236,7 +236,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('LogRadar Pod Log Collector started');
+  console.log('stackradar Pod Log Collector started');
   console.log(`Target: ${POD_NAMESPACE} with labels: ${POD_LABEL_SELECTOR}`);
   console.log(`Cluster: ${CLUSTER_NAME}`);
   console.log(`Follow mode: ${FOLLOW_LOGS ? 'enabled' : 'disabled'}`);

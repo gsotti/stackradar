@@ -1,7 +1,7 @@
 {
-  "name": "logradar-docker-log-collector",
+  "name": "stackradar-docker-log-collector",
   "version": "1.0.0",
-  "description": "Docker log collector for LogRadar",
+  "description": "Docker log collector for stackradar",
   "main": "log-collector.mjs",
   "type": "module",
   "scripts": {

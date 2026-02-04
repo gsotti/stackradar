@@ -4,7 +4,7 @@ import Docker from 'dockerode';
 import fetch from 'node-fetch';
 
 // Configuration from environment variables
-const LOGRADAR_API_URL = process.env.LOGRADAR_API_URL || 'http://localhost:8000';
+const STACKRADAR_API_URL = process.env.STACKRADAR_API_URL || 'http://localhost:8000';
 const API_TOKEN = process.env.API_TOKEN;
 const TENANT = process.env.TENANT || 'default';
 const SITE = process.env.SITE || 'docker-host';
@@ -38,12 +38,12 @@ function parseLogLevel(message) {
     return 'INFO';
 }
 
-// Send logs to LogRadar API
+// Send logs to stackradar API
 async function sendLogs(logs) {
     if (logs.length === 0) return;
 
     try {
-        const response = await fetch(`${LOGRADAR_API_URL}/api/ingest/${API_TOKEN}`, {
+        const response = await fetch(`${STACKRADAR_API_URL}/api/ingest/${API_TOKEN}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ async function monitorContainers() {
 
     if (DEBUG) {
         console.log('🚀 Docker Log Collector started');
-        console.log(`   API URL: ${LOGRADAR_API_URL}`);
+        console.log(`   API URL: ${STACKRADAR_API_URL}`);
         console.log(`   Tenant: ${TENANT}`);
         console.log(`   Site: ${SITE}`);
         console.log(`   Environment: ${ENVIRONMENT}`);

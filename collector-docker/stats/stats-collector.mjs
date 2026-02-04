@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import os from 'os';
 
 // Configuration from environment variables
-const LOGRADAR_API_URL = process.env.LOGRADAR_API_URL || 'http://localhost:8000';
+const STACKRADAR_API_URL = process.env.STACKRADAR_API_URL || 'http://localhost:8000';
 const API_TOKEN = process.env.API_TOKEN;
 const COLLECTION_INTERVAL_MS = parseInt(process.env.COLLECTION_INTERVAL_MS || '60000', 10); // 1 minute default
 const DEBUG = process.env.DEBUG === "true" || false;
@@ -125,10 +125,10 @@ async function collectContainerStats() {
     }
 }
 
-// Send metrics to LogRadar API
+// Send metrics to stackradar API
 async function sendMetrics(metrics) {
     try {
-        const response = await fetch(`${LOGRADAR_API_URL}/api/k8s/metrics/${API_TOKEN}`, {
+        const response = await fetch(`${STACKRADAR_API_URL}/api/k8s/metrics/${API_TOKEN}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ async function sendMetrics(metrics) {
 // Send stats history for tracking over time
 async function sendStatsHistory(metrics) {
     try {
-        const response = await fetch(`${LOGRADAR_API_URL}/api/k8s/stats/${API_TOKEN}`, {
+        const response = await fetch(`${STACKRADAR_API_URL}/api/k8s/stats/${API_TOKEN}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ function printStats(metrics) {
 async function startCollection() {
     if (DEBUG) {
         console.log('🚀 Docker Stats Collector started');
-        console.log(`   API URL: ${LOGRADAR_API_URL}`);
+        console.log(`   API URL: ${STACKRADAR_API_URL}`);
         console.log(`   Collection Interval: ${COLLECTION_INTERVAL_MS}ms`);
         console.log('');
     }

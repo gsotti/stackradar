@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  # LogRadar Docker Log Collector
-  logradar-docker-logs-collector:
+  # stackradar Docker Log Collector
+  stackradar-docker-logs-collector:
     build: .
-    container_name: logradar-docker-logs-collector
+    container_name: stackradar-docker-logs-collector
     restart: unless-stopped
     environment:
-      # Required: LogRadar API configuration
-      LOGRADAR_API_URL: "https://logradar.example.com"
+      # Required: stackradar API configuration
+      STACKRADAR_API_URL: "https://stackradar.example.com"
       API_TOKEN: "your-api-token-here"
 
       # Hierarchy configuration

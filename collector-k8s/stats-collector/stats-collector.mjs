@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * LogRadar Kubernetes Stats Collector
+ * stackradar Kubernetes Stats Collector
  *
- * Collects cluster metrics and sends them to LogRadar
+ * Collects cluster metrics and sends them to stackradar
  * Run as a CronJob in your cluster
  */
 
@@ -11,7 +11,7 @@ import https from 'https';
 import http from 'http';
 import fs from 'fs';
 
-const LOGRADAR_URL = process.env.LOGRADAR_URL;
+const STACKRADAR_URL = process.env.STACKRADAR_URL;
 const API_TOKEN = process.env.API_TOKEN;
 const KUBERNETES_SERVICE_HOST = process.env.KUBERNETES_SERVICE_HOST;
 const KUBERNETES_SERVICE_PORT = process.env.KUBERNETES_SERVICE_PORT || '443';
@@ -191,7 +191,7 @@ function parseMemory(mem) {
 }
 
 async function sendMetrics(metrics) {
-  const url = new URL(`/api/k8s/metrics/${API_TOKEN}`, LOGRADAR_URL);
+  const url = new URL(`/api/k8s/metrics/${API_TOKEN}`, STACKRADAR_URL);
 
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(metrics);
@@ -226,15 +226,15 @@ async function sendMetrics(metrics) {
 }
 
 async function main() {
-  if (!LOGRADAR_URL || !API_TOKEN) {
-    console.error('Missing LOGRADAR_URL or API_TOKEN environment variables');
+  if (!STACKRADAR_URL || !API_TOKEN) {
+    console.error('Missing STACKRADAR_URL or API_TOKEN environment variables');
     process.exit(1);
   }
 
   const COLLECTION_INTERVAL = parseInt(process.env.COLLECTION_INTERVAL) || 10000; // Default 10 seconds
   const RUN_ONCE = process.env.RUN_ONCE === 'true'; // Support one-time execution
 
-  console.log('LogRadar Stats Collector started');
+  console.log('stackradar Stats Collector started');
   console.log(`Cluster: ${CLUSTER_NAME}`);
   console.log(`Collection interval: ${COLLECTION_INTERVAL}ms`);
   console.log(`Run mode: ${RUN_ONCE ? 'one-time' : 'continuous'}`);

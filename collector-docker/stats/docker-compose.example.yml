@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  # LogRadar Docker Stats Collector
-  logradar-docker-stats-collector:
+  # stackradar Docker Stats Collector
+  stackradar-docker-stats-collector:
     build: .
-    container_name: logradar-docker-stats-collector
+    container_name: stackradar-docker-stats-collector
     restart: unless-stopped
     environment:
-      # Required: LogRadar API configuration
-      LOGRADAR_API_URL: "https://logradar.example.com"
+      # Required: stackradar API configuration
+      STACKRADAR_API_URL: "https://stackradar.example.com"
       API_TOKEN: "your-api-token-here"
 
       # Optional: Collection interval in milliseconds (default: 60000 = 1 minute)

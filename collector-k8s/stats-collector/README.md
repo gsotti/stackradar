@@ -1,6 +1,6 @@
-# LogRadar Stats Collector
+# stackradar Stats Collector
 
-Collects cluster-wide Kubernetes metrics and sends them to LogRadar.
+Collects cluster-wide Kubernetes metrics and sends them to stackradar.
 
 ## What it collects
 
@@ -15,13 +15,13 @@ Collects cluster-wide Kubernetes metrics and sends them to LogRadar.
 
 ## How it works
 
-Runs as a **Deployment** with a continuous loop that collects metrics from the Kubernetes API and sends them to LogRadar every 10 seconds (configurable).
+Runs as a **Deployment** with a continuous loop that collects metrics from the Kubernetes API and sends them to stackradar every 10 seconds (configurable).
 
 ## Configuration
 
 Required environment variables (set in `deployment.yaml`):
 
-- `LOGRADAR_URL` - Your LogRadar instance URL
+- `STACKRADAR_URL` - Your stackradar instance URL
 - `API_TOKEN` - API token for authentication
 - `CLUSTER_NAME` - Name of your cluster (optional, default: "default")
 - `COLLECTION_INTERVAL` - Collection interval in milliseconds (optional, default: 10000 = 10 seconds)
@@ -42,12 +42,12 @@ cd ..
 1. **Build the Docker image:**
 
 ```bash
-docker build -t your-registry/logradar-stats-collector:latest .
-docker push your-registry/logradar-stats-collector:latest
+docker build -t your-registry/stackradar-stats-collector:latest .
+docker push your-registry/stackradar-stats-collector:latest
 ```
 
 2. **Update `deployment.yaml`:**
-   - Set your `LOGRADAR_URL` in the Secret
+   - Set your `STACKRADAR_URL` in the Secret
    - Set your `API_TOKEN` in the Secret
    - Update the image name if using a different registry
 
@@ -61,13 +61,13 @@ kubectl apply -f deployment.yaml
 
 ```bash
 # Check if Deployment was created
-kubectl get deployment -n logradar-system logradar-stats-collector
+kubectl get deployment -n stackradar-system stackradar-stats-collector
 
 # Check pods
-kubectl get pods -n logradar-system -l app=logradar-stats-collector
+kubectl get pods -n stackradar-system -l app=stackradar-stats-collector
 
 # View logs (follow mode to see continuous collection)
-kubectl logs -n logradar-system -l app=logradar-stats-collector --tail=50 -f
+kubectl logs -n stackradar-system -l app=stackradar-stats-collector --tail=50 -f
 ```
 
 ## Adjust Collection Interval

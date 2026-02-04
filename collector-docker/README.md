@@ -1,6 +1,6 @@
-# LogRadar Docker Collectors
+# stackradar Docker Collectors
 
-Automatically collect logs and metrics from Docker containers and send them to LogRadar.
+Automatically collect logs and metrics from Docker containers and send them to stackradar.
 
 ## Overview
 
@@ -36,25 +36,25 @@ docker-compose logs -f
 **Log Collector:**
 ```bash
 cd logs
-docker build -t logradar-log-collector .
+docker build -t stackradar-log-collector .
 docker run -d \
-  --name logradar-logs \
+  --name stackradar-logs \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -e LOGRADAR_API_URL="http://your-logradar" \
+  -e STACKRADAR_API_URL="http://your-stackradar" \
   -e API_TOKEN="your-token" \
-  logradar-log-collector
+  stackradar-log-collector
 ```
 
 **Stats Collector:**
 ```bash
 cd stats
-docker build -t logradar-stats-collector .
+docker build -t stackradar-stats-collector .
 docker run -d \
-  --name logradar-stats \
+  --name stackradar-stats \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -e LOGRADAR_API_URL="http://your-logradar" \
+  -e STACKRADAR_API_URL="http://your-stackradar" \
   -e API_TOKEN="your-token" \
-  logradar-stats-collector
+  stackradar-stats-collector
 ```
 
 ## Log Collector Features
@@ -70,7 +70,7 @@ docker run -d \
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `LOGRADAR_API_URL` | LogRadar API endpoint (required) | - |
+| `STACKRADAR_API_URL` | stackradar API endpoint (required) | - |
 | `API_TOKEN` | Site API token (required) | - |
 | `TENANT` | Tenant name | `default` |
 | `SITE` | Site name | `docker-host` |
@@ -93,7 +93,7 @@ docker run -d \
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `LOGRADAR_API_URL` | LogRadar API endpoint (required) | - |
+| `STACKRADAR_API_URL` | stackradar API endpoint (required) | - |
 | `API_TOKEN` | Site API token (required) | - |
 | `COLLECTION_INTERVAL_MS` | Collection interval | `60000` |
 | `CONTAINER_FILTER` | Regex to filter containers | `` |
@@ -129,7 +129,7 @@ collector-docker/
 ### Scenario 1: Logs Only
 ```yaml
 services:
-  logradar-log-collector:
+  stackradar-log-collector:
     build: ./logs
     # ... configuration
 ```
@@ -137,7 +137,7 @@ services:
 ### Scenario 2: Stats Only
 ```yaml
 services:
-  logradar-stats-collector:
+  stackradar-stats-collector:
     build: ./stats
     # ... configuration
 ```
@@ -145,11 +145,11 @@ services:
 ### Scenario 3: Both (Recommended)
 ```yaml
 services:
-  logradar-log-collector:
+  stackradar-log-collector:
     build: ./logs
     # ... logs config
 
-  logradar-stats-collector:
+  stackradar-stats-collector:
     build: ./stats
     # ... stats config
 ```
@@ -195,10 +195,10 @@ deploy:
 **Check collector status:**
 ```bash
 # Logs
-docker logs logradar-log-collector
+docker logs stackradar-log-collector
 
 # Stats
-docker logs logradar-stats-collector
+docker logs stackradar-stats-collector
 ```
 
 **Expected output (Logs):**
@@ -206,7 +206,7 @@ docker logs logradar-stats-collector
 🚀 Docker Log Collector started
 📦 Starting log collection from container: app-1
 📦 Starting log collection from container: nginx
-✅ Sent 10 logs to LogRadar
+✅ Sent 10 logs to stackradar
 ```
 
 **Expected output (Stats):**
@@ -225,24 +225,24 @@ docker logs logradar-stats-collector
 
 1. Check API token:
    ```bash
-   docker logs logradar-log-collector | grep "Failed"
+   docker logs stackradar-log-collector | grep "Failed"
    ```
 
 2. Verify container discovery:
    ```bash
-   docker logs logradar-log-collector | grep "Starting log collection"
+   docker logs stackradar-log-collector | grep "Starting log collection"
    ```
 
 ### Stats not updating
 
 1. Check collection interval:
    ```bash
-   docker logs logradar-stats-collector | grep "Stats:"
+   docker logs stackradar-stats-collector | grep "Stats:"
    ```
 
 2. Verify API connectivity:
    ```bash
-   docker exec logradar-stats-collector wget -O- http://logradar/api/health
+   docker exec stackradar-stats-collector wget -O- http://stackradar/api/health
    ```
 
 ## Security
@@ -268,4 +268,4 @@ environment:
 
 ## License
 
-Same as LogRadar main application
+Same as stackradar main application

@@ -2,18 +2,18 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: logradar-system
+  name: stackradar-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: logradar-stats-collector
-  namespace: logradar-system
+  name: stackradar-stats-collector
+  namespace: stackradar-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: logradar-stats-collector
+  name: stackradar-stats-collector
 rules:
   - apiGroups: [""]
     resources:
@@ -37,26 +37,26 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: logradar-stats-collector
+  name: stackradar-stats-collector
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: logradar-stats-collector
+  name: stackradar-stats-collector
 subjects:
   - kind: ServiceAccount
-    name: logradar-stats-collector
-    namespace: logradar-system
+    name: stackradar-stats-collector
+    namespace: stackradar-system
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: logradar-stats-config
-  namespace: logradar-system
+  name: stackradar-stats-config
+  namespace: stackradar-system
 type: Opaque
 stringData:
-  # REQUIRED: Replace with your LogRadar URL
-  LOGRADAR_URL: "https://your-logradar-instance.com"
-  # REQUIRED: Replace with your API token from LogRadar
+  # REQUIRED: Replace with your stackradar URL
+  STACKRADAR_URL: "https://your-stackradar-instance.com"
+  # REQUIRED: Replace with your API token from stackradar
   API_TOKEN: "your-api-token-here"
   # OPTIONAL: Name your cluster
   CLUSTER_NAME: "my-cluster"
@@ -64,25 +64,25 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: logradar-stats-collector
-  namespace: logradar-system
+  name: stackradar-stats-collector
+  namespace: stackradar-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: logradar-stats-collector
+      app: stackradar-stats-collector
   template:
     metadata:
       labels:
-        app: logradar-stats-collector
+        app: stackradar-stats-collector
     spec:
-      serviceAccountName: logradar-stats-collector
+      serviceAccountName: stackradar-stats-collector
       containers:
         - name: stats-collector
           # REQUIRED: Build and push this image to your registry
-          # Example: docker build -t ghcr.io/gsotti/logradar-k8s-stats-collector:latest .
-          #          docker push ghcr.io/gsotti/logradar-k8s-stats-collector:latest
-          image: ghcr.io/gsotti/logradar-k8s-stats-collector:latest
+          # Example: docker build -t ghcr.io/gsotti/stackradar-k8s-stats-collector:latest .
+          #          docker push ghcr.io/gsotti/stackradar-k8s-stats-collector:latest
+          image: ghcr.io/gsotti/stackradar-k8s-stats-collector:latest
           imagePullPolicy: Always
           env:
             # Collection interval in milliseconds (default: 10000 = 10 seconds)
@@ -90,7 +90,7 @@ spec:
               value: "10000"
           envFrom:
             - secretRef:
-                name: logradar-stats-config
+                name: stackradar-stats-config
           resources:
             requests:
               memory: "64Mi"

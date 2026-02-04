@@ -1,6 +1,6 @@
-# LogRadar Log Collector
+# stackradar Log Collector
 
-Collects logs from a specific Kubernetes pod and sends them to LogRadar.
+Collects logs from a specific Kubernetes pod and sends them to stackradar.
 
 ## What it collects
 
@@ -11,13 +11,13 @@ Collects logs from a specific Kubernetes pod and sends them to LogRadar.
 
 ## How it works
 
-Runs as a **Deployment** that continuously polls the Kubernetes API for new logs from the specified pod and sends them to LogRadar.
+Runs as a **Deployment** that continuously polls the Kubernetes API for new logs from the specified pod and sends them to stackradar.
 
 ## Configuration
 
 Required environment variables (set in `deployment.yaml`):
 
-- `LOGRADAR_URL` - Your LogRadar instance URL
+- `STACKRADAR_URL` - Your stackradar instance URL
 - `API_TOKEN` - API token for authentication
 - `POD_NAMESPACE` - Namespace of the pod to monitor
 - **Either:**
@@ -54,24 +54,24 @@ Deploy **one log collector per application** you want to monitor. Each collector
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: logradar-log-collector-nginx
-  namespace: logradar-system
+  name: stackradar-log-collector-nginx
+  namespace: stackradar-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: logradar-log-collector
+      app: stackradar-log-collector
       target: nginx
   template:
     metadata:
       labels:
-        app: logradar-log-collector
+        app: stackradar-log-collector
         target: nginx
     spec:
-      serviceAccountName: logradar-log-collector
+      serviceAccountName: stackradar-log-collector
       containers:
         - name: log-collector
-          image: your-registry/logradar-log-collector:latest
+          image: your-registry/stackradar-log-collector:latest
           env:
             - name: POD_NAMESPACE
               value: "production"
@@ -81,7 +81,7 @@ spec:
               value: "nginx"
           envFrom:
             - secretRef:
-                name: logradar-log-config
+                name: stackradar-log-config
 ```
 
 ### Example 2: Monitor specific pod by exact name
@@ -114,12 +114,12 @@ cd ..
 1. **Build the Docker image:**
 
 ```bash
-docker build -t your-registry/logradar-log-collector:latest .
-docker push your-registry/logradar-log-collector:latest
+docker build -t your-registry/stackradar-log-collector:latest .
+docker push your-registry/stackradar-log-collector:latest
 ```
 
 2. **Update `deployment.yaml`:**
-   - Set your `LOGRADAR_URL` in the Secret
+   - Set your `STACKRADAR_URL` in the Secret
    - Set your `API_TOKEN` in the Secret
    - Set `POD_NAMESPACE` and `POD_NAME` in the Deployment
    - Update the image name if using a different registry
@@ -134,13 +134,13 @@ kubectl apply -f deployment.yaml
 
 ```bash
 # Check if deployment was created
-kubectl get deployment -n logradar-system -l app=logradar-log-collector
+kubectl get deployment -n stackradar-system -l app=stackradar-log-collector
 
 # View pods
-kubectl get pods -n logradar-system -l app=logradar-log-collector
+kubectl get pods -n stackradar-system -l app=stackradar-log-collector
 
 # View logs (to see what the collector is doing)
-kubectl logs -n logradar-system -l app=logradar-log-collector --tail=50 -f
+kubectl logs -n stackradar-system -l app=stackradar-log-collector --tail=50 -f
 ```
 
 ## RBAC Permissions
