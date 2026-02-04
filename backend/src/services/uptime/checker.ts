@@ -139,6 +139,8 @@ async function sendUptimeNotification(
   monitor: UptimeMonitor,
   eventType: 'down' | 'recovered'
 ): Promise<void> {
+  console.log(`[Uptime Alert] Sending ${eventType} notification for monitor "${monitor.name}" (ID: ${monitor.id})`);
+
   try {
     // Get site details
     const siteResult = await db.query<{ id: number; name: string }>(
@@ -147,7 +149,7 @@ async function sendUptimeNotification(
     );
 
     if (siteResult.rows.length === 0) {
-      console.error('Site not found for uptime notification:', monitor.site_id);
+      console.error('[Uptime Alert] Site not found for uptime notification:', monitor.site_id);
       return;
     }
 
@@ -165,6 +167,8 @@ async function sendUptimeNotification(
     if (alertRuleResult.rows.length > 0) {
       // Use channels linked to the alert rule
       const ruleId = alertRuleResult.rows[0].id;
+      console.log(`[Uptime Alert] Found alert rule ID: ${ruleId}`);
+
       const channelsResult = await db.query<NotificationChannel>(
         `SELECT nc.* FROM notification_channels nc
          INNER JOIN alert_rule_channels arc ON nc.id = arc.notification_channel_id
@@ -172,14 +176,27 @@ async function sendUptimeNotification(
         [ruleId]
       );
       channels = channelsResult.rows;
+
+      // If alert rule has no linked channels, fall back to site channels
+      if (channels.length === 0) {
+        console.log(`[Uptime Alert] No channels linked to alert rule, falling back to site channels`);
+        const siteChannelsResult = await db.query<NotificationChannel>(
+          'SELECT * FROM notification_channels WHERE site_id = $1 AND enabled = TRUE',
+          [monitor.site_id]
+        );
+        channels = siteChannelsResult.rows;
+      }
     } else {
-      // Fallback: get all notification channels for this site
+      // No alert rule: get all notification channels for this site
+      console.log(`[Uptime Alert] No alert rule found, using site channels`);
       const channelsResult = await db.query<NotificationChannel>(
         'SELECT * FROM notification_channels WHERE site_id = $1 AND enabled = TRUE',
         [monitor.site_id]
       );
       channels = channelsResult.rows;
     }
+
+    console.log(`[Uptime Alert] Found ${channels.length} notification channel(s)`);
 
     // Create alert history entry if there's an alert rule
     const alertRule = alertRuleResult.rows[0];
@@ -197,7 +214,7 @@ async function sendUptimeNotification(
     }
 
     if (channels.length === 0) {
-      console.log('No enabled notification channels for site:', monitor.site_id);
+      console.log(`[Uptime Alert] No enabled notification channels found for site ID: ${monitor.site_id}. Alert will not be sent.`);
       return;
     }
 
@@ -377,14 +394,8 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
     result.errorMessage
   );
 
-  // Get failure threshold from alert rule (default to 3 if no rule exists)
-  const alertRuleResult = await db.query<{ failure_threshold: number }>(
-    `SELECT failure_threshold FROM alert_rules
-     WHERE monitor_id = $1 AND alert_type = 'uptime' AND enabled = TRUE
-     LIMIT 1`,
-    [monitor.id]
-  );
-  const failureThreshold = alertRuleResult.rows[0]?.failure_threshold || 3;
+  // Use monitor's failure_threshold (set when monitor is created)
+  const failureThreshold = monitor.failure_threshold || 3;
 
   const now = new Date();
 
@@ -411,6 +422,8 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
     const newFailures = monitor.consecutive_failures + 1;
     const hadAlreadyReachedThreshold = monitor.consecutive_failures >= failureThreshold;
 
+    console.log(`[Uptime] Monitor "${monitor.name}" check failed: ${result.status} (failures: ${newFailures}/${failureThreshold}, error: ${result.errorMessage || 'none'})`);
+
     await updateMonitorStatus(monitor.id, {
       consecutive_failures: newFailures,
       current_status: result.status,
@@ -419,8 +432,11 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
 
     // Only notify when threshold is first reached
     if (newFailures >= failureThreshold && !hadAlreadyReachedThreshold) {
+      console.log(`[Uptime] Threshold reached for monitor "${monitor.name}", triggering alert`);
       await updateMonitorStatus(monitor.id, { last_status_change: now });
       await sendUptimeNotification(monitor, 'down');
+    } else if (hadAlreadyReachedThreshold) {
+      console.log(`[Uptime] Monitor "${monitor.name}" still down, alert already sent`);
     }
   }
 }
