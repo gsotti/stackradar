@@ -46,4 +46,6 @@ spec:
                   key: ADMIN_PASSWORD
             - name: ADMIN_NAME
               value: {{ .Values.admin.name | quote }}
+            - name: DEFAULT_TENANT
+              value: {{ .Values.tenant.name | quote }}
   backoffLimit: 3

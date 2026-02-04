@@ -27,6 +27,10 @@ admin:
   password: changeme
   name: Admin User
 
+# Default tenant (created on first startup)
+tenant:
+  name: Default
+
 # Security secrets
 secrets:
   jwtSecret: change-this-to-a-secure-random-string
