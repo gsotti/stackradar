@@ -24,24 +24,25 @@ export default function LogsLivePage() {
   // Reset system filter on initial load
   useEffect(() => {
     setSelectedSystem('');
+    setLiveLogs([]);
   }, []);
 
   // Live mode polling with smooth log addition
   useEffect(() => {
+    // Clear logs immediately when filters change to provide instant feedback
+    setLiveLogs([]);
+    oldestLogIdRef.current = null;
+    setHasMoreLogs(true);
+
     if (isLiveMode) {
       let isActive = true;
       let pollingInterval = null;
       const myKey = ++requestKeyRef.current;
       const abortController = new AbortController();
 
-      // Debounce: wait 1.5 seconds THEN clear and fetch
+      // Debounce: wait 300ms THEN clear and fetch
       const debounceTimeout = setTimeout(() => {
         if (!isActive) return;
-
-        // NOW clear logs and reset state after debounce period
-        setLiveLogs([]);
-        oldestLogIdRef.current = null;
-        setHasMoreLogs(true);
 
         // REPLACE logs on initial fetch (don't merge with old data)
         const replaceLogsInitial = (logs) => {
@@ -154,7 +155,7 @@ export default function LogsLivePage() {
 
         // Start polling every 3 seconds AFTER initial fetch
         pollingInterval = setInterval(pollLogs, 3000);
-      }, 1500); // Wait 1.5 seconds before clearing and fetching
+      }, 300); // Wait 300ms before clearing and fetching
 
       // Cleanup: Stop polling immediately when filters change
       return () => {

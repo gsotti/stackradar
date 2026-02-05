@@ -16,10 +16,8 @@ export default function LogsTablePage() {
   const [logs, setLogs] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  // Incrementing key to guard against stale async responses
+  // Guard to drop stale responses
   const requestKeyRef = React.useRef(0);
-  // Track if we're waiting for context filter debounce
-  const isDebouncingRef = React.useRef(false);
   const [filters, setFilters] = useState({
     level: '',
     search: '',
@@ -27,39 +25,32 @@ export default function LogsTablePage() {
     offset: 0
   });
   const [expandedLog, setExpandedLog] = useState(null);
+  const lastContextRef = React.useRef([selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem]);
 
-  // Handle context filter changes (site, tenant, etc.) with debounce
+  // Combined effect to handle both context and local filters
   useEffect(() => {
-    // Mark that we're debouncing to prevent immediate fetch
-    isDebouncingRef.current = true;
-
     // Reset pagination when context filters change
-    setFilters(prev => ({ ...prev, offset: 0 }));
+    const isContextChange = [selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem].some(
+      (val, i) => val !== lastContextRef.current[i]
+    );
 
-    // Debounce: wait 1.5 seconds THEN clear and fetch
-    const debounceTimeout = setTimeout(() => {
-      // Clear list just before fetching new data
-      setLogs([]);
+    if (isContextChange) {
+      lastContextRef.current = [selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem];
+      setFilters(prev => ({ ...prev, offset: 0 }));
+      setLogs([]); // Clear logs immediately on context change
       setTotal(0);
-      isDebouncingRef.current = false; // Done debouncing
+    }
+
+    // Debounce: wait 300ms THEN fetch
+    const debounceTimeout = setTimeout(() => {
       fetchLogs();
-    }, 1500);
+    }, 300);
 
     return () => {
       clearTimeout(debounceTimeout);
-      isDebouncingRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem]);
-
-  // Handle local filter changes (level, search, pagination) without debounce
-  useEffect(() => {
-    // Skip if we're waiting for context filter debounce
-    if (isDebouncingRef.current) return;
-
-    fetchLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem, filters]);
 
   const fetchLogs = async () => {
     setLoading(true);
