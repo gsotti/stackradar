@@ -6,6 +6,54 @@ import { triggerManualCheck } from '../services/uptime/checker.js';
 
 const router = Router();
 
+// List all monitors (with optional site/tenant filters)
+router.get('/monitors/all', authMiddleware, async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { tenant, site, environment } = req.query;
+
+    let query = `
+      SELECT m.*,
+        (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time,
+        s.name as site_name
+      FROM uptime_monitors m
+      INNER JOIN sites s ON s.id = m.site_id
+      WHERE s.tenant_id = ANY($1)
+    `;
+
+    const params: any[] = [req.userTenantIds || []];
+
+    if (tenant) {
+      params.push(tenant);
+      query += ` AND s.tenant_id = $${params.length}`;
+    }
+
+    if (site) {
+      params.push(site);
+      query += ` AND s.id = $${params.length}`;
+    }
+
+    if (environment) {
+      params.push(environment);
+      query += ` AND EXISTS (
+        SELECT 1 FROM environments e
+        WHERE e.site_id = s.id AND e.id = $${params.length}
+      )`;
+    }
+
+    query += ` ORDER BY m.current_status = 'down' DESC, m.current_status = 'degraded' DESC, m.name ASC`;
+
+    const result = await db.query<UptimeMonitor>(query, params);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get all monitors error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
 // List monitors for a site
 router.get('/monitors', authMiddleware, async (
   req: AuthRequest,
@@ -382,6 +430,55 @@ router.get('/site/:siteId/status', authMiddleware, async (
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Get site status error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+// Get global stats for dashboard
+router.get('/stats', authMiddleware, async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { tenant, site, environment } = req.query;
+
+    let query = `
+      SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE m.current_status = 'up') as up,
+        COUNT(*) FILTER (WHERE m.current_status = 'down') as down,
+        COUNT(*) FILTER (WHERE m.current_status = 'degraded') as degraded,
+        COUNT(*) FILTER (WHERE m.current_status = 'unknown' OR m.current_status IS NULL) as unknown
+      FROM uptime_monitors m
+      INNER JOIN sites s ON s.id = m.site_id
+      WHERE s.tenant_id = ANY($1)
+    `;
+
+    const params: any[] = [req.userTenantIds || []];
+
+    if (tenant) {
+      params.push(tenant);
+      query += ` AND s.tenant_id = $${params.length}`;
+    }
+
+    if (site) {
+      params.push(site);
+      query += ` AND s.id = $${params.length}`;
+    }
+
+    if (environment) {
+      params.push(environment);
+      query += ` AND EXISTS (
+        SELECT 1 FROM environments e
+        WHERE e.site_id = s.id AND e.id = $${params.length}
+      )`;
+    }
+
+    const result = await db.query(query, params);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get uptime stats error:', error);
     res.status(500).json({ detail: 'Internal server error' });
   }
 });
