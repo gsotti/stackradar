@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, Server, Activity, CheckCircle, AlertTriangle, Bell, BarChart2, Settings, Eye, EyeOff, Copy, Trash2, Terminal, Clock, Box, Radio } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { api } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import AlertsView from '../components/alerts/AlertsView';
 import SiteSetupInstructions from '../components/SiteSetupInstructions';
@@ -11,6 +12,7 @@ import UptimeMonitorsView from '../components/uptime/UptimeMonitorsView';
 export default function SiteDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { showSuccess, showError } = useNotification();
   const [site, setSite] = useState(null);
   const [live, setLive] = useState({ points: [] });
@@ -192,48 +194,52 @@ export default function SiteDetailsPage() {
             <Radio className="w-4 h-4" />
             Monitors
           </button>
-          <button
-            onClick={() => setActiveTab('alerts')}
-            className={`
-              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
-              ${
-                activeTab === 'alerts'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
-              }
-            `}
-          >
-            <Bell className="w-4 h-4" />
-            Alerts
-          </button>
-          <button
-            onClick={() => setActiveTab('setup')}
-            className={`
-              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
-              ${
-                activeTab === 'setup'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
-              }
-            `}
-          >
-            <Terminal className="w-4 h-4" />
-            Setup
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`
-              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
-              ${
-                activeTab === 'settings'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
-              }
-            `}
-          >
-            <Settings className="w-4 h-4" />
-            Settings
-          </button>
+          {!user?.is_viewer && (
+            <>
+              <button
+                onClick={() => setActiveTab('alerts')}
+                className={`
+                  flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+                  ${
+                    activeTab === 'alerts'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+                  }
+                `}
+              >
+                <Bell className="w-4 h-4" />
+                Alerts
+              </button>
+              <button
+                onClick={() => setActiveTab('setup')}
+                className={`
+                  flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+                  ${
+                    activeTab === 'setup'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+                  }
+                `}
+              >
+                <Terminal className="w-4 h-4" />
+                Setup
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`
+                  flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+                  ${
+                    activeTab === 'settings'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+                  }
+                `}
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+            </>
+          )}
         </nav>
       </div>
 

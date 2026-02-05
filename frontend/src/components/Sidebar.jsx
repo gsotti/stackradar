@@ -36,8 +36,10 @@ export default function Sidebar() {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Logs', href: '/logs/live', icon: Activity },
     { name: 'Sites', href: '/sites', icon: Server },
-    { name: 'Environments', href: '/environments', icon: Globe },
-    { name: 'Systems', href: '/systems', icon: Package },
+    ...(!user?.is_viewer ? [
+      { name: 'Environments', href: '/environments', icon: Globe },
+      { name: 'Systems', href: '/systems', icon: Package }
+    ] : []),
     ...(user?.is_admin ? [
       { name: 'Users', href: '/users', icon: Users },
       { name: 'Admin Settings', href: '/admin/settings', icon: Settings }

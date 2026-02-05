@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, Server, Info } from 'lucide-react';
 import { api } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { UptimeStatusDot } from '../components/uptime/UptimeStatusBadge';
 
 export default function SitesPage() {
+  const { user } = useAuth();
   const { selectedTenant } = useApp();
   const { showError, showSuccess } = useNotification();
   const [sites, setSites] = useState([]);
@@ -106,13 +108,15 @@ export default function SitesPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Sites</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your Docker hosts, Kubernetes clusters, and generic sites</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' }); }}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Add Site
-        </button>
+        {!user?.is_viewer && (
+          <button
+            onClick={() => { setShowForm(true); setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' }); }}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Site
+          </button>
+        )}
       </div>
 
       {/* Form Modal */}

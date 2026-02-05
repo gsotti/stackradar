@@ -36,10 +36,10 @@ export default function App() {
               <Route path="/logs" element={<Navigate to="/logs/live" replace />} />
               <Route path="/sites" element={<ProtectedRoute><SitesPage /></ProtectedRoute>} />
               <Route path="/sites/:id" element={<ProtectedRoute><SiteDetailsPage /></ProtectedRoute>} />
-              <Route path="/environments" element={<ProtectedRoute><EnvironmentsPage /></ProtectedRoute>} />
-              <Route path="/systems" element={<ProtectedRoute><SystemsPage /></ProtectedRoute>} />
-              <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
+              <Route path="/environments" element={<ProtectedRoute requireNotViewer><EnvironmentsPage /></ProtectedRoute>} />
+              <Route path="/systems" element={<ProtectedRoute requireNotViewer><SystemsPage /></ProtectedRoute>} />
+              <Route path="/users" element={<ProtectedRoute requireAdmin><UsersPage /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>} />
             </Routes>
           </NotificationProvider>
         </AppProvider>

@@ -4,7 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from './Layout';
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, requireAdmin = false, requireNotViewer = false }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -17,6 +17,14 @@ export default function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requireAdmin && !user.is_admin) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireNotViewer && user.is_viewer) {
+    return <Navigate to="/" replace />;
   }
 
   return <Layout>{children}</Layout>;
