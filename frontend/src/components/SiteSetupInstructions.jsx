@@ -231,18 +231,159 @@ services:
   };
 
   const renderGenericInstructions = () => {
+    const apiEndpoint = `${window.location.origin}/api/ingest/${site.api_token}/single`;
+    const envName = getEnvName();
+
+    const curlSnippet = `curl -X POST "${apiEndpoint}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "level": "INFO",
+    "message": "Hello from StackRadar",
+    "environment": "${envName}",
+    "system": "${selectedSystem || 'my-app'}",
+    "source": "curl"
+  }'`;
+
+    const jsSnippet = `fetch("${apiEndpoint}", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    level: "INFO",
+    message: "Log message from JavaScript",
+    environment: "${envName}",
+    system: "${selectedSystem || 'web-app'}",
+    source: "browser"
+  })
+})
+.then(res => res.json())
+.then(console.log);`;
+
+    const tsSnippet = `interface StackRadarLog {
+  level: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+  message: string;
+  environment: string;
+  system: string;
+  source?: string;
+  metadata?: any;
+}
+
+const log: StackRadarLog = {
+  level: 'INFO',
+  message: 'Log message from TypeScript',
+  environment: '${envName}',
+  system: '${selectedSystem || 'api-service'}',
+  source: 'nodejs'
+};
+
+async function sendLog(data: StackRadarLog) {
+  const response = await fetch("${apiEndpoint}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+
+sendLog(log).catch(console.error);`;
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            Use the HTTP API to send logs and metrics from any platform:
+            Use the HTTP API to send logs from any platform. You can send individual logs or bulk updates.
           </p>
         </div>
+
+        {/* Environment/System Selection */}
+        {(environments.length > 0 || systems.length > 0) && (
+          <div className="grid grid-cols-2 gap-4">
+            {environments.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Environment
+                </label>
+                <select
+                  value={selectedEnv}
+                  onChange={(e) => setSelectedEnv(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {environments.map((env) => (
+                    <option key={env.id} value={env.id}>{env.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {systems.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Target System
+                </label>
+                <select
+                  value={selectedSystem}
+                  onChange={(e) => setSelectedSystem(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Manual system name</option>
+                  {systems.map((sys) => (
+                    <option key={sys.id} value={sys.name}>{sys.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* cURL */}
         <div>
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">API Endpoint</h4>
-          <code className="block bg-gray-900 text-green-400 p-3 rounded-lg text-xs">
-            POST {window.location.origin}/api/ingest/{site.api_token}
-          </code>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">cURL (Single Log)</h3>
+            <button
+              onClick={() => copyToClipboard(curlSnippet, 'curl')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['curl'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {curlSnippet}
+          </pre>
+        </div>
+
+        {/* JavaScript */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">JavaScript (Fetch)</h3>
+            <button
+              onClick={() => copyToClipboard(jsSnippet, 'js')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['js'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {jsSnippet}
+          </pre>
+        </div>
+
+        {/* TypeScript */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">TypeScript / Node.js</h3>
+            <button
+              onClick={() => copyToClipboard(tsSnippet, 'ts')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['ts'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {tsSnippet}
+          </pre>
         </div>
       </div>
     );
