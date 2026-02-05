@@ -223,9 +223,15 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
 
                 <div className="flex items-center justify-between mt-2 pt-4 border-t border-gray-50 dark:border-gray-700">
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span>Window: {rule.time_window_minutes}m</span>
-                    <span>•</span>
-                    <span>Cooldown: {rule.cooldown_minutes}m</span>
+                    {rule.alert_type === 'metric' ? (
+                      <>
+                        <span>Window: {rule.time_window_minutes}m</span>
+                        <span>•</span>
+                        <span>Cooldown: {rule.cooldown_minutes}m</span>
+                      </>
+                    ) : (
+                      <span>Threshold: {rule.failure_threshold} failures</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-[10px] font-bold text-gray-400 uppercase">Channels:</span>

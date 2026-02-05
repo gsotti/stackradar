@@ -164,6 +164,37 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-8">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                Rule Name *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                placeholder="CPU high usage alert"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                placeholder="Alert when service is down or resource usage is high"
+                rows={2}
+              />
+            </div>
+          </div>
+
           {/* Rule Type Selection */}
           <div className="grid grid-cols-2 gap-4">
             <button
@@ -192,63 +223,33 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Rule Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
-                  placeholder="CPU high usage alert"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
-                  placeholder="Alert when cluster CPU usage exceeds 80%"
-                  rows={2}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Severity
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['info', 'warning', 'critical'].map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, severity: s as AlertSeverity }))}
-                      className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all border ${
-                        formData.severity === s
-                          ? s === 'critical' ? 'bg-red-100 border-red-500 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            : s === 'warning' ? 'bg-yellow-100 border-yellow-500 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                            : 'bg-blue-100 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-gray-50 border-gray-200 text-gray-500 dark:bg-gray-900 dark:border-gray-700'
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+          <div className="space-y-6">
+            <div className="w-full">
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                Severity
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {['info', 'warning', 'critical'].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, severity: s as AlertSeverity }))}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all border ${
+                      formData.severity === s
+                        ? s === 'critical' ? 'bg-red-100 border-red-500 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                          : s === 'warning' ? 'bg-yellow-100 border-yellow-500 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          : 'bg-blue-100 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-gray-50 border-gray-200 text-gray-500 dark:bg-gray-900 dark:border-gray-700'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="space-y-6 bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
+
+            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-4 w-full">
               <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 Conditions
               </h3>
@@ -375,7 +376,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       onChange={handleChange}
                       min="1"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
-                      placeholder="e.g. 3 consecutive failures"
+                      placeholder="e.g. 3"
                       required
                     />
                     <p className="mt-1 text-[10px] text-gray-500">Alert after this many consecutive check failures</p>
@@ -383,39 +384,39 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                 </>
               )}
             </div>
-          </div>
 
-          {/* Notification Channels */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">
-              Notification Channels
-            </label>
-            {channels.length === 0 ? (
-              <div className="p-4 bg-amber-50 dark:bg-yellow-900/20 border border-amber-200 dark:border-yellow-800 rounded-xl text-sm text-amber-700 dark:text-yellow-400">
-                No active notification channels found. Please create one in the Notification Channels tab first.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {channels.map((channel) => (
-                  <button
-                    key={channel.id}
-                    type="button"
-                    onClick={() => handleChannelToggle(channel.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                      formData.notification_channel_ids.includes(channel.id)
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-600 dark:text-gray-400'
-                    }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${formData.notification_channel_ids.includes(channel.id) ? 'bg-blue-500' : 'bg-gray-300'}`} />
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold truncate">{channel.name}</p>
-                      <p className="text-[10px] uppercase tracking-wider font-semibold opacity-70">{channel.channel_type}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Notification Channels */}
+            <div className="w-full">
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">
+                Notification Channels
+              </label>
+              {channels.length === 0 ? (
+                <div className="p-4 bg-amber-50 dark:bg-yellow-900/20 border border-amber-200 dark:border-yellow-800 rounded-xl text-sm text-amber-700 dark:text-yellow-400">
+                  No active notification channels found. Please create one in the Notification Channels tab first.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {channels.map((channel) => (
+                    <button
+                      key={channel.id}
+                      type="button"
+                      onClick={() => handleChannelToggle(channel.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                        formData.notification_channel_ids.includes(channel.id)
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-600 dark:text-gray-400'
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${formData.notification_channel_ids.includes(channel.id) ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold truncate">{channel.name}</p>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold opacity-70">{channel.channel_type}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
