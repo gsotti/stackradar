@@ -1,0 +1,455 @@
+import React, { useState, useEffect } from 'react';
+import { Copy, Terminal, X } from 'lucide-react';
+import { api } from '../utils/api';
+import { Site, Environment, System } from '../types';
+
+interface SiteSetupInstructionsProps {
+  site: Site & { tenant_name?: string };
+  onClose?: () => void;
+  embedded?: boolean;
+}
+
+export default function SiteSetupInstructions({ site, onClose, embedded = false }: SiteSetupInstructionsProps) {
+  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const [systems, setSystems] = useState<System[]>([]);
+  const [selectedEnv, setSelectedEnv] = useState<string>('');
+  const [selectedSystem, setSelectedSystem] = useState<string>('');
+  const [copied, setCopied] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetchEnvironments();
+  }, [site.id]);
+
+  useEffect(() => {
+    if (selectedEnv) {
+      fetchSystems(selectedEnv);
+    } else {
+      setSystems([]);
+      setSelectedSystem('');
+    }
+  }, [selectedEnv]);
+
+  const fetchEnvironments = async () => {
+    try {
+      const data = await api.get<Environment[]>(`/environments?site_id=${site.id}`);
+      setEnvironments(data || []);
+      if (data && data.length > 0) {
+        setSelectedEnv(String(data[0].id));
+      }
+    } catch (error) {
+      console.error('Error fetching environments:', error);
+    }
+  };
+
+  const fetchSystems = async (envId: string) => {
+    try {
+      const data = await api.get<System[]>(`/systems?environment_id=${envId}`);
+      setSystems(data || []);
+      if (data && data.length > 0) {
+        setSelectedSystem(data[0].name);
+      }
+    } catch (error) {
+      console.error('Error fetching systems:', error);
+    }
+  };
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied({ ...copied, [key]: true });
+    setTimeout(() => setCopied((prev) => ({ ...prev, [key]: false })), 2000);
+  };
+
+  const getEnvName = () => {
+    const env = environments.find(e => e.id === parseInt(selectedEnv));
+    return env ? env.name : 'dev';
+  };
+
+  const renderDockerInstructions = () => {
+    const logCollectorCmd = `docker run -d \\
+  --name stackradar-docker-logs-collector \\
+  --restart unless-stopped \\
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \\
+  -e STACKRADAR_API_URL="${window.location.origin}" \\
+  -e API_TOKEN="${site.api_token}" \\
+  -e TENANT="${site.tenant_name || 'default'}" \\
+  -e SITE="${site.name}" \\
+  -e ENVIRONMENT="${getEnvName()}"${selectedSystem ? ` \\
+  -e CONTAINER_FILTER="${selectedSystem}"` : ''} \\
+  ghcr.io/gsotti/stackradar-docker-logs-collector:latest`;
+
+    const statsCollectorCmd = `docker run -d \\
+  --name stackradar-docker-stats-collector \\
+  --restart unless-stopped \\
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \\
+  -e STACKRADAR_API_URL="${window.location.origin}" \\
+  -e API_TOKEN="${site.api_token}" \\
+  -e COLLECTION_INTERVAL_MS="60000" \\
+  ghcr.io/gsotti/stackradar-docker-stats-collector:latest`;
+
+    const composeFile = `version: '3.8'
+
+services:
+  stackradar-docker-logs-collector:
+    image: ghcr.io/gsotti/stackradar-docker-logs-collector:latest
+    container_name: stackradar-docker-logs-collector
+    restart: unless-stopped
+    environment:
+      STACKRADAR_API_URL: "${window.location.origin}"
+      API_TOKEN: "${site.api_token}"
+      TENANT: "${site.tenant_name || 'default'}"
+      SITE: "${site.name}"
+      ENVIRONMENT: "${getEnvName()}"${selectedSystem ? `\n      CONTAINER_FILTER: "${selectedSystem}"` : ''}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  stackradar-docker-stats-collector:
+    image: ghcr.io/gsotti/stackradar-docker-stats-collector:latest
+    container_name: stackradar-docker-stats-collector
+    restart: unless-stopped
+    environment:
+      STACKRADAR_API_URL: "${window.location.origin}"
+      API_TOKEN: "${site.api_token}"
+      COLLECTION_INTERVAL_MS: "60000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro`;
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            Deploy the collectors on your Docker host to start collecting logs and metrics.
+          </p>
+        </div>
+
+        {/* Environment/System Selection */}
+        {(environments.length > 0 || systems.length > 0) && (
+          <div className="grid grid-cols-2 gap-4">
+            {environments.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Environment
+                </label>
+                <select
+                  value={selectedEnv}
+                  onChange={(e) => setSelectedEnv(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {environments.map((env) => (
+                    <option key={env.id} value={env.id}>{env.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {systems.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Filter by System (Optional)
+                </label>
+                <select
+                  value={selectedSystem}
+                  onChange={(e) => setSelectedSystem(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">All containers</option>
+                  {systems.map((sys) => (
+                    <option key={sys.id} value={sys.name}>{sys.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Log Collector Command */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Log Collector (Docker Run)
+            </h3>
+            <button
+              onClick={() => copyToClipboard(logCollectorCmd, 'log-cmd')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['log-cmd'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {logCollectorCmd}
+          </pre>
+        </div>
+
+        {/* Stats Collector Command */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Stats Collector (Docker Run)
+            </h3>
+            <button
+              onClick={() => copyToClipboard(statsCollectorCmd, 'stats-cmd')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['stats-cmd'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {statsCollectorCmd}
+          </pre>
+        </div>
+
+        {/* Docker Compose */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Docker Compose (Both Collectors)
+            </h3>
+            <button
+              onClick={() => copyToClipboard(composeFile, 'compose')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['compose'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {composeFile}
+          </pre>
+        </div>
+      </div>
+    );
+  };
+
+  const renderKubernetesInstructions = () => {
+    return (
+      <div className="space-y-4">
+        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+          <p className="text-sm text-purple-800 dark:text-purple-200">
+            Deploy the log collector to your Kubernetes cluster using the provided manifests.
+          </p>
+        </div>
+        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
+          <code className="text-xs">
+            kubectl apply -f https://raw.githubusercontent.com/your-repo/k8s-collector/main/deployment.yaml
+          </code>
+        </div>
+      </div>
+    );
+  };
+
+  const renderGenericInstructions = () => {
+    const apiEndpoint = `${window.location.origin}/api/ingest/${site.api_token}/single`;
+    const envName = getEnvName();
+
+    const curlSnippet = `curl -X POST "${apiEndpoint}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "level": "INFO",
+    "message": "Hello from StackRadar",
+    "environment": "${envName}",
+    "system": "${selectedSystem || 'my-app'}",
+    "source": "curl"
+  }'`;
+
+    const jsSnippet = `fetch("${apiEndpoint}", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    level: "INFO",
+    message: "Log message from JavaScript",
+    environment: "${envName}",
+    system: "${selectedSystem || 'web-app'}",
+    source: "browser"
+  })
+})
+.then(res => res.json())
+.then(console.log);`;
+
+    const tsSnippet = `interface StackRadarLog {
+  level: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+  message: string;
+  environment: string;
+  system: string;
+  source?: string;
+  metadata?: any;
+}
+
+const log: StackRadarLog = {
+  level: 'INFO',
+  message: 'Log message from TypeScript',
+  environment: '${envName}',
+  system: '${selectedSystem || 'api-service'}',
+  source: 'nodejs'
+};
+
+async function sendLog(data: StackRadarLog) {
+  const response = await fetch("${apiEndpoint}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+
+sendLog(log).catch(console.error);`;
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Use the HTTP API to send logs from any platform. You can send individual logs or bulk updates.
+          </p>
+        </div>
+
+        {/* Environment/System Selection */}
+        {(environments.length > 0 || systems.length > 0) && (
+          <div className="grid grid-cols-2 gap-4">
+            {environments.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Environment
+                </label>
+                <select
+                  value={selectedEnv}
+                  onChange={(e) => setSelectedEnv(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {environments.map((env) => (
+                    <option key={env.id} value={env.id}>{env.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {systems.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Target System
+                </label>
+                <select
+                  value={selectedSystem}
+                  onChange={(e) => setSelectedSystem(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Default (my-app)</option>
+                  {systems.map((sys) => (
+                    <option key={sys.id} value={sys.name}>{sys.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* cURL Snippet */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <Terminal className="w-4 h-4" /> cURL
+            </h3>
+            <button
+              onClick={() => copyToClipboard(curlSnippet, 'curl')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['curl'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {curlSnippet}
+          </pre>
+        </div>
+
+        {/* JS Snippet */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              JavaScript (Fetch)
+            </h3>
+            <button
+              onClick={() => copyToClipboard(jsSnippet, 'js')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['js'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {jsSnippet}
+          </pre>
+        </div>
+
+        {/* TS Snippet */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              TypeScript / Node.js
+            </h3>
+            <button
+              onClick={() => copyToClipboard(tsSnippet, 'ts')}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <Copy className="w-4 h-4" />
+              {copied['ts'] ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+            {tsSnippet}
+          </pre>
+        </div>
+      </div>
+    );
+  };
+
+  const content = (
+    <div className={`${embedded ? '' : 'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col'}`}>
+      {!embedded && (
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Terminal className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Setup Instructions</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Configure {site.name} for log collection</p>
+            </div>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
+              <X className="w-6 h-6 text-gray-500" />
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className={`${embedded ? '' : 'p-6 overflow-y-auto'}`}>
+        {site.site_type === 'docker' ? renderDockerInstructions() :
+         site.site_type === 'kubernetes' ? renderKubernetesInstructions() :
+         renderGenericInstructions()}
+      </div>
+
+      {!embedded && (
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+          >
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-3xl">
+        {content}
+      </div>
+    </div>
+  );
+}

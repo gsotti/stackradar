@@ -40,3 +40,4 @@ coverage/
 *.tgz
 .cache/
 /plans
+/images/

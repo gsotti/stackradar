@@ -427,7 +427,10 @@ router.get('/site/:siteId/status', authMiddleware, async (
       return;
     }
 
-    res.json(result.rows[0]);
+    res.json({
+      status: result.rows[0].current_status,
+      ...result.rows[0]
+    });
   } catch (error) {
     console.error('Get site status error:', error);
     res.status(500).json({ detail: 'Internal server error' });

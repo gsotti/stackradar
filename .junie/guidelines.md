@@ -40,9 +40,7 @@ StackRadar is a self-hosted full-stack observability platform designed for log a
 - Maintain consistency with the existing directory structure and naming conventions.
 - When modifying the backend, ensure that `CLUSTER_MODE` and background job scheduling are considered in `backend/src/index.ts`.
 
-### Testing
-- Verify changes by running relevant tests if available.
+### Execution, Testing & Building
+- **Strict Restriction**: Do NOT run tests, build the project, or execute any changes.
+- This project has its own deployment and verification workflow outside of this environment.
 - For backend changes, ensure that any new database requirements are reflected in migrations.
-
-### Building
-- Before submitting major changes, ensure the project can still be built using the provided Dockerfile or local npm scripts.
