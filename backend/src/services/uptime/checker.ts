@@ -454,7 +454,7 @@ async function getMonitorsDueForCheck(): Promise<UptimeMonitor[]> {
   const result = await db.query<UptimeMonitor>(
     `SELECT * FROM uptime_monitors
      WHERE enabled = true
-       AND (last_checked_at IS NULL OR last_checked_at + (interval_seconds || ' seconds')::interval < NOW())
+       AND (last_checked_at IS NULL OR last_checked_at + (interval_seconds || ' seconds')::interval <= NOW() + interval '1 second')
      ORDER BY last_checked_at ASC NULLS FIRST
      LIMIT 100`
   );

@@ -118,9 +118,9 @@ function scheduleAlertJobOnce() {
 
 
 
-// Uptime Monitoring Cron Job (runs every minute)
+// Uptime Monitoring Cron Job (runs every 30 seconds)
 function scheduleUptimeJobOnce() {
-  const job = new CronJob('* * * * *', async () => {
+  const job = new CronJob('*/30 * * * * *', async () => {
     try {
       await runUptimeChecks();
     } catch (error) {
@@ -129,7 +129,7 @@ function scheduleUptimeJobOnce() {
   });
 
   job.start();
-  console.log('📅 Uptime monitoring cron job scheduled (every minute)');
+  console.log('📅 Uptime monitoring cron job scheduled (every 30 seconds)');
 }
 
 // Cluster bootstrap: utilize multiple CPU cores if enabled
