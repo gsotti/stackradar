@@ -494,38 +494,50 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
       await sendUptimeNotification(monitor, 'down', triggerMessage);
     } else if (hadAlreadyReachedThreshold) {
       console.log(`[Uptime] Monitor "${monitor.name}" still down, checking for recurring notification`);
-      
-      // Check for recurring notification
-      const lastAlertResult = await db.query<{ id: number; last_notified_at: Date; triggered_at: Date; alert_rule_id: number; repeat_interval_hours: number }>(
-        `SELECT h.id, h.last_notified_at, h.triggered_at, h.alert_rule_id, r.repeat_interval_hours
-         FROM alert_history h
-         JOIN alert_rules r ON r.id = h.alert_rule_id
-         WHERE h.site_id = $1 AND h.alert_rule_id IS NOT NULL AND h.state = 'firing' AND h.resolved_at IS NULL
-         ORDER BY h.triggered_at DESC
+
+      // First, get the alert rule for THIS specific monitor
+      const monitorAlertRuleResult = await db.query<{ id: number; repeat_interval_hours: number }>(
+        `SELECT id, repeat_interval_hours FROM alert_rules
+         WHERE monitor_id = $1 AND alert_type = 'uptime' AND enabled = TRUE
          LIMIT 1`,
-        [monitor.site_id]
+        [monitor.id]
       );
 
-      if (lastAlertResult.rows.length > 0) {
-        const lastAlert = lastAlertResult.rows[0];
-        const lastNotified = lastAlert.last_notified_at 
-          ? new Date(lastAlert.last_notified_at) 
-          : new Date(lastAlert.triggered_at);
-        
-        const repeatIntervalMs = (lastAlert.repeat_interval_hours || 1) * 60 * 60 * 1000;
-        const nextNotificationTime = new Date(lastNotified.getTime() + repeatIntervalMs);
+      // Only proceed with recurring notification check if this monitor has an alert rule
+      if (monitorAlertRuleResult.rows.length > 0) {
+        const monitorAlertRule = monitorAlertRuleResult.rows[0];
 
-        if (Date.now() >= nextNotificationTime.getTime()) {
-          console.log(`🔔 Sending recurring notification for uptime alert "${monitor.name}" (still firing, interval: ${lastAlert.repeat_interval_hours}h)`);
-          
-          // Update last_notified_at
-          await db.query(
-            'UPDATE alert_history SET last_notified_at = NOW() WHERE id = $1',
-            [lastAlert.id]
-          );
-          
-          // Send notification
-          await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`);
+        // Check for recurring notification - filter by THIS monitor's alert rule ID
+        const lastAlertResult = await db.query<{ id: number; last_notified_at: Date; triggered_at: Date }>(
+          `SELECT h.id, h.last_notified_at, h.triggered_at
+           FROM alert_history h
+           WHERE h.alert_rule_id = $1 AND h.state = 'firing' AND h.resolved_at IS NULL
+           ORDER BY h.triggered_at DESC
+           LIMIT 1`,
+          [monitorAlertRule.id]
+        );
+
+        if (lastAlertResult.rows.length > 0) {
+          const lastAlert = lastAlertResult.rows[0];
+          const lastNotified = lastAlert.last_notified_at
+            ? new Date(lastAlert.last_notified_at)
+            : new Date(lastAlert.triggered_at);
+
+          const repeatIntervalMs = (monitorAlertRule.repeat_interval_hours || 1) * 60 * 60 * 1000;
+          const nextNotificationTime = new Date(lastNotified.getTime() + repeatIntervalMs);
+
+          if (Date.now() >= nextNotificationTime.getTime()) {
+            console.log(`🔔 Sending recurring notification for uptime alert "${monitor.name}" (still firing, interval: ${monitorAlertRule.repeat_interval_hours}h)`);
+
+            // Update last_notified_at
+            await db.query(
+              'UPDATE alert_history SET last_notified_at = NOW() WHERE id = $1',
+              [lastAlert.id]
+            );
+
+            // Send notification
+            await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`);
+          }
         }
       }
     }

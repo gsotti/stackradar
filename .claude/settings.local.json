@@ -12,7 +12,8 @@
       "Bash(cat:*)",
       "Bash(grep:*)",
       "Bash(test:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(npm run build:no-obfuscate:*)"
     ],
     "deny": [],
     "ask": []

@@ -208,7 +208,7 @@ function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checkin
             <div className="flex flex-col gap-0.5">
               <span className="font-medium">Last 30 checks</span>
             </div>
-            <span>Checked {formatTimeAgo(monitor.last_checked_at)} {monitor.last_checked_at && `(${formatInLocalTime(monitor.last_checked_at, 'dd.MM.yyyy HH:mm:ss')})`}</span>
+            <span>Checked {formatTimeAgo(monitor.last_checked_at)}</span>
           </div>
           <UptimeBar checks={checks} />
         </div>
