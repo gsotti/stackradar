@@ -202,18 +202,8 @@ function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checkin
           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
             <div className="flex flex-col gap-0.5">
               <span className="font-medium">Last 30 checks</span>
-              {monitor.last_triggered_at && monitor.current_status === 'down' && (
-                <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider">
-                  Triggered {formatTimeAgo(monitor.last_triggered_at)}
-                </span>
-              )}
-              {monitor.last_triggered_at && monitor.current_status === 'up' && (
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider">
-                  Last Triggered {formatTimeAgo(monitor.last_triggered_at)}
-                </span>
-              )}
             </div>
-            <span>Checked {formatTimeAgo(monitor.last_checked_at)}</span>
+            <span>Checked {formatTimeAgo(monitor.last_checked_at)} {monitor.last_checked_at && `(${format(new Date(monitor.last_checked_at), 'dd.MM.yyyy HH:mm:ss')})`}</span>
           </div>
           <UptimeBar checks={checks} />
         </div>

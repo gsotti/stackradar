@@ -479,8 +479,7 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
     if (newFailures >= failureThreshold && !hadAlreadyReachedThreshold) {
       console.log(`[Uptime] Threshold reached for monitor "${monitor.name}", triggering alert`);
       await updateMonitorStatus(monitor.id, { 
-        last_status_change: now,
-        last_triggered_at: now
+        last_status_change: now
       });
       await sendUptimeNotification(monitor, 'down');
     } else if (hadAlreadyReachedThreshold) {
