@@ -73,10 +73,12 @@ function formatTimeAgo(date: string | null | undefined) {
 
   const seconds = Math.floor((Date.now() - parsedDate.getTime()) / 1000);
 
-  // Handle negative values (future dates due to timezone issues or clock skew)
-  if (seconds < 0) return 'Just now';
+  // Debug: log if seconds is negative (indicates timezone issue)
+  if (seconds < 0) {
+    console.warn('[formatTimeAgo] Negative seconds detected:', { date, parsedDate: parsedDate.toISOString(), seconds, now: new Date().toISOString() });
+  }
 
-  if (seconds < 5) return 'Just now';
+  if (seconds < 0) return `${Math.abs(Math.floor(seconds / 60))}m ahead`;
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
