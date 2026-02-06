@@ -17,11 +17,7 @@ router.get('/monitors/all', authMiddleware, async (
     let query = `
       SELECT m.*,
         (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time,
-        s.name as site_name,
-        to_char(m.last_checked_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_checked_at_iso,
-        to_char(m.last_status_change AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_status_change_iso,
-        to_char(m.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at_iso,
-        to_char(m.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at_iso
+        s.name as site_name
       FROM uptime_monitors m
       INNER JOIN sites s ON s.id = m.site_id
       WHERE s.tenant_id = ANY($1)
@@ -51,20 +47,7 @@ router.get('/monitors/all', authMiddleware, async (
 
     const result = await db.query<UptimeMonitor>(query, params);
 
-    // Replace timestamp fields with ISO formatted versions
-    const monitors = result.rows.map((m: any) => ({
-      ...m,
-      last_checked_at: m.last_checked_at_iso || m.last_checked_at,
-      last_status_change: m.last_status_change_iso || m.last_status_change,
-      created_at: m.created_at_iso || m.created_at,
-      updated_at: m.updated_at_iso || m.updated_at,
-      last_checked_at_iso: undefined,
-      last_status_change_iso: undefined,
-      created_at_iso: undefined,
-      updated_at_iso: undefined,
-    }));
-
-    res.json(monitors);
+    res.json(result.rows);
   } catch (error) {
     console.error('Get all monitors error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -97,31 +80,14 @@ router.get('/monitors', authMiddleware, async (
 
     const result = await db.query<UptimeMonitor>(
       `SELECT m.*,
-        (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time,
-        to_char(m.last_checked_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_checked_at_iso,
-        to_char(m.last_status_change AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_status_change_iso,
-        to_char(m.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at_iso,
-        to_char(m.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at_iso
+        (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time
        FROM uptime_monitors m
        WHERE m.site_id = $1
        ORDER BY m.is_main DESC, m.name ASC`,
       [site_id]
     );
 
-    // Replace timestamp fields with ISO formatted versions
-    const monitors = result.rows.map((m: any) => ({
-      ...m,
-      last_checked_at: m.last_checked_at_iso || m.last_checked_at,
-      last_status_change: m.last_status_change_iso || m.last_status_change,
-      created_at: m.created_at_iso || m.created_at,
-      updated_at: m.updated_at_iso || m.updated_at,
-      last_checked_at_iso: undefined,
-      last_status_change_iso: undefined,
-      created_at_iso: undefined,
-      updated_at_iso: undefined,
-    }));
-
-    res.json(monitors);
+    res.json(result.rows);
   } catch (error) {
     console.error('Get monitors error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -135,12 +101,7 @@ router.get('/monitors/:id', authMiddleware, async (
 ): Promise<void> => {
   try {
     const result = await db.query<UptimeMonitor>(
-      `SELECT m.*,
-        to_char(m.last_checked_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_checked_at_iso,
-        to_char(m.last_status_change AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_status_change_iso,
-        to_char(m.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at_iso,
-        to_char(m.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at_iso
-       FROM uptime_monitors m
+      `SELECT m.* FROM uptime_monitors m
        INNER JOIN sites s ON s.id = m.site_id
        WHERE m.id = $1 AND s.tenant_id = ANY($2)`,
       [req.params.id, req.userTenantIds || []]
@@ -153,33 +114,16 @@ router.get('/monitors/:id', authMiddleware, async (
 
     // Get recent checks
     const checksResult = await db.query<UptimeCheck>(
-      `SELECT *,
-        to_char(checked_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as checked_at_iso
-       FROM uptime_checks
+      `SELECT * FROM uptime_checks
        WHERE monitor_id = $1
        ORDER BY checked_at DESC
        LIMIT 10`,
       [req.params.id]
     );
 
-    const monitor: any = result.rows[0];
-    const checks = checksResult.rows.map((c: any) => ({
-      ...c,
-      checked_at: c.checked_at_iso || c.checked_at,
-      checked_at_iso: undefined,
-    }));
-
     res.json({
-      ...monitor,
-      last_checked_at: monitor.last_checked_at_iso || monitor.last_checked_at,
-      last_status_change: monitor.last_status_change_iso || monitor.last_status_change,
-      created_at: monitor.created_at_iso || monitor.created_at,
-      updated_at: monitor.updated_at_iso || monitor.updated_at,
-      last_checked_at_iso: undefined,
-      last_status_change_iso: undefined,
-      created_at_iso: undefined,
-      updated_at_iso: undefined,
-      recent_checks: checks,
+      ...result.rows[0],
+      recent_checks: checksResult.rows,
     });
   } catch (error) {
     console.error('Get monitor error:', error);
@@ -399,9 +343,7 @@ router.get('/monitors/:id/history', authMiddleware, async (
     }
 
     const result = await db.query<UptimeCheck>(
-      `SELECT *,
-        to_char(checked_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as checked_at_iso
-       FROM uptime_checks
+      `SELECT * FROM uptime_checks
        WHERE monitor_id = $1
        ORDER BY checked_at DESC
        LIMIT $2 OFFSET $3`,
@@ -413,15 +355,8 @@ router.get('/monitors/:id/history', authMiddleware, async (
       [req.params.id]
     );
 
-    // Replace timestamp fields with ISO formatted versions
-    const checks = result.rows.map((c: any) => ({
-      ...c,
-      checked_at: c.checked_at_iso || c.checked_at,
-      checked_at_iso: undefined,
-    }));
-
     res.json({
-      checks,
+      checks: result.rows,
       total: parseInt(countResult.rows[0].count),
       limit: parseInt(limit as string),
       offset: parseInt(offset as string),
@@ -480,11 +415,7 @@ router.get('/site/:siteId/status', authMiddleware, async (
     // Get main monitor status
     const result = await db.query<UptimeMonitor & { last_response_time: number }>(
       `SELECT m.*,
-        (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time,
-        to_char(m.last_checked_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_checked_at_iso,
-        to_char(m.last_status_change AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_status_change_iso,
-        to_char(m.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at_iso,
-        to_char(m.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at_iso
+        (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time
        FROM uptime_monitors m
        WHERE m.site_id = $1 AND m.is_main = true
        LIMIT 1`,
@@ -496,18 +427,9 @@ router.get('/site/:siteId/status', authMiddleware, async (
       return;
     }
 
-    const monitor: any = result.rows[0];
     res.json({
-      status: monitor.current_status,
-      ...monitor,
-      last_checked_at: monitor.last_checked_at_iso || monitor.last_checked_at,
-      last_status_change: monitor.last_status_change_iso || monitor.last_status_change,
-      created_at: monitor.created_at_iso || monitor.created_at,
-      updated_at: monitor.updated_at_iso || monitor.updated_at,
-      last_checked_at_iso: undefined,
-      last_status_change_iso: undefined,
-      created_at_iso: undefined,
-      updated_at_iso: undefined,
+      status: result.rows[0].current_status,
+      ...result.rows[0],
     });
   } catch (error) {
     console.error('Get site status error:', error);
