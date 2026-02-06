@@ -23,7 +23,7 @@ interface LiveMetricsResponse {
 }
 
 export default function SiteDetailsPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id, tab: activeTab = 'metrics' } = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showSuccess, showError } = useNotification();
@@ -32,7 +32,14 @@ export default function SiteDetailsPage() {
   const [summary, setSummary] = useState<K8sMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [activeTab, setActiveTab] = useState('metrics');
+
+  const setActiveTab = (tab: string) => {
+    if (tab === 'metrics') {
+      navigate(`/sites/${id}`);
+    } else {
+      navigate(`/sites/${id}/${tab}`);
+    }
+  };
   const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' as const });
   const [tokenVisible, setTokenVisible] = useState(false);
   const [saving, setSaving] = useState(false);
