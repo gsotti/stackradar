@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Zap, ExternalLink, Clock, RefreshCw, CheckCircle, XCircle, AlertTriangle, Radio, TrendingUp, Activity, LucideIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatInLocalTime } from '../../utils/dateUtils';
+import { parseAsUTC, formatInLocalTime } from '../../utils/dateUtils';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -68,15 +68,10 @@ const intervalLabels: Record<number, string> = {
 function formatTimeAgo(date: string | null | undefined) {
   if (!date) return 'Never';
   
-  // Ensure we treat the input as UTC
-  const normalizedDateStr = date.endsWith('Z') || date.includes('+') || date.includes('T') 
-    ? (date.endsWith('Z') || date.includes('+') ? date : `${date}Z`)
-    : `${date.replace(' ', 'T')}Z`;
+  const parsedDate = parseAsUTC(date);
+  if (!parsedDate) return date;
   
-  const parsedDate = new Date(normalizedDateStr);
-  const timestamp = isNaN(parsedDate.getTime()) ? new Date(date).getTime() : parsedDate.getTime();
-  
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  const seconds = Math.floor((Date.now() - parsedDate.getTime()) / 1000);
   if (seconds < 5) return 'Just now';
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
