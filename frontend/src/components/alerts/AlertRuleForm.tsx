@@ -30,6 +30,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
     severity: 'warning' as AlertSeverity,
     cooldown_minutes: 30,
     failure_threshold: 3,
+    repeat_interval_hours: 1,
     notification_channel_ids: [] as number[],
     monitor_id: '' as string | number,
   });
@@ -53,6 +54,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
         severity: rule.severity || 'warning',
         cooldown_minutes: rule.cooldown_minutes || 30,
         failure_threshold: rule.failure_threshold || 3,
+        repeat_interval_hours: rule.repeat_interval_hours || 1,
         notification_channel_ids: rule.channel_ids || [],
         monitor_id: rule.monitor_id || '',
       });
@@ -312,6 +314,23 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                     </div>
                   </div>
 
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                      Repeat Notification Every (hours)
+                    </label>
+                    <input
+                      type="number"
+                      name="repeat_interval_hours"
+                      value={formData.repeat_interval_hours}
+                      onChange={handleChange}
+                      min="1"
+                      max="24"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                      required
+                    />
+                    <p className="mt-1 text-[10px] text-gray-500">Resend alert every X hours if the issue persists (1-24)</p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
@@ -380,6 +399,23 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       required
                     />
                     <p className="mt-1 text-[10px] text-gray-500">Alert after this many consecutive check failures</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                      Repeat Notification Every (hours)
+                    </label>
+                    <input
+                      type="number"
+                      name="repeat_interval_hours"
+                      value={formData.repeat_interval_hours}
+                      onChange={handleChange}
+                      min="1"
+                      max="24"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                      required
+                    />
+                    <p className="mt-1 text-[10px] text-gray-500">Resend alert every X hours if the issue persists (1-24)</p>
                   </div>
                 </>
               )}

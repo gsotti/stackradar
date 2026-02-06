@@ -165,8 +165,9 @@ router.post(
       const result = await db.query<AlertRule>(
         `INSERT INTO alert_rules (
           site_id, name, description, alert_type, metric_type, threshold_operator,
-          threshold_value, time_window_minutes, cooldown_minutes, failure_threshold, severity, monitor_id, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          threshold_value, time_window_minutes, cooldown_minutes, failure_threshold, 
+          repeat_interval_hours, severity, monitor_id, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *`,
         [
           body.site_id,
@@ -179,6 +180,7 @@ router.post(
           body.time_window_minutes || 5,
           body.cooldown_minutes || 30,
           alertType === 'uptime' ? (body.failure_threshold || 3) : null,
+          body.repeat_interval_hours || 1,
           body.severity || 'warning',
           alertType === 'uptime' ? body.monitor_id : null,
           req.userId,
@@ -277,6 +279,10 @@ router.put(
       if (body.failure_threshold !== undefined) {
         updates.push(`failure_threshold = $${paramCount++}`);
         values.push(body.failure_threshold);
+      }
+      if (body.repeat_interval_hours !== undefined) {
+        updates.push(`repeat_interval_hours = $${paramCount++}`);
+        values.push(body.repeat_interval_hours);
       }
       if (body.monitor_id !== undefined) {
         updates.push(`monitor_id = $${paramCount++}`);

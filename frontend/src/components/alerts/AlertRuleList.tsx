@@ -228,9 +228,23 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                         <span>Window: {rule.time_window_minutes}m</span>
                         <span>•</span>
                         <span>Cooldown: {rule.cooldown_minutes}m</span>
+                        {rule.repeat_interval_hours > 1 && (
+                          <>
+                            <span>•</span>
+                            <span>Repeat: {rule.repeat_interval_hours}h</span>
+                          </>
+                        )}
                       </>
                     ) : (
-                      <span>Threshold: {rule.failure_threshold} failures</span>
+                      <>
+                        <span>Threshold: {rule.failure_threshold} failures</span>
+                        {rule.repeat_interval_hours > 1 && (
+                          <>
+                            <span>•</span>
+                            <span>Repeat: {rule.repeat_interval_hours}h</span>
+                          </>
+                        )}
+                      </>
                     )}
                   </div>
                   <div className="flex items-center gap-1">

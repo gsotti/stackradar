@@ -249,9 +249,9 @@ async function sendUptimeNotification(
         : `Monitor "${monitor.name}" has RECOVERED (${monitor.url})`);
 
       await db.query(
-        `INSERT INTO alert_history (alert_rule_id, site_id, state, message, notification_sent)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [alertRule.id, monitor.site_id, state, message, channels.length > 0]
+        `INSERT INTO alert_history (alert_rule_id, site_id, state, message, notification_sent, last_notified_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [alertRule.id, monitor.site_id, state, message, channels.length > 0, state === 'firing' ? now : null]
       );
     }
 
@@ -493,7 +493,41 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
       });
       await sendUptimeNotification(monitor, 'down', triggerMessage);
     } else if (hadAlreadyReachedThreshold) {
-      console.log(`[Uptime] Monitor "${monitor.name}" still down, alert already sent`);
+      console.log(`[Uptime] Monitor "${monitor.name}" still down, checking for recurring notification`);
+      
+      // Check for recurring notification
+      const lastAlertResult = await db.query<{ id: number; last_notified_at: Date; triggered_at: Date; alert_rule_id: number; repeat_interval_hours: number }>(
+        `SELECT h.id, h.last_notified_at, h.triggered_at, h.alert_rule_id, r.repeat_interval_hours
+         FROM alert_history h
+         JOIN alert_rules r ON r.id = h.alert_rule_id
+         WHERE h.site_id = $1 AND h.alert_rule_id IS NOT NULL AND h.state = 'firing' AND h.resolved_at IS NULL
+         ORDER BY h.triggered_at DESC
+         LIMIT 1`,
+        [monitor.site_id]
+      );
+
+      if (lastAlertResult.rows.length > 0) {
+        const lastAlert = lastAlertResult.rows[0];
+        const lastNotified = lastAlert.last_notified_at 
+          ? new Date(lastAlert.last_notified_at) 
+          : new Date(lastAlert.triggered_at);
+        
+        const repeatIntervalMs = (lastAlert.repeat_interval_hours || 1) * 60 * 60 * 1000;
+        const nextNotificationTime = new Date(lastNotified.getTime() + repeatIntervalMs);
+
+        if (Date.now() >= nextNotificationTime.getTime()) {
+          console.log(`🔔 Sending recurring notification for uptime alert "${monitor.name}" (still firing, interval: ${lastAlert.repeat_interval_hours}h)`);
+          
+          // Update last_notified_at
+          await db.query(
+            'UPDATE alert_history SET last_notified_at = NOW() WHERE id = $1',
+            [lastAlert.id]
+          );
+          
+          // Send notification
+          await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`);
+        }
+      }
     }
   }
 }

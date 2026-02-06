@@ -82,9 +82,30 @@ export async function evaluateRule(rule: AlertRule): Promise<string> {
   if (conditionMet) {
     // Condition is met - should fire alert
     if (existingAlert) {
-      // Alert already firing, just skip (don't create duplicate entries)
-      // The alert will continue to show as "firing" until resolved
-      console.log(`Alert ${rule.name} still firing (value: ${currentValue})`);
+      // Check if we should send a recurring notification
+      const lastNotified = existingAlert.last_notified_at 
+        ? new Date(existingAlert.last_notified_at) 
+        : new Date(existingAlert.triggered_at);
+      
+      const repeatIntervalMs = (rule.repeat_interval_hours || 1) * 60 * 60 * 1000;
+      const nextNotificationTime = new Date(lastNotified.getTime() + repeatIntervalMs);
+
+      if (Date.now() >= nextNotificationTime.getTime()) {
+        console.log(`🔔 Sending recurring notification for alert ${rule.name} (still firing, interval: ${rule.repeat_interval_hours}h)`);
+        
+        // Update last_notified_at
+        await updateAlertLastNotifiedAt(existingAlert.id);
+        
+        // Send notifications
+        sendNotifications(existingAlert.id, rule.id).catch((error) => {
+          console.error(`Failed to send recurring notifications for alert ${existingAlert.id}:`, error);
+        });
+        
+        return 'fired'; // Or maybe 'skipped' but 'fired' indicates notification activity
+      }
+
+      // Alert already firing and notified recently, just skip
+      console.log(`Alert ${rule.name} still firing (value: ${currentValue}), last notified ${lastNotified.toISOString()}`);
       return 'skipped';
     }
 
@@ -261,9 +282,9 @@ function evaluateCondition(
  */
 async function getLastFiringAlert(
   ruleId: number
-): Promise<{ id: number; triggered_at: Date } | null> {
-  const result = await db.query<{ id: number; triggered_at: Date }>(
-    `SELECT id, triggered_at
+): Promise<{ id: number; triggered_at: Date; last_notified_at: Date | null } | null> {
+  const result = await db.query<{ id: number; triggered_at: Date; last_notified_at: Date | null }>(
+    `SELECT id, triggered_at, last_notified_at
      FROM alert_history
      WHERE alert_rule_id = $1 AND state = 'firing' AND resolved_at IS NULL
      ORDER BY triggered_at DESC
@@ -312,13 +333,25 @@ export async function createAlertHistory(
 ): Promise<number> {
   const result = await db.query<{ id: number }>(
     `INSERT INTO alert_history (
-      alert_rule_id, site_id, state, metric_value, threshold_value, message
-    ) VALUES ($1, $2, $3, $4, $5, $6)
+      alert_rule_id, site_id, state, metric_value, threshold_value, message, last_notified_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING id`,
-    [rule.id, rule.site_id, state, metricValue, rule.threshold_value, message]
+    [rule.id, rule.site_id, state, metricValue, rule.threshold_value, message, state === 'firing' ? new Date() : null]
   );
 
   return result.rows[0].id;
+}
+
+/**
+ * Update the last_notified_at timestamp for an alert
+ */
+async function updateAlertLastNotifiedAt(alertHistoryId: number): Promise<void> {
+  await db.query(
+    `UPDATE alert_history
+     SET last_notified_at = NOW()
+     WHERE id = $1`,
+    [alertHistoryId]
+  );
 }
 
 /**

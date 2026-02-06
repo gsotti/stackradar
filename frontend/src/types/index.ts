@@ -184,6 +184,7 @@ export interface AlertRule {
   time_window_minutes: number;
   cooldown_minutes: number;
   failure_threshold: number;
+  repeat_interval_hours: number;
   severity: AlertSeverity;
   enabled: boolean;
   monitor_id: number | null;
@@ -249,6 +250,7 @@ export interface CreateAlertRuleRequest {
   time_window_minutes?: number;
   cooldown_minutes?: number;
   failure_threshold?: number;
+  repeat_interval_hours?: number;
   severity?: AlertSeverity;
   notification_channel_ids?: number[];
   monitor_id?: number;
@@ -264,6 +266,7 @@ export interface UpdateAlertRuleRequest {
   time_window_minutes?: number;
   cooldown_minutes?: number;
   failure_threshold?: number;
+  repeat_interval_hours?: number;
   severity?: AlertSeverity;
   enabled?: boolean;
   notification_channel_ids?: number[];
