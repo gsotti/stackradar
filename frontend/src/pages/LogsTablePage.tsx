@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatInLocalTime } from '../utils/dateUtils';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
 import SystemFilter from '../components/SystemFilter';
@@ -146,7 +147,7 @@ export default function LogsTablePage() {
                           )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-600 dark:text-gray-400">
-                          {format(new Date(log.timestamp), 'dd.MM.yyyy HH:mm:ss')}
+                          {formatInLocalTime(log.timestamp, 'dd.MM.yyyy HH:mm:ss')}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${getLevelBadgeClass(log.level)}`}>

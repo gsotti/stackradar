@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Activity, Search, X, RefreshCw, ChevronDown, Clock, Calendar, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatInLocalTime } from '../utils/dateUtils';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
 import { getLogLevelConfig } from '../utils/logLevels';
@@ -358,7 +359,7 @@ export default function LogsLivePage() {
               style={{ fontSize: `${logFontSize}px` }}
             >
               <span className="text-gray-600 shrink-0 select-none mt-0.5 whitespace-nowrap" style={{ width: `${logFontSize * 10.5}px` }}>
-                {format(new Date(log.timestamp), 'dd.MM.yyyy HH:mm:ss')}
+                {formatInLocalTime(log.timestamp, 'dd.MM.yyyy HH:mm:ss')}
               </span>
               <span 
                 className={`shrink-0 font-black uppercase text-[0.75em] px-1 rounded flex items-center justify-center mt-0.5 ${config.color} bg-white/5 border border-white/5`}
@@ -452,7 +453,7 @@ export default function LogsLivePage() {
 
                 {firstLogTimestamp && (
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                    Searchable logs begin on {format(new Date(firstLogTimestamp), 'dd.MM.yyyy')} at {format(new Date(firstLogTimestamp), 'HH:mm')}
+                    Searchable logs begin on {formatInLocalTime(firstLogTimestamp, 'dd.MM.yyyy')} at {formatInLocalTime(firstLogTimestamp, 'HH:mm')}
                   </p>
                 )}
 

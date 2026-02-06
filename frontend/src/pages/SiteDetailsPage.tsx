@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, Server, Activity, CheckCircle, AlertTriangle, Bell, BarChart2, Settings, Eye, EyeOff, Copy, Trash2, Terminal, Clock, Box, Radio } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
+import { formatInLocalTime } from '../utils/dateUtils';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -403,7 +404,7 @@ export default function SiteDetailsPage() {
                       dataKey="timestamp"
                       tick={{ fontSize: 12, fill: '#6b7280' }}
                       stroke="#9ca3af"
-                      tickFormatter={(t) => new Date(t).toLocaleTimeString()}
+                      tickFormatter={(t) => formatInLocalTime(t, 'HH:mm:ss')}
                     />
                     <YAxis
                       domain={[0, 100]}
@@ -411,7 +412,7 @@ export default function SiteDetailsPage() {
                       stroke="#9ca3af"
                     />
                     <Tooltip
-                      labelFormatter={(l) => format(new Date(l), 'dd.MM.yyyy HH:mm:ss')}
+                      labelFormatter={(l) => formatInLocalTime(l, 'dd.MM.yyyy HH:mm:ss')}
                       formatter={(v: any, _n: any, item: any) => [`${Number(v).toFixed(1)}%`, item?.dataKey === 'cpu_usage_percent' ? 'CPU' : 'Memory']}
                       cursor={{
                         // subtle hover overlay tuned per theme

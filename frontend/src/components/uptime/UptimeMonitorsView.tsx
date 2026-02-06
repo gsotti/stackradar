@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Zap, ExternalLink, Clock, RefreshCw, CheckCircle, XCircle, AlertTriangle, Radio, TrendingUp, Activity, LucideIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatInLocalTime } from '../../utils/dateUtils';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -66,7 +67,16 @@ const intervalLabels: Record<number, string> = {
 
 function formatTimeAgo(date: string | null | undefined) {
   if (!date) return 'Never';
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  
+  // Ensure we treat the input as UTC
+  const normalizedDateStr = date.endsWith('Z') || date.includes('+') || date.includes('T') 
+    ? (date.endsWith('Z') || date.includes('+') ? date : `${date}Z`)
+    : `${date.replace(' ', 'T')}Z`;
+  
+  const parsedDate = new Date(normalizedDateStr);
+  const timestamp = isNaN(parsedDate.getTime()) ? new Date(date).getTime() : parsedDate.getTime();
+  
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
   if (seconds < 5) return 'Just now';
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
@@ -86,7 +96,7 @@ function UptimeBar({ checks }: { checks: UptimeCheck[] }) {
           <div
             key={i}
             className={`flex-1 max-w-2 min-w-1 rounded-sm ${config.bg} opacity-80 hover:opacity-100 transition-all hover:scale-110 cursor-pointer ${height}`}
-            title={`${check.status.toUpperCase()} - ${check.response_time_ms || 0}ms\n${format(new Date(check.checked_at), 'dd.MM.yyyy HH:mm:ss')}`}
+            title={`${check.status.toUpperCase()} - ${check.response_time_ms || 0}ms\n${formatInLocalTime(check.checked_at, 'dd.MM.yyyy HH:mm:ss')}`}
           />
         );
       })}
@@ -203,7 +213,7 @@ function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checkin
             <div className="flex flex-col gap-0.5">
               <span className="font-medium">Last 30 checks</span>
             </div>
-            <span>Checked {formatTimeAgo(monitor.last_checked_at)} {monitor.last_checked_at && `(${format(new Date(monitor.last_checked_at), 'dd.MM.yyyy HH:mm:ss')})`}</span>
+            <span>Checked {formatTimeAgo(monitor.last_checked_at)} {monitor.last_checked_at && `(${formatInLocalTime(monitor.last_checked_at, 'dd.MM.yyyy HH:mm:ss')})`}</span>
           </div>
           <UptimeBar checks={checks} />
         </div>

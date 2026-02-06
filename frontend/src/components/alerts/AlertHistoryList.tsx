@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatInLocalTime } from '../../utils/dateUtils';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { AlertHistory, AlertSeverity, AlertState, MetricType } from '../../types';
@@ -61,7 +62,7 @@ export default function AlertHistoryList({ siteId }: AlertHistoryListProps) {
   };
 
   const formatDate = (date: string) => {
-    return format(new Date(date), 'dd.MM.yyyy HH:mm:ss');
+    return formatInLocalTime(date, 'dd.MM.yyyy HH:mm:ss');
   };
 
   const getMetricLabel = (metricType: MetricType | string) => {
