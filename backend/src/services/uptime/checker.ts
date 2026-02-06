@@ -533,30 +533,29 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
 }
 
 /**
- * Get monitors due for checking
+ * Get all enabled monitors for a specific interval
  */
-async function getMonitorsDueForCheck(): Promise<UptimeMonitor[]> {
+async function getMonitorsByInterval(intervalSeconds: number): Promise<UptimeMonitor[]> {
   const result = await db.query<UptimeMonitor>(
     `SELECT * FROM uptime_monitors
-     WHERE enabled = true
-       AND (last_checked_at IS NULL OR last_checked_at + (interval_seconds || ' seconds')::interval <= NOW() + interval '10 seconds')
-     ORDER BY last_checked_at ASC NULLS FIRST
-     LIMIT 100`
+     WHERE enabled = true AND interval_seconds = $1
+     ORDER BY id`,
+    [intervalSeconds]
   );
   return result.rows;
 }
 
 /**
- * Run uptime checks for all due monitors
+ * Run uptime checks for all monitors with a specific interval
  */
-export async function runUptimeChecks(): Promise<void> {
-  const monitors = await getMonitorsDueForCheck();
+export async function runUptimeChecksForInterval(intervalSeconds: number): Promise<void> {
+  const monitors = await getMonitorsByInterval(intervalSeconds);
 
   if (monitors.length === 0) {
     return;
   }
 
-  console.log(`Running uptime checks for ${monitors.length} monitor(s)...`);
+  console.log(`[Uptime ${intervalSeconds}s] Running checks for ${monitors.length} monitor(s)...`);
 
   // Process in batches with limited concurrency
   for (let i = 0; i < monitors.length; i += MAX_CONCURRENT_CHECKS) {
