@@ -43,18 +43,20 @@ router.get('/', authMiddleware, async (
       before_id
     } = req.query;
 
-    // Debug: Log received filter parameters
-    console.log('🔍 [Backend /logs] Received query params:', {
-      tenant,
-      site,
-      environment,
-      system,
-      system_id,
-      level,
-      search,
-      limit,
-      offset
-    });
+    // Debug: Log received filter parameters (only in non-production)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 [Backend /logs] Received query params:', {
+        tenant,
+        site,
+        environment,
+        system,
+        system_id,
+        level,
+        search,
+        limit,
+        offset
+      });
+    }
 
     // Get all system IDs limited to the user's tenant mappings
     const tenantIds = req.userTenantIds || [];
@@ -174,9 +176,11 @@ router.get('/', authMiddleware, async (
       paramIndex++;
     }
 
-    // Debug: Log final query details
-    console.log('🔍 [Backend /logs] Query WHERE clause:', whereClause);
-    console.log('🔍 [Backend /logs] Query params:', params);
+    // Debug: Log final query details (only in non-production)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 [Backend /logs] Query WHERE clause:', whereClause);
+      console.log('🔍 [Backend /logs] Query params:', params);
+    }
 
     const countResult = await db.query<{ count: string }>(
       `SELECT COUNT(*) as count
