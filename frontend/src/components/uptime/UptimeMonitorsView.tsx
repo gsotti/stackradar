@@ -67,11 +67,15 @@ const intervalLabels: Record<number, string> = {
 
 function formatTimeAgo(date: string | null | undefined) {
   if (!date) return 'Never';
-  
+
   const parsedDate = parseAsUTC(date);
   if (!parsedDate) return date;
-  
+
   const seconds = Math.floor((Date.now() - parsedDate.getTime()) / 1000);
+
+  // Handle negative values (future dates due to timezone issues or clock skew)
+  if (seconds < 0) return 'Just now';
+
   if (seconds < 5) return 'Just now';
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
