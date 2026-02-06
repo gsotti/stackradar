@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Activity, Search, X, RefreshCw, ChevronDown, Clock, Calendar } from 'lucide-react';
+import { Activity, Search, X, RefreshCw, ChevronDown, Clock, Calendar, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
@@ -20,6 +20,17 @@ export default function LogsLivePage() {
   const [showTimePopover, setShowTimePopover] = useState(false);
   const [firstLogTimestamp, setFirstLogTimestamp] = useState<string | null>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [logFontSize, setLogFontSize] = useState(() => {
+    const saved = localStorage.getItem('logFontSize');
+    return saved ? parseInt(saved, 10) : 14;
+  });
+
+  const updateLogFontSize = (newSize: number) => {
+    const size = Math.max(8, Math.min(32, newSize));
+    setLogFontSize(size);
+    localStorage.setItem('logFontSize', size.toString());
+  };
+
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMoreLogs, setHasMoreLogs] = useState(true);
   const liveLogsEndRef = useRef<HTMLDivElement>(null);
@@ -343,20 +354,24 @@ export default function LogsLivePage() {
           return (
             <div 
               key={log.id} 
-              className={`flex gap-4 text-sm leading-relaxed group py-0.5 px-2 rounded hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-blue-500/50 whitespace-nowrap items-center ${index === filteredLogs.length - 1 ? 'animate-fadeIn' : ''}`}
+              className={`flex gap-3 items-start py-1 px-2 rounded hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-blue-500/50 ${index === filteredLogs.length - 1 ? 'animate-fadeIn' : ''}`}
+              style={{ fontSize: `${logFontSize}px` }}
             >
-              <span className="text-gray-600 shrink-0 select-none w-36 mr-2">
+              <span className="text-gray-600 shrink-0 select-none mt-0.5 whitespace-nowrap" style={{ width: `${logFontSize * 10.5}px` }}>
                 {format(new Date(log.timestamp), 'dd.MM.yyyy HH:mm:ss')}
               </span>
-              <span className={`shrink-0 w-20 font-black uppercase text-xs px-1 rounded flex items-center justify-center h-5 ${config.color} bg-white/5 border border-white/5`}>
+              <span 
+                className={`shrink-0 font-black uppercase text-[0.75em] px-1 rounded flex items-center justify-center mt-0.5 ${config.color} bg-white/5 border border-white/5`}
+                style={{ width: `${logFontSize * 5.5}px`, height: `${logFontSize * 1.4}px` }}
+              >
                 {log.level}
               </span>
-              <span className="text-blue-400/80 shrink-0 font-bold min-w-[100px]">
+              <span className="text-blue-400/80 shrink-0 font-bold mt-0.5" style={{ minWidth: `${logFontSize * 7.5}px` }}>
                 [{log.system}]
               </span>
-              <span className="text-gray-300 truncate flex-1 group-hover:text-white transition-colors">
+              <div className="text-gray-300 break-all whitespace-pre-wrap group-hover:text-white transition-colors">
                 {log.message}
-              </span>
+              </div>
             </div>
           );
         })}
@@ -376,19 +391,19 @@ export default function LogsLivePage() {
 
       {/* Status Bar */}
       <div className="bg-gray-900 border-t border-gray-800 px-4 py-2 flex items-center gap-4 shadow-lg z-10 shrink-0">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <SystemFilter className="h-10 text-sm bg-gray-800 border-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
-        <div className="flex items-center gap-2 flex-1">
-          <div className="relative group flex-1">
+        <div className="flex items-center gap-2 flex-1 h-10">
+          <div className="relative group flex-1 h-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-400" />
             <input
               type="text"
               placeholder="Grep logs..."
               value={liveSearchTerm}
               onChange={(e) => setLiveSearchTerm(e.target.value)}
-              className="bg-gray-800 border-none rounded-md pl-10 pr-4 py-2 text-sm w-full focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-600"
+              className="bg-gray-800 border-none rounded-md pl-10 pr-4 py-2 text-sm w-full h-full focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-600"
             />
             {liveSearchTerm && (
               <button 
@@ -399,8 +414,10 @@ export default function LogsLivePage() {
               </button>
             )}
           </div>
+        </div>
 
-          <div className="relative flex items-center gap-2" ref={popoverRef}>
+        <div className="flex items-center gap-4 justify-end">
+          <div className="relative flex items-center gap-2 h-10" ref={popoverRef}>
             {showTimePopover && (
               <div className="absolute bottom-full right-0 mb-2 w-96 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6 animate-fadeIn z-50">
                 <h3 className="text-sm font-bold text-white mb-4">Seek to date or time</h3>
@@ -462,16 +479,29 @@ export default function LogsLivePage() {
               onClick={() => {
                 setShowTimePopover(!showTimePopover);
               }}
-              className={`p-2 rounded-md transition-all ${showTimePopover || startTime ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+              className={`h-full px-4 rounded-md transition-all ${showTimePopover || startTime ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
               title="Seek back in time"
             >
               <Clock className="w-4 h-4" />
             </button>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 justify-end">
-          {/* Action buttons area */}
+          <div className="flex items-center bg-gray-800 rounded-md p-1 gap-1 h-10">
+            <button
+              onClick={() => updateLogFontSize(logFontSize - 1)}
+              className="p-2 hover:bg-gray-700 rounded transition-colors text-gray-400 hover:text-white"
+              title="Decrease text size"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => updateLogFontSize(logFontSize + 1)}
+              className="p-2 hover:bg-gray-700 rounded transition-colors text-gray-400 hover:text-white"
+              title="Increase text size"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
