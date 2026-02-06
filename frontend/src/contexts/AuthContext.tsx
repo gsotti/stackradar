@@ -12,7 +12,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token');
     if (token) {
       api.get<User>('/auth/me')
-        .then(setUser)
+        .then((userData) => {
+          // Ensure tenant_roles is always an array
+          if (!userData.tenant_roles) {
+            userData.tenant_roles = [];
+          }
+          setUser(userData);
+        })
         .catch(() => {
           localStorage.removeItem('token');
           api.setToken(null);
@@ -29,6 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Fetch user data after setting token
     const userData = await api.get<User>('/auth/me');
+    // Ensure tenant_roles is always an array
+    if (!userData.tenant_roles) {
+      userData.tenant_roles = [];
+    }
     setUser(userData);
 
     return data;
@@ -39,8 +49,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const isSuperadmin = (): boolean => {
+    return user?.global_role === 'superadmin';
+  };
+
+  const isOrgAdmin = (): boolean => {
+    return user?.global_role === 'org_admin';
+  };
+
+  const getTenantRole = (tenantId: number | string): string | null => {
+    if (!user || !user.tenant_roles) return null;
+
+    const numericTenantId = typeof tenantId === 'string' ? parseInt(tenantId, 10) : tenantId;
+    if (isNaN(numericTenantId)) return null;
+
+    const tenantRole = user.tenant_roles.find(tr => tr.tenant_id === numericTenantId);
+    return tenantRole ? tenantRole.role : null;
+  };
+
+  const canManageTenant = (tenantId: number | string): boolean => {
+    if (isSuperadmin()) return true;
+    if (isOrgAdmin()) return true;
+
+    const role = getTenantRole(tenantId);
+    return role === 'tenant_admin';
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{
+      user,
+      login,
+      logout,
+      loading,
+      isSuperadmin,
+      isOrgAdmin,
+      getTenantRole,
+      canManageTenant
+    }}>
       {children}
     </AuthContext.Provider>
   );

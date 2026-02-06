@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import db from '../db/database.js';
 import { hashPassword, verifyPassword, generateToken, authMiddleware } from '../middleware/auth.js';
 import {
@@ -10,6 +11,16 @@ import {
 } from '../types/index.js';
 
 const router = Router();
+
+// Rate limiter for login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  skipSuccessfulRequests: true,
+  message: { detail: 'Too many login attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Register
 router.post('/register', async (
@@ -77,7 +88,7 @@ router.post('/register', async (
 });
 
 // Login
-router.post('/login', async (
+router.post('/login', loginLimiter, async (
   req: Request<{}, LoginResponse | { detail: string }, LoginRequest>,
   res: Response<LoginResponse | { detail: string }>
 ): Promise<void> => {
@@ -91,6 +102,21 @@ router.post('/login', async (
       return;
     }
 
+    // Check for account lockout (5 failed attempts in the last hour)
+    const recentFailures = await db.query(
+      `SELECT COUNT(*) as count FROM login_attempts
+       WHERE email = $1 AND success = false
+       AND attempted_at > NOW() - INTERVAL '1 hour'`,
+      [email]
+    );
+
+    if (parseInt(recentFailures.rows[0].count) >= 5) {
+      res.status(429).json({
+        detail: 'Account temporarily locked due to too many failed attempts. Try again in 1 hour.'
+      });
+      return;
+    }
+
     const result = await db.query<User>(
       'SELECT * FROM users WHERE email = $1',
       [email]
@@ -98,6 +124,12 @@ router.post('/login', async (
     const user = result.rows[0];
 
     if (!user || !verifyPassword(password, user.password_hash)) {
+      // Log failed login attempt
+      await db.query(
+        'INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, $3)',
+        [email, req.ip, false]
+      );
+
       res.status(401).json({ detail: 'Invalid email or password' });
       return;
     }
@@ -111,6 +143,12 @@ router.post('/login', async (
       res.status(403).json({ detail: 'Your account has been deactivated. Please contact an administrator.' });
       return;
     }
+
+    // Log successful login attempt
+    await db.query(
+      'INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, $3)',
+      [email, req.ip, true]
+    );
 
     const token = generateToken(user.id);
 
@@ -131,7 +169,12 @@ router.get('/me', authMiddleware, async (
 ): Promise<void> => {
   try {
     const result = await db.query<Omit<User, 'password_hash'>>(
-      'SELECT id, email, name, is_active, is_admin, is_viewer, created_at FROM users WHERE id = $1',
+      `SELECT u.id, u.email, u.name, u.is_active, u.is_admin, u.is_viewer,
+              u.global_role, u.email_verified, u.organization_id, u.created_at,
+              o.name as organization_name
+       FROM users u
+       LEFT JOIN organizations o ON u.organization_id = o.id
+       WHERE u.id = $1`,
       [req.userId]
     );
 
@@ -142,7 +185,22 @@ router.get('/me', authMiddleware, async (
       return;
     }
 
-    res.json(user);
+    // Get tenant roles
+    const tenantRolesResult = await db.query<{ tenant_id: number; role: string; tenant_name: string }>(
+      `SELECT ut.tenant_id, ut.role, t.name as tenant_name
+       FROM user_tenants ut
+       INNER JOIN tenants t ON ut.tenant_id = t.id
+       WHERE ut.user_id = $1
+       ORDER BY t.name`,
+      [req.userId]
+    );
+
+    const response = {
+      ...user,
+      tenant_roles: tenantRolesResult.rows
+    };
+
+    res.json(response);
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ detail: 'Internal server error' });

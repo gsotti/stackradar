@@ -16,9 +16,13 @@ import ingestRoutes from './routes/ingest.js';
 import k8sRoutes from './routes/k8s.js';
 import adminRoutes from './routes/admin.js';
 import tenantRoutes from './routes/tenants.js';
+import tenantUsersRoutes from './routes/tenant-users.js';
 import environmentRoutes from './routes/environments.js';
 import alertRoutes from './routes/alerts.js';
 import uptimeRoutes from './routes/uptime.js';
+import superadminRoutes from './routes/superadmin.js';
+import invitationsRoutes from './routes/invitations.js';
+import organizationsRoutes from './routes/organizations.js';
 import { cleanupOldLogs } from './services/cleanup.js';
 import { evaluateAllAlerts } from './services/alerting/evaluator.js';
 import { runUptimeChecksForInterval } from './services/uptime/checker.js';
@@ -50,8 +54,12 @@ app.use('/api/ingest', ingestRoutes);
 app.use('/api/k8s', k8sRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tenants', tenantRoutes);
+app.use('/api/tenants', tenantUsersRoutes);
+app.use('/api/organizations', organizationsRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/uptime', uptimeRoutes);
+app.use('/api/superadmin', superadminRoutes);
+app.use('/api/invitations', invitationsRoutes);
 
 // Health check
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -59,13 +67,13 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 // Serve static frontend files
-const staticPath = process.env.STATIC_PATH || path.join(__dirname, '../../static');
+const staticPath = path.resolve(process.env.STATIC_PATH || path.join(__dirname, '../../static'));
 app.use(express.static(staticPath));
 
 // SPA fallback
 app.get('*', (req: Request, res: Response) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(staticPath, 'index.html'));
+    res.sendFile(path.resolve(staticPath, 'index.html'));
   } else {
     res.status(404).json({ error: 'Not found' });
   }

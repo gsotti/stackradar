@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Globe, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
+import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
 import { Environment, Site } from '../types';
 
@@ -17,11 +18,12 @@ export default function EnvironmentsPage() {
   const [form, setForm] = useState({ site_id: '', name: '', display_name: '' });
   const [sites, setSites] = useState<Site[]>([]);
   const { showError, showSuccess } = useNotification();
+  const { selectedTenant } = useApp();
 
   useEffect(() => {
     loadEnvironments();
     loadSites();
-  }, []);
+  }, [selectedTenant]);
 
   const loadSites = async () => {
     try {
@@ -35,7 +37,9 @@ export default function EnvironmentsPage() {
   const loadEnvironments = async () => {
     try {
       setLoading(true);
-      const data = await api.get<EnvironmentWithDetails[]>('/environments');
+      const params = new URLSearchParams();
+      if (selectedTenant) params.append('tenant_id', selectedTenant);
+      const data = await api.get<EnvironmentWithDetails[]>(`/environments?${params}`);
       setEnvironments(data);
     } catch (error: any) {
       showError(error.message || 'Failed to load environments');

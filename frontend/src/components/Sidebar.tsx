@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Server, Activity, Users, LogOut, Menu, X,
-  Moon, Sun, ChevronLeft, ChevronRight, Package, Settings, Globe
+  LayoutDashboard, Server, Activity, LogOut, Menu, X,
+  Moon, Sun, ChevronLeft, ChevronRight, Package, Globe, Shield, Building2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { getGravatarUrl } from '../utils/md5';
 import { api } from '../utils/api';
 import Logo from './Logo';
 import { Tenant, Site, Environment } from '../types';
 
 export default function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperadmin, isOrgAdmin } = useAuth();
+  const { isViewer } = usePermissions();
   const {
     darkMode,
     setDarkMode,
@@ -36,13 +38,15 @@ export default function Sidebar() {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Logs', href: '/logs/live', icon: Activity },
     { name: 'Sites', href: '/sites', icon: Server },
-    ...(!user?.is_viewer ? [
+    ...(!isViewer() ? [
       { name: 'Environments', href: '/environments', icon: Globe },
       { name: 'Systems', href: '/systems', icon: Package }
     ] : []),
-    ...(user?.is_admin ? [
-      { name: 'Users', href: '/users', icon: Users },
-      { name: 'Admin Settings', href: '/admin/settings', icon: Settings }
+    ...(isOrgAdmin() ? [
+      { name: 'Tenants', href: '/tenants', icon: Building2 }
+    ] : []),
+    ...(isSuperadmin() ? [
+      { name: 'Superadmin', href: '/superadmin', icon: Shield }
     ] : []),
   ];
 
@@ -140,9 +144,16 @@ export default function Sidebar() {
             <Logo size={48} />
           </div>
           {!sidebarCollapsed && (
-            <span className="font-bold text-xl bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-              StackRadar
-            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-xl bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                StackRadar
+              </span>
+              {user?.organization_name && (
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                  {user.organization_name}
+                </span>
+              )}
+            </div>
           )}
           <button className="lg:hidden ml-auto text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => setSidebarOpen(false)}>
             <X className="w-6 h-6" />

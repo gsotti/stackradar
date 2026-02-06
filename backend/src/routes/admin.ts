@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { cleanupOldLogs } from '../services/cleanup.js';
-import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { superadminMiddleware } from '../middleware/roleMiddleware.js';
 import { AuthRequest, User } from '../types/index.js';
 import db from '../db/database.js';
 
@@ -22,8 +23,8 @@ router.post('/cleanup', (req: Request, res: Response): void => {
   res.json({ message: `Deleted ${deleted} old log entries` });
 });
 
-// Get all users (admin only)
-router.get('/users', authMiddleware, adminMiddleware, async (
+// Get all users (superadmin only - org admins should use /api/tenants/:id/users)
+router.get('/users', authMiddleware, superadminMiddleware, async (
   _req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -41,8 +42,8 @@ router.get('/users', authMiddleware, adminMiddleware, async (
   }
 });
 
-// Get pending users (admin only)
-router.get('/users/pending', authMiddleware, adminMiddleware, async (
+// Get pending users (superadmin only)
+router.get('/users/pending', authMiddleware, superadminMiddleware, async (
   _req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -61,8 +62,8 @@ router.get('/users/pending', authMiddleware, adminMiddleware, async (
   }
 });
 
-// Approve user (admin only)
-router.post('/users/:id/approve', authMiddleware, adminMiddleware, async (
+// Approve user (superadmin only)
+router.post('/users/:id/approve', authMiddleware, superadminMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -86,8 +87,8 @@ router.post('/users/:id/approve', authMiddleware, adminMiddleware, async (
   }
 });
 
-// Reject/Delete user (admin only)
-router.delete('/users/:id', authMiddleware, adminMiddleware, async (
+// Reject/Delete user (superadmin only)
+router.delete('/users/:id', authMiddleware, superadminMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -117,8 +118,8 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, async (
   }
 });
 
-// Deactivate user (admin only)
-router.post('/users/:id/deactivate', authMiddleware, adminMiddleware, async (
+// Deactivate user (superadmin only)
+router.post('/users/:id/deactivate', authMiddleware, superadminMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -148,8 +149,8 @@ router.post('/users/:id/deactivate', authMiddleware, adminMiddleware, async (
   }
 });
 
-// Activate user (admin only)
-router.post('/users/:id/activate', authMiddleware, adminMiddleware, async (
+// Activate user (superadmin only)
+router.post('/users/:id/activate', authMiddleware, superadminMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -173,8 +174,8 @@ router.post('/users/:id/activate', authMiddleware, adminMiddleware, async (
   }
 });
 
-// Update user (admin only)
-router.put('/users/:id', authMiddleware, adminMiddleware, async (
+// Update user (superadmin only)
+router.put('/users/:id', authMiddleware, superadminMiddleware, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {

@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { formatInLocalTime } from '../utils/dateUtils';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { useNotification } from '../contexts/NotificationContext';
 import AlertsView from '../components/alerts/AlertsView';
 import SiteSetupInstructions from '../components/SiteSetupInstructions';
@@ -26,6 +27,7 @@ export default function SiteDetailsPage() {
   const { id, tab: activeTab = 'metrics' } = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isViewer } = usePermissions();
   const { showSuccess, showError } = useNotification();
   const [site, setSite] = useState<Site | null>(null);
   const [live, setLive] = useState<LiveMetricsResponse>({ points: [] });
@@ -129,6 +131,13 @@ export default function SiteDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, autoRefresh]);
 
+  // Redirect viewers away from restricted tabs
+  useEffect(() => {
+    if (isViewer() && (activeTab === 'alerts' || activeTab === 'setup' || activeTab === 'settings')) {
+      navigate(`/sites/${id}/metrics`, { replace: true });
+    }
+  }, [isViewer, activeTab, id, navigate]);
+
   const data = live?.points || [];
 
   // Safe helpers
@@ -217,7 +226,7 @@ export default function SiteDetailsPage() {
             <Radio className="w-4 h-4" />
             Monitors
           </button>
-          {!user?.is_viewer && (
+          {!isViewer() && (
             <>
               <button
                 onClick={() => setActiveTab('alerts')}

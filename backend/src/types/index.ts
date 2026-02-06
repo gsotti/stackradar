@@ -1,5 +1,9 @@
 import { Request } from 'express';
 
+// Role Types
+export type GlobalRole = 'superadmin' | 'org_admin' | null;
+export type TenantRole = 'tenant_admin' | 'editor' | 'viewer';
+
 // Database Models
 export interface User {
   id: number;
@@ -10,7 +14,18 @@ export interface User {
   is_approved: boolean;
   is_admin: boolean;
   is_viewer: boolean;
+  global_role: string | null;
+  email_verified: boolean;
+  created_by: number | null;
+  organization_id: number | null;
   created_at: Date;
+}
+
+export interface UserWithRoles extends Omit<User, 'password_hash'> {
+  global_role: GlobalRole;
+  email_verified: boolean;
+  tenant_role?: TenantRole;
+  tenant_ids: number[];
 }
 
 export interface Site {
@@ -28,8 +43,30 @@ export interface Tenant {
   id: number;
   name: string;
   description: string | null;
+  created_by: number | null;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface Organization {
+  id: number;
+  name: string;
+  description: string | null;
+  created_by: number | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Invitation {
+  id: number;
+  email: string;
+  token: string;
+  tenant_id: number;
+  role: TenantRole;
+  invited_by: number;
+  expires_at: Date;
+  accepted_at: Date | null;
+  created_at: Date;
 }
 
 export interface Environment {
@@ -160,6 +197,10 @@ export interface IngestLogsRequest {
 export interface AuthRequest<P = any, ResBody = any, ReqBody = any, ReqQuery = any> extends Request<P, ResBody, ReqBody, ReqQuery> {
   userId?: number;
   userTenantIds?: number[]; // enforced tenant visibility for the authenticated user
+  globalRole?: GlobalRole;
+  tenantRole?: TenantRole;
+  organizationId?: number;
+  emailVerified?: boolean;
 }
 
 // JWT Payload

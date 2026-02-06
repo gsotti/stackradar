@@ -1,0 +1,404 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { ArrowLeft, Building2, RefreshCw, Trash2, Users, Settings, UserPlus } from 'lucide-react';
+import { api } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
+import TenantForm from '../components/tenants/TenantForm';
+import TenantUserList from '../components/users/TenantUserList';
+import PendingInvitations from '../components/users/PendingInvitations';
+import UserInviteForm from '../components/users/UserInviteForm';
+import UserCreateModal from '../components/users/UserCreateModal';
+import AvailableUsersList from '../components/users/AvailableUsersList';
+import { Tenant, TenantUser, Invitation, TenantRoleName } from '../types';
+
+type TabType = 'settings' | 'users';
+
+export default function TenantSettingsPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isOrgAdmin, canManageTenant } = useAuth();
+  const { showError, showSuccess } = useNotification();
+
+  // Derive active tab from URL path
+  const activeTab: TabType = location.pathname.endsWith('/users') ? 'users' : 'settings';
+
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // User management state
+  const [users, setUsers] = useState<TenantUser[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  useEffect(() => {
+    fetchTenant();
+  }, [id]);
+
+  // Load users when switching to users tab
+  useEffect(() => {
+    if (activeTab === 'users' && id) {
+      loadUsersData();
+    }
+  }, [activeTab, id]);
+
+  const setActiveTab = (tab: TabType) => {
+    if (tab === 'users') {
+      navigate(`/tenants/${id}/settings/users`);
+    } else {
+      navigate(`/tenants/${id}/settings`);
+    }
+  };
+
+  const fetchTenant = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<Tenant>(`/tenants/${id}`);
+      setTenant(data);
+    } catch (error: any) {
+      showError(error.message || 'Failed to fetch tenant');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUsersData = async () => {
+    if (!id) return;
+
+    setUsersLoading(true);
+    try {
+      const [usersData, invitationsData] = await Promise.all([
+        api.get<TenantUser[]>(`/tenants/${id}/users`),
+        api.get<Invitation[]>(`/invitations?tenant_id=${id}`)
+      ]);
+      setUsers(usersData);
+      setInvitations(invitationsData);
+    } catch (error: any) {
+      showError(error.message || 'Failed to load users');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleUpdateTenant = async (data: { name: string; description: string }) => {
+    try {
+      const updated = await api.put<Tenant>(`/tenants/${id}`, data);
+      setTenant(updated);
+      showSuccess('Tenant updated successfully');
+    } catch (error: any) {
+      showError(error.message || 'Failed to update tenant');
+      throw error;
+    }
+  };
+
+  const handleDeleteTenant = async () => {
+    if (!confirm(`Are you sure you want to delete tenant "${tenant?.name}"? This action cannot be undone and will affect all associated users and sites.`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/tenants/${id}`);
+      showSuccess('Tenant deleted successfully');
+      navigate('/tenants');
+    } catch (error: any) {
+      showError(error.message || 'Failed to delete tenant');
+    }
+  };
+
+  const handleInviteClose = (updated?: boolean) => {
+    setShowInviteForm(false);
+    if (updated) {
+      loadUsersData();
+    }
+  };
+
+  const handleCreateUser = async (data: { email: string; password: string; name: string; role: TenantRoleName }) => {
+    await api.post(`/tenants/${id}/users`, data);
+    showSuccess('User created successfully');
+    loadUsersData();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
+        <div className="text-center">
+          <RefreshCw className="w-10 h-10 animate-spin text-blue-500 mx-auto mb-3" />
+          <p className="text-gray-600 dark:text-gray-400">Loading tenant details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tenant) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)]">
+        <Building2 className="w-16 h-16 text-gray-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tenant not found</h2>
+        <Link
+          to="/tenants"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          Return to tenants list
+        </Link>
+      </div>
+    );
+  }
+
+  const canManage = canManageTenant(tenant.id);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            to="/tenants"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <Building2 className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{tenant.name}</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Tenant settings and management
+            </p>
+          </div>
+        </div>
+
+        {/* Action buttons for Users tab */}
+        {activeTab === 'users' && (
+          <div className="flex gap-2">
+            <button
+              onClick={loadUsersData}
+              className="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-5 h-5 ${usersLoading ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold"
+            >
+              <UserPlus className="w-5 h-5" />
+              Create User
+            </button>
+            <button
+              onClick={() => setShowInviteForm(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold"
+            >
+              <UserPlus className="w-5 h-5" />
+              Invite User
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="flex gap-4">
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`
+              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+              ${
+                activeTab === 'settings'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+              }
+            `}
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`
+              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+              ${
+                activeTab === 'users'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+              }
+            `}
+          >
+            <Users className="w-4 h-4" />
+            Users
+            {users.length > 0 && (
+              <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">
+                {users.length}
+              </span>
+            )}
+          </button>
+        </nav>
+      </div>
+
+      {/* Content based on active tab */}
+      {activeTab === 'settings' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Tenant Settings Form */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+            <TenantForm
+              mode="edit"
+              initialData={{
+                name: tenant.name,
+                description: tenant.description || ''
+              }}
+              onSubmit={handleUpdateTenant}
+              submitLabel={canManage ? 'Save Changes' : 'View Only'}
+            />
+          </div>
+
+          {/* Right Column - Danger Zone */}
+          {isOrgAdmin() && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-red-200 dark:border-red-900">
+                <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+                  <Trash2 className="w-5 h-5" />
+                  Danger Zone
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Deleting this tenant will permanently remove all associated users, sites, environments, systems, and logs. This action cannot be undone.
+                </p>
+                <button
+                  onClick={handleDeleteTenant}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Tenant
+                </button>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+                <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                  Tenant Information
+                </h3>
+                <dl className="space-y-2 text-sm">
+                  <div>
+                    <dt className="text-blue-700 dark:text-blue-400 font-medium">Created:</dt>
+                    <dd className="text-blue-900 dark:text-blue-200">
+                      {new Date(tenant.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-blue-700 dark:text-blue-400 font-medium">Last Updated:</dt>
+                    <dd className="text-blue-900 dark:text-blue-200">
+                      {new Date(tenant.updated_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-blue-700 dark:text-blue-400 font-medium">Tenant ID:</dt>
+                    <dd className="text-blue-900 dark:text-blue-200 font-mono">{tenant.id}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {usersLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <>
+              {/* Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                      <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{users.length}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
+                      <UserPlus className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Pending Invitations</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{invitations.length}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pending Invitations */}
+              {invitations.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                  <PendingInvitations
+                    tenantId={parseInt(id!, 10)}
+                    invitations={invitations}
+                    onUpdate={loadUsersData}
+                  />
+                </div>
+              )}
+
+              {/* Users List */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Tenant Members
+                  </h3>
+                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">
+                    {users.length}
+                  </span>
+                </div>
+                <TenantUserList
+                  tenantId={parseInt(id!, 10)}
+                  users={users}
+                  onUpdate={loadUsersData}
+                />
+              </div>
+
+              {/* Available Organization Users */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                <AvailableUsersList
+                  tenantId={parseInt(id!, 10)}
+                  onUserAdded={loadUsersData}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Invite Form Modal */}
+      {showInviteForm && (
+        <UserInviteForm
+          tenantId={parseInt(id!, 10)}
+          onClose={handleInviteClose}
+        />
+      )}
+
+      {/* Create User Modal */}
+      {showCreateForm && (
+        <UserCreateModal
+          tenantId={parseInt(id!, 10)}
+          onSave={handleCreateUser}
+          onClose={() => setShowCreateForm(false)}
+        />
+      )}
+    </div>
+  );
+}

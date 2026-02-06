@@ -1,4 +1,10 @@
 // Database Models
+export interface TenantRole {
+  tenant_id: number;
+  tenant_name: string;
+  role: string;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -8,6 +14,11 @@ export interface User {
   is_approved: boolean;
   is_admin: boolean;
   is_viewer: boolean;
+  global_role: string | null;
+  email_verified: boolean;
+  organization_id: number | null;
+  organization_name?: string;
+  tenant_roles: TenantRole[];
   created_at: string;
 }
 
@@ -28,6 +39,17 @@ export interface Tenant {
   description: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Organization {
+  id: number;
+  name: string;
+  description: string | null;
+  created_by?: number;
+  created_at: string;
+  updated_at: string;
+  user_count?: number;
+  tenant_count?: number;
 }
 
 export interface Environment {
@@ -377,6 +399,10 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
   loading: boolean;
+  isSuperadmin: () => boolean;
+  isOrgAdmin: () => boolean;
+  getTenantRole: (tenantId: number | string) => string | null;
+  canManageTenant: (tenantId: number | string) => boolean;
 }
 
 export interface AppContextType {
@@ -413,4 +439,38 @@ export interface NotificationContextType {
   showInfo: (message: string, duration?: number) => void;
   showWarning: (message: string, duration?: number) => void;
   removeNotification: (id: number) => void;
+}
+
+// User Management Types
+export type TenantRoleName = 'tenant_admin' | 'editor' | 'viewer';
+
+export interface TenantUser {
+  id: number;
+  email: string;
+  name: string | null;
+  role: TenantRoleName;
+  created_at: string;
+}
+
+export interface Invitation {
+  id: number;
+  tenant_id: number;
+  email: string;
+  role: TenantRoleName;
+  token: string;
+  expires_at: string;
+  invited_by: number;
+  invited_by_name: string | null;
+  created_at: string;
+}
+
+export interface CreateInvitationRequest {
+  tenant_id: number;
+  email: string;
+  role: TenantRoleName;
+}
+
+export interface AcceptInvitationRequest {
+  name: string;
+  password: string;
 }

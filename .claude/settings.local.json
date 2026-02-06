@@ -14,7 +14,8 @@
       "Bash(test:*)",
       "Bash(chmod:*)",
       "Bash(npm run build:no-obfuscate:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []
