@@ -327,6 +327,7 @@ export interface UptimeMonitor {
   consecutive_failures: number;
   last_status_change: string | null;
   last_checked_at: string | null;
+  last_triggered_at: string | null;
   created_at: string;
   updated_at: string;
   last_response_time?: number; // Added for frontend cards

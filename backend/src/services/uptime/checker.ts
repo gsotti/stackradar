@@ -1,6 +1,7 @@
 import https from 'https';
 import http from 'http';
 import db from '../../db/database.js';
+import { resolveHierarchy } from '../hierarchy.js';
 import { UptimeMonitor, UptimeStatus, NotificationChannel } from '../../types/index.js';
 import { sendEmail } from '../alerting/smtp.js';
 
@@ -141,10 +142,12 @@ async function sendUptimeNotification(
 ): Promise<void> {
   console.log(`[Uptime Alert] Sending ${eventType} notification for monitor "${monitor.name}" (ID: ${monitor.id})`);
 
+  const now = new Date();
+
   try {
     // Get site details
-    const siteResult = await db.query<{ id: number; name: string }>(
-      'SELECT id, name FROM sites WHERE id = $1',
+    const siteResult = await db.query<{ id: number; name: string; tenant_id: number }>(
+      'SELECT id, name, tenant_id FROM sites WHERE id = $1',
       [monitor.site_id]
     );
 
@@ -154,6 +157,42 @@ async function sendUptimeNotification(
     }
 
     const site = siteResult.rows[0];
+
+    // Log the trigger to the central logs
+    try {
+      const client = await db.connect();
+      try {
+        const { systemId } = await resolveHierarchy(
+          client,
+          site.id,
+          'uptime',
+          'monitor'
+        );
+
+        await client.query(
+          `INSERT INTO log_entries (
+            system_id, timestamp, level, message, source,
+            tenant_id, site, environment, system
+          )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            systemId,
+            now,
+            eventType === 'down' ? 'CRITICAL' : 'INFO',
+            `Monitor "${monitor.name}" ${eventType === 'down' ? 'is DOWN' : 'has RECOVERED'} (${monitor.url})`,
+            'uptime-monitor',
+            site.tenant_id,
+            site.name,
+            'uptime',
+            'monitor'
+          ]
+        );
+      } finally {
+        client.release();
+      }
+    } catch (logError) {
+      console.error('[Uptime Alert] Failed to log status change:', logError);
+    }
 
     // Check if there's an uptime alert rule for this monitor
     const alertRuleResult = await db.query<{ id: number; severity: string; failure_threshold: number }>(
@@ -439,7 +478,10 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
     // Only notify when threshold is first reached
     if (newFailures >= failureThreshold && !hadAlreadyReachedThreshold) {
       console.log(`[Uptime] Threshold reached for monitor "${monitor.name}", triggering alert`);
-      await updateMonitorStatus(monitor.id, { last_status_change: now });
+      await updateMonitorStatus(monitor.id, { 
+        last_status_change: now,
+        last_triggered_at: now
+      });
       await sendUptimeNotification(monitor, 'down');
     } else if (hadAlreadyReachedThreshold) {
       console.log(`[Uptime] Monitor "${monitor.name}" still down, alert already sent`);

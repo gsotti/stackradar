@@ -349,6 +349,7 @@ export interface UptimeMonitor {
   consecutive_failures: number;
   last_status_change: Date | null;
   last_checked_at: Date | null;
+  last_triggered_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
