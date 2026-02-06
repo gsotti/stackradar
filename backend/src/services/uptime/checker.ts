@@ -138,7 +138,8 @@ async function updateMonitorStatus(
  */
 async function sendUptimeNotification(
   monitor: UptimeMonitor,
-  eventType: 'down' | 'recovered'
+  eventType: 'down' | 'recovered',
+  triggerReason?: string
 ): Promise<void> {
   console.log(`[Uptime Alert] Sending ${eventType} notification for monitor "${monitor.name}" (ID: ${monitor.id})`);
 
@@ -169,6 +170,8 @@ async function sendUptimeNotification(
           'monitor'
         );
 
+        const logMessage = triggerReason || `Monitor "${monitor.name}" ${eventType === 'down' ? 'is DOWN' : 'has RECOVERED'} (${monitor.url})`;
+
         await client.query(
           `INSERT INTO log_entries (
             system_id, timestamp, level, message, source,
@@ -179,7 +182,7 @@ async function sendUptimeNotification(
             systemId,
             now,
             eventType === 'down' ? 'CRITICAL' : 'INFO',
-            `Monitor "${monitor.name}" ${eventType === 'down' ? 'is DOWN' : 'has RECOVERED'} (${monitor.url})`,
+            logMessage,
             'uptime-monitor',
             site.tenant_id,
             site.name,
@@ -241,9 +244,9 @@ async function sendUptimeNotification(
     const alertRule = alertRuleResult.rows[0];
     if (alertRule) {
       const state = eventType === 'down' ? 'firing' : 'resolved';
-      const message = eventType === 'down'
+      const message = triggerReason || (eventType === 'down'
         ? `Monitor "${monitor.name}" is DOWN (${monitor.url})`
-        : `Monitor "${monitor.name}" has RECOVERED (${monitor.url})`;
+        : `Monitor "${monitor.name}" has RECOVERED (${monitor.url})`);
 
       await db.query(
         `INSERT INTO alert_history (alert_rule_id, site_id, state, message, notification_sent)
@@ -447,6 +450,7 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
   if (result.status === 'up') {
     // If previously failing, this is a recovery
     if (monitor.consecutive_failures > 0) {
+      console.log(`[Uptime] Monitor "${monitor.name}" RECOVERED (status: ${result.statusCode}, time: ${result.responseTimeMs}ms)`);
       await updateMonitorStatus(monitor.id, {
         consecutive_failures: 0,
         current_status: 'up',
@@ -467,7 +471,7 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
     const newFailures = monitor.consecutive_failures + 1;
     const hadAlreadyReachedThreshold = monitor.consecutive_failures >= failureThreshold;
 
-    console.log(`[Uptime] Monitor "${monitor.name}" check failed: ${result.status} (failures: ${newFailures}/${failureThreshold}, error: ${result.errorMessage || 'none'})`);
+    console.log(`[Uptime] Monitor "${monitor.name}" check FAILED: ${result.status} (failures: ${newFailures}/${failureThreshold}, code: ${result.statusCode}, error: ${result.errorMessage || 'none'}, time: ${result.responseTimeMs}ms)`);
 
     await updateMonitorStatus(monitor.id, {
       consecutive_failures: newFailures,
@@ -477,11 +481,17 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
 
     // Only notify when threshold is first reached
     if (newFailures >= failureThreshold && !hadAlreadyReachedThreshold) {
-      console.log(`[Uptime] Threshold reached for monitor "${monitor.name}", triggering alert`);
+      const reason = result.status === 'down' 
+        ? `Status code ${result.statusCode} (expected ${monitor.expected_status})`
+        : result.errorMessage || 'Unknown error';
+        
+      const triggerMessage = `Monitor "${monitor.name}" is DOWN: Reached threshold of ${failureThreshold} failures. Last reason: ${reason}`;
+      console.log(`[Uptime] ALERT TRIGGERED for monitor "${monitor.name}": ${triggerMessage}`);
+      
       await updateMonitorStatus(monitor.id, { 
         last_status_change: now
       });
-      await sendUptimeNotification(monitor, 'down');
+      await sendUptimeNotification(monitor, 'down', triggerMessage);
     } else if (hadAlreadyReachedThreshold) {
       console.log(`[Uptime] Monitor "${monitor.name}" still down, alert already sent`);
     }
@@ -495,7 +505,7 @@ async function getMonitorsDueForCheck(): Promise<UptimeMonitor[]> {
   const result = await db.query<UptimeMonitor>(
     `SELECT * FROM uptime_monitors
      WHERE enabled = true
-       AND (last_checked_at IS NULL OR last_checked_at + (interval_seconds || ' seconds')::interval <= NOW() + interval '5 seconds')
+       AND (last_checked_at IS NULL OR last_checked_at + (interval_seconds || ' seconds')::interval <= NOW() + interval '10 seconds')
      ORDER BY last_checked_at ASC NULLS FIRST
      LIMIT 100`
   );
