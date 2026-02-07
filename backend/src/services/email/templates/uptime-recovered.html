@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+
+          <!-- Logo / Brand bar -->
+          <tr>
+            <td style="padding: 24px 32px; background: #111827; border-radius: 16px 16px 0 0;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #10b981, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">StackRadar</span>
+                  </td>
+                  <td align="right">
+                    <span style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; background: #10b981; color: white;">RECOVERED</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Content card -->
+          <tr>
+            <td style="background: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+
+              <!-- Header -->
+              <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #059669;">Monitor Recovered</h1>
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #6b7280;">Your monitored service is back online</p>
+
+              <!-- Success Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 16px 20px; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0;">
+                    <p style="margin: 0; color: #065f46; font-size: 14px; font-weight: 600;">Great news! Your endpoint is responding normally and the service has been restored.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Site -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px;">
+                    <span style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Site</span><br>
+                    <span style="color: #111827; font-size: 15px; font-weight: 600;">{{siteName}}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Monitor Name -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px;">
+                    <span style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Monitor</span><br>
+                    <span style="color: #111827; font-size: 15px; font-weight: 600;">{{monitorName}}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- URL -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px;">
+                    <span style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">URL</span><br>
+                    <span style="color: #111827; font-size: 14px; font-weight: 500; word-break: break-all;">{{monitorUrl}}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 24px 0;">
+
+              <!-- Status -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f0fdf4; border-radius: 8px;">
+                    <span style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Status</span><br>
+                    <span style="color: #059669; font-size: 16px; font-weight: 700;">UP</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Timestamp -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px;">
+                    <span style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Recovered At</span><br>
+                    <span style="color: #111827; font-size: 15px; font-weight: 500;">{{timestamp}}</span>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f9fafb; padding: 20px 32px; border-radius: 0 0 16px 16px; border: 1px solid #e5e7eb; border-top: none; text-align: center;">
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">Automated notification from StackRadar Uptime Monitoring</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -5,6 +5,7 @@ import { authMiddleware, hashPassword } from '../middleware/auth.js';
 import { AuthRequest, Invitation, TenantRole, User } from '../types/index.js';
 import db from '../db/database.js';
 import { sendEmail } from '../services/alerting/smtp.js';
+import { renderTemplate } from '../services/email/templateRenderer.js';
 
 const router = Router();
 
@@ -141,19 +142,14 @@ router.post('/', authMiddleware, async (
     try {
       const invitationUrl = `${process.env.APP_URL || 'http://localhost:5173'}/invitation/${token}`;
 
-      await sendEmail(
-        email,
-        'You have been invited to StackRadar',
-        `
-          <h2>You have been invited to join StackRadar</h2>
-          <p>You have been invited to join the tenant <strong>${tenantName}</strong> with the role of <strong>${role}</strong>.</p>
-          <p>Click the link below to accept your invitation and create your account:</p>
-          <p><a href="${invitationUrl}">${invitationUrl}</a></p>
-          <p>This invitation will expire on ${expiresAt.toLocaleDateString()}.</p>
-          <p>If you did not expect this invitation, you can safely ignore this email.</p>
-        `,
-        `You have been invited to join StackRadar\n\nYou have been invited to join the tenant "${tenantName}" with the role of "${role}".\n\nClick the link below to accept your invitation and create your account:\n${invitationUrl}\n\nThis invitation will expire on ${expiresAt.toLocaleDateString()}.\n\nIf you did not expect this invitation, you can safely ignore this email.`
-      );
+      const { html: htmlBody, text: textBody } = renderTemplate('invitation', {
+        tenantName,
+        role,
+        invitationUrl,
+        expiresAt: expiresAt.toLocaleDateString(),
+      });
+
+      await sendEmail(email, 'You have been invited to StackRadar', htmlBody, textBody);
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
       // Continue anyway - invitation is created, user can be manually notified
@@ -440,19 +436,14 @@ router.post('/:id/resend', authMiddleware, async (
     try {
       const invitationUrl = `${process.env.APP_URL || 'http://localhost:5173'}/invitation/${newToken}`;
 
-      await sendEmail(
-        invitation.email,
-        'You have been invited to StackRadar',
-        `
-          <h2>You have been invited to join StackRadar</h2>
-          <p>You have been invited to join the tenant <strong>${tenantName}</strong> with the role of <strong>${invitation.role}</strong>.</p>
-          <p>Click the link below to accept your invitation and create your account:</p>
-          <p><a href="${invitationUrl}">${invitationUrl}</a></p>
-          <p>This invitation will expire on ${newExpiresAt.toLocaleDateString()}.</p>
-          <p>If you did not expect this invitation, you can safely ignore this email.</p>
-        `,
-        `You have been invited to join StackRadar\n\nYou have been invited to join the tenant "${tenantName}" with the role of "${invitation.role}".\n\nClick the link below to accept your invitation and create your account:\n${invitationUrl}\n\nThis invitation will expire on ${newExpiresAt.toLocaleDateString()}.\n\nIf you did not expect this invitation, you can safely ignore this email.`
-      );
+      const { html: htmlBody, text: textBody } = renderTemplate('invitation', {
+        tenantName,
+        role: invitation.role,
+        invitationUrl,
+        expiresAt: newExpiresAt.toLocaleDateString(),
+      });
+
+      await sendEmail(invitation.email, 'You have been invited to StackRadar', htmlBody, textBody);
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
       // Return error since the resend action failed

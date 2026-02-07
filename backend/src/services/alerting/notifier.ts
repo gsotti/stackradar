@@ -2,6 +2,7 @@ import https from 'https';
 import http from 'http';
 import db from '../../db/database.js';
 import { sendEmail } from './smtp.js';
+import { renderTemplate } from '../email/templateRenderer.js';
 import {
   AlertHistory,
   AlertRule,
@@ -114,8 +115,28 @@ async function sendEmailNotification(
   }
 
   const subject = formatEmailSubject(alert, rule, site);
-  const htmlBody = formatEmailTemplate(alert, rule, site);
-  const textBody = formatTextTemplate(alert, rule, site);
+
+  // Pre-compute all variables for template
+  const metricTypeLabel = getMetricTypeLabel(rule.metric_type);
+  const stateColor = alert.state === 'firing' ? '#ef4444' : '#10b981';
+  const severityColor = rule.severity === 'critical' ? '#dc2626' : rule.severity === 'warning' ? '#f59e0b' : '#3b82f6';
+
+  const { html: htmlBody, text: textBody } = renderTemplate('metric-alert', {
+    stateColor,
+    severityColor,
+    headerText: alert.state === 'firing' ? '⚠️ Alert Triggered' : '✅ Alert Resolved',
+    siteName: site.name,
+    ruleName: rule.name,
+    descriptionHtml: rule.description ? `<div class="field"><span class="label">Description:</span><span class="value">${rule.description}</span></div>` : '',
+    severityUpper: rule.severity.toUpperCase(),
+    statusText: alert.state === 'firing' ? 'FIRING' : 'RESOLVED',
+    metricTypeLabel,
+    conditionText: `${metricTypeLabel} ${rule.threshold_operator} ${rule.threshold_value}`,
+    metricValue: alert.metric_value !== null ? String(alert.metric_value) : 'N/A',
+    metricValueColor: alert.state === 'firing' ? '#ef4444' : '#10b981',
+    triggeredAt: new Date(alert.triggered_at).toLocaleString(),
+    resolvedAtHtml: alert.resolved_at ? `<div class="field"><span class="label">Resolved At:</span><span class="value">${new Date(alert.resolved_at).toLocaleString()}</span></div>` : '',
+  });
 
   await sendEmail(channel.email_recipients, subject, htmlBody, textBody);
 }
@@ -156,126 +177,6 @@ function formatEmailSubject(
   return `[StackRadar ${severity}] ${state}: ${rule.name} - ${site.name}`;
 }
 
-/**
- * Format HTML email template
- */
-function formatEmailTemplate(
-  alert: AlertHistory,
-  rule: AlertRule,
-  site: { id: number; name: string }
-): string {
-  const metricTypeLabel = getMetricTypeLabel(rule.metric_type);
-  const stateColor = alert.state === 'firing' ? '#ef4444' : '#10b981';
-  const severityColor =
-    rule.severity === 'critical'
-      ? '#dc2626'
-      : rule.severity === 'warning'
-      ? '#f59e0b'
-      : '#3b82f6';
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: ${stateColor}; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-    .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; }
-    .field { margin: 10px 0; }
-    .label { font-weight: bold; color: #6b7280; }
-    .value { color: #111827; }
-    .severity { display: inline-block; padding: 4px 12px; border-radius: 4px; color: white; background: ${severityColor}; }
-    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 style="margin: 0;">${alert.state === 'firing' ? '⚠️ Alert Triggered' : '✅ Alert Resolved'}</h1>
-    </div>
-    <div class="content">
-      <div class="field">
-        <span class="label">Site:</span>
-        <span class="value">${site.name}</span>
-      </div>
-      <div class="field">
-        <span class="label">Alert Rule:</span>
-        <span class="value">${rule.name}</span>
-      </div>
-      ${rule.description ? `<div class="field"><span class="label">Description:</span><span class="value">${rule.description}</span></div>` : ''}
-      <div class="field">
-        <span class="label">Severity:</span>
-        <span class="severity">${rule.severity.toUpperCase()}</span>
-      </div>
-      <div class="field">
-        <span class="label">Status:</span>
-        <span class="value">${alert.state === 'firing' ? 'FIRING' : 'RESOLVED'}</span>
-      </div>
-      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-      <div class="field">
-        <span class="label">Metric:</span>
-        <span class="value">${metricTypeLabel}</span>
-      </div>
-      <div class="field">
-        <span class="label">Condition:</span>
-        <span class="value">${metricTypeLabel} ${rule.threshold_operator} ${rule.threshold_value}</span>
-      </div>
-      <div class="field">
-        <span class="label">Current Value:</span>
-        <span class="value" style="font-weight: bold; color: ${alert.state === 'firing' ? '#ef4444' : '#10b981'};">${alert.metric_value !== null ? alert.metric_value : 'N/A'}</span>
-      </div>
-      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-      <div class="field">
-        <span class="label">Triggered At:</span>
-        <span class="value">${new Date(alert.triggered_at).toLocaleString()}</span>
-      </div>
-      ${alert.resolved_at ? `<div class="field"><span class="label">Resolved At:</span><span class="value">${new Date(alert.resolved_at).toLocaleString()}</span></div>` : ''}
-    </div>
-    <div class="footer">
-      <p>This is an automated message from StackRadar</p>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
-}
-
-/**
- * Format plain text email template
- */
-function formatTextTemplate(
-  alert: AlertHistory,
-  rule: AlertRule,
-  site: { id: number; name: string }
-): string {
-  const metricTypeLabel = getMetricTypeLabel(rule.metric_type);
-
-  return `
-StackRadar Alert Notification
-${alert.state === 'firing' ? 'ALERT TRIGGERED' : 'ALERT RESOLVED'}
-${'='.repeat(50)}
-
-Site: ${site.name}
-Alert Rule: ${rule.name}
-${rule.description ? `Description: ${rule.description}` : ''}
-Severity: ${rule.severity.toUpperCase()}
-Status: ${alert.state === 'firing' ? 'FIRING' : 'RESOLVED'}
-
-Metric Details:
-- Metric: ${metricTypeLabel}
-- Condition: ${metricTypeLabel} ${rule.threshold_operator} ${rule.threshold_value}
-- Current Value: ${alert.metric_value !== null ? alert.metric_value : 'N/A'}
-
-Timestamps:
-- Triggered At: ${new Date(alert.triggered_at).toLocaleString()}
-${alert.resolved_at ? `- Resolved At: ${new Date(alert.resolved_at).toLocaleString()}` : ''}
-
-${'='.repeat(50)}
-This is an automated message from StackRadar
-  `.trim();
-}
 
 /**
  * Format webhook payload

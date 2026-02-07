@@ -4,6 +4,7 @@ import db from '../../db/database.js';
 import { resolveHierarchy } from '../hierarchy.js';
 import { UptimeMonitor, UptimeStatus, NotificationChannel } from '../../types/index.js';
 import { sendEmail } from '../alerting/smtp.js';
+import { renderTemplate } from '../email/templateRenderer.js';
 
 const MAX_CONCURRENT_CHECKS = 10;
 
@@ -139,7 +140,9 @@ async function updateMonitorStatus(
 async function sendUptimeNotification(
   monitor: UptimeMonitor,
   eventType: 'down' | 'recovered',
-  triggerReason?: string
+  triggerReason?: string,
+  isRecurring?: boolean,
+  consecutiveFailures?: number
 ): Promise<void> {
   console.log(`[Uptime Alert] Sending ${eventType} notification for monitor "${monitor.name}" (ID: ${monitor.id})`);
 
@@ -260,86 +263,53 @@ async function sendUptimeNotification(
       return;
     }
 
-    const subject = eventType === 'down'
-      ? `[StackRadar ALERT] Monitor Down: ${monitor.name} - ${site.name}`
-      : `[StackRadar RESOLVED] Monitor Recovered: ${monitor.name} - ${site.name}`;
+    // Generate subject based on event type and recurring status
+    let subject: string;
+    if (eventType === 'recovered') {
+      subject = `[StackRadar RESOLVED] Monitor Recovered: ${monitor.name} - ${site.name}`;
+    } else if (isRecurring) {
+      subject = `[StackRadar REMINDER] Monitor Still Down: ${monitor.name} - ${site.name}`;
+    } else {
+      subject = `[StackRadar ALERT] Monitor Down: ${monitor.name} - ${site.name}`;
+    }
 
-    const stateColor = eventType === 'down' ? '#ef4444' : '#10b981';
-    const stateEmoji = eventType === 'down' ? '🔴' : '🟢';
-    const stateText = eventType === 'down' ? 'DOWN' : 'UP';
+    const timestamp = new Date().toLocaleString();
+    const failureCount = consecutiveFailures !== undefined ? String(consecutiveFailures) : String(monitor.consecutive_failures);
 
-    const htmlBody = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: ${stateColor}; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-    .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; }
-    .field { margin: 10px 0; }
-    .label { font-weight: bold; color: #6b7280; }
-    .value { color: #111827; }
-    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 style="margin: 0;">${stateEmoji} Monitor ${eventType === 'down' ? 'Down' : 'Recovered'}</h1>
-    </div>
-    <div class="content">
-      <div class="field">
-        <span class="label">Site:</span>
-        <span class="value">${site.name}</span>
-      </div>
-      <div class="field">
-        <span class="label">Monitor:</span>
-        <span class="value">${monitor.name}</span>
-      </div>
-      <div class="field">
-        <span class="label">URL:</span>
-        <span class="value">${monitor.url}</span>
-      </div>
-      <div class="field">
-        <span class="label">Status:</span>
-        <span class="value" style="color: ${stateColor}; font-weight: bold;">${stateText}</span>
-      </div>
-      <div class="field">
-        <span class="label">Time:</span>
-        <span class="value">${new Date().toLocaleString()}</span>
-      </div>
-      ${eventType === 'down' && alertRule ? `
-      <div class="field">
-        <span class="label">Consecutive Failures:</span>
-        <span class="value">${alertRule.failure_threshold || 3}</span>
-      </div>
-      ` : ''}
-    </div>
-    <div class="footer">
-      <p>This is an automated message from StackRadar Uptime Monitoring</p>
-    </div>
-  </div>
-</body>
-</html>
-    `.trim();
+    // Select appropriate template based on event type and recurring status
+    let htmlBody: string;
+    let textBody: string;
 
-    const textBody = `
-StackRadar Uptime Monitor Notification
-${eventType === 'down' ? 'MONITOR DOWN' : 'MONITOR RECOVERED'}
-${'='.repeat(50)}
-
-Site: ${site.name}
-Monitor: ${monitor.name}
-URL: ${monitor.url}
-Status: ${stateText}
-Time: ${new Date().toLocaleString()}
-${eventType === 'down' && alertRule ? `Consecutive Failures: ${alertRule.failure_threshold || 3}` : ''}
-
-${'='.repeat(50)}
-This is an automated message from StackRadar Uptime Monitoring
-    `.trim();
+    if (eventType === 'down' && isRecurring) {
+      const rendered = renderTemplate('uptime-still-down', {
+        siteName: site.name,
+        monitorName: monitor.name,
+        monitorUrl: monitor.url,
+        timestamp,
+        consecutiveFailures: failureCount,
+      });
+      htmlBody = rendered.html;
+      textBody = rendered.text;
+    } else if (eventType === 'down') {
+      const rendered = renderTemplate('uptime-down', {
+        siteName: site.name,
+        monitorName: monitor.name,
+        monitorUrl: monitor.url,
+        timestamp,
+        consecutiveFailures: failureCount,
+      });
+      htmlBody = rendered.html;
+      textBody = rendered.text;
+    } else {
+      const rendered = renderTemplate('uptime-recovered', {
+        siteName: site.name,
+        monitorName: monitor.name,
+        monitorUrl: monitor.url,
+        timestamp,
+      });
+      htmlBody = rendered.html;
+      textBody = rendered.text;
+    }
 
     // Send to all channels
     for (const channel of channels) {
@@ -481,17 +451,17 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
 
     // Only notify when threshold is first reached
     if (newFailures >= failureThreshold && !hadAlreadyReachedThreshold) {
-      const reason = result.status === 'down' 
+      const reason = result.status === 'down'
         ? `Status code ${result.statusCode} (expected ${monitor.expected_status})`
         : result.errorMessage || 'Unknown error';
-        
+
       const triggerMessage = `Monitor "${monitor.name}" is DOWN: Reached threshold of ${failureThreshold} failures. Last reason: ${reason}`;
       console.log(`[Uptime] ALERT TRIGGERED for monitor "${monitor.name}": ${triggerMessage}`);
-      
-      await updateMonitorStatus(monitor.id, { 
+
+      await updateMonitorStatus(monitor.id, {
         last_status_change: now
       });
-      await sendUptimeNotification(monitor, 'down', triggerMessage);
+      await sendUptimeNotification(monitor, 'down', triggerMessage, false, newFailures);
     } else if (hadAlreadyReachedThreshold) {
       console.log(`[Uptime] Monitor "${monitor.name}" still down, checking for recurring notification`);
 
@@ -519,24 +489,18 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
 
         if (lastAlertResult.rows.length > 0) {
           const lastAlert = lastAlertResult.rows[0];
-          const lastNotified = lastAlert.last_notified_at
-            ? new Date(lastAlert.last_notified_at)
-            : new Date(lastAlert.triggered_at);
 
-          const repeatIntervalMs = (monitorAlertRule.repeat_interval_hours || 1) * 60 * 60 * 1000;
-          const nextNotificationTime = new Date(lastNotified.getTime() + repeatIntervalMs);
+          // Atomic update: only proceed if enough time has passed
+          const atomicResult = await db.query(
+            `UPDATE alert_history SET last_notified_at = NOW()
+             WHERE id = $1 AND (last_notified_at IS NULL OR last_notified_at <= NOW() - $2 * INTERVAL '1 hour')
+             RETURNING id`,
+            [lastAlert.id, monitorAlertRule.repeat_interval_hours || 1]
+          );
 
-          if (Date.now() >= nextNotificationTime.getTime()) {
+          if (atomicResult.rowCount && atomicResult.rowCount > 0) {
             console.log(`🔔 Sending recurring notification for uptime alert "${monitor.name}" (still firing, interval: ${monitorAlertRule.repeat_interval_hours}h)`);
-
-            // Update last_notified_at
-            await db.query(
-              'UPDATE alert_history SET last_notified_at = NOW() WHERE id = $1',
-              [lastAlert.id]
-            );
-
-            // Send notification
-            await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`);
+            await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`, true, newFailures);
           }
         }
       }

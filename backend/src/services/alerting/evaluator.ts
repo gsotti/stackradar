@@ -92,14 +92,16 @@ export async function evaluateRule(rule: AlertRule): Promise<string> {
 
       if (Date.now() >= nextNotificationTime.getTime()) {
         console.log(`🔔 Sending recurring notification for alert ${rule.name} (still firing, interval: ${rule.repeat_interval_hours}h)`);
-        
+
         // Update last_notified_at
         await updateAlertLastNotifiedAt(existingAlert.id);
-        
+
         // Send notifications
-        sendNotifications(existingAlert.id, rule.id).catch((error) => {
+        try {
+          await sendNotifications(existingAlert.id, rule.id);
+        } catch (error) {
           console.error(`Failed to send recurring notifications for alert ${existingAlert.id}:`, error);
-        });
+        }
         
         return 'fired'; // Or maybe 'skipped' but 'fired' indicates notification activity
       }
@@ -120,10 +122,12 @@ export async function evaluateRule(rule: AlertRule): Promise<string> {
 
     console.log(`🔔 Alert fired: ${rule.name} (${rule.metric_type} = ${currentValue})`);
 
-    // Send notifications asynchronously
-    sendNotifications(alertHistoryId, rule.id).catch((error) => {
+    // Send notifications
+    try {
+      await sendNotifications(alertHistoryId, rule.id);
+    } catch (error) {
       console.error(`Failed to send notifications for alert ${alertHistoryId}:`, error);
-    });
+    }
 
     return 'fired';
   } else {
@@ -141,9 +145,11 @@ export async function evaluateRule(rule: AlertRule): Promise<string> {
         message
       );
 
-      sendNotifications(resolvedAlertId, rule.id).catch((error) => {
+      try {
+        await sendNotifications(resolvedAlertId, rule.id);
+      } catch (error) {
         console.error(`Failed to send resolution notifications:`, error);
-      });
+      }
 
       return 'resolved';
     }

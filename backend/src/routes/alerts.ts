@@ -8,6 +8,7 @@ import {
   clearSmtpConfigCache,
 } from '../services/alerting/smtp.js';
 import { evaluateRule, getCurrentMetricValue } from '../services/alerting/evaluator.js';
+import { renderTemplate } from '../services/email/templateRenderer.js';
 import {
   AuthRequest,
   AlertRule,
@@ -951,45 +952,11 @@ router.post(
         if (channel.channel_type === 'email') {
           // Send email notification
           const subject = `[StackRadar Test Alert] High CPU Usage on ${site.name}`;
-          const htmlBody = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%); padding: 20px; border-radius: 8px 8px 0 0;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">⚠️ Test Alert</h1>
-              </div>
-              <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-                <h2 style="color: #111827; margin-top: 0;">High CPU Usage</h2>
-                <p style="color: #4b5563; font-size: 16px;">This is a <strong>test alert</strong> triggered manually from StackRadar Admin Settings.</p>
 
-                <div style="background: white; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-                  <p style="margin: 5px 0; color: #374151;"><strong>Site:</strong> ${site.name}</p>
-                  <p style="margin: 5px 0; color: #374151;"><strong>Metric:</strong> CPU Usage</p>
-                  <p style="margin: 5px 0; color: #374151;"><strong>Current Value:</strong> 95.0%</p>
-                  <p style="margin: 5px 0; color: #374151;"><strong>Threshold:</strong> > 80.0%</p>
-                  <p style="margin: 5px 0; color: #374151;"><strong>Severity:</strong> Warning</p>
-                  <p style="margin: 5px 0; color: #374151;"><strong>Channel:</strong> ${channel.name}</p>
-                </div>
-
-                <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
-                  This is a test notification. No action is required. If you received this email,
-                  your notification channel is configured correctly.
-                </p>
-              </div>
-            </div>
-          `;
-          const textBody = `
-TEST ALERT - High CPU Usage
-
-This is a test alert triggered manually from StackRadar Admin Settings.
-
-Site: ${site.name}
-Metric: CPU Usage
-Current Value: 95.0%
-Threshold: > 80.0%
-Severity: Warning
-Channel: ${channel.name}
-
-This is a test notification. No action is required.
-          `;
+          const { html: htmlBody, text: textBody } = renderTemplate('test-alert', {
+            siteName: site.name,
+            channelName: channel.name,
+          });
 
           await sendEmail(channel.email_recipients!, subject, htmlBody, textBody);
         } else if (channel.channel_type === 'webhook') {

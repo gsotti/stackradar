@@ -56,6 +56,11 @@ export default function Sidebar() {
       try {
         const tenantsData = await api.get<Tenant[]>('/tenants');
         setTenants(tenantsData);
+
+        // Auto-select tenant if user has exactly one and none is selected
+        if (tenantsData.length === 1 && !selectedTenant) {
+          setSelectedTenant(String(tenantsData[0].id));
+        }
       } catch (error) {
         console.error('Error fetching tenants:', error);
       }
@@ -64,7 +69,7 @@ export default function Sidebar() {
     if (user) {
       fetchTenants();
     }
-  }, [user]);
+  }, [user, selectedTenant, setSelectedTenant]);
 
   // Fetch sites based on selected tenant
   useEffect(() => {
@@ -160,8 +165,8 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Tenant Selector - Only for admins */}
-        {!sidebarCollapsed && user?.is_admin && (
+        {/* Tenant Selector - Show for users with multiple tenants */}
+        {!sidebarCollapsed && tenants.length > 1 && (
           <div className="px-4 pt-3 pb-2">
             <select
               value={selectedTenant}

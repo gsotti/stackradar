@@ -211,9 +211,9 @@ export default function SitesPage() {
           <Server className="w-16 h-16 text-gray-300 mx-auto mb-4 opacity-50" />
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No sites found</h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">
-            {selectedTenant ? 'Create your first site to start monitoring your infrastructure.' : 'Please select a tenant from the sidebar first.'}
+            Create your first site to start monitoring your infrastructure.
           </p>
-          {selectedTenant && !user?.is_viewer && (
+          {!user?.is_viewer && (
             <button
               onClick={() => setShowForm(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"

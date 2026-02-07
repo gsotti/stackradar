@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+
+          <!-- Logo / Brand bar -->
+          <tr>
+            <td style="padding: 24px 32px; background: #111827; border-radius: 16px 16px 0 0;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #10b981, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">StackRadar</span>
+                  </td>
+                  <td align="right">
+                    <span style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; background: linear-gradient(135deg, #3b82f6, #a855f7); color: white;">INVITATION</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Content card -->
+          <tr>
+            <td style="background: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+
+              <!-- Header -->
+              <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #111827;">You're Invited!</h1>
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #6b7280; line-height: 1.6;">You have been invited to join a StackRadar tenant. Accept your invitation to start monitoring and managing your observability infrastructure.</p>
+
+              <!-- Invitation Details -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px;">
+                    <span style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Tenant</span><br>
+                    <span style="color: #111827; font-size: 15px; font-weight: 600;">{{tenantName}}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px;">
+                    <span style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Your Role</span><br>
+                    <span style="color: #111827; font-size: 15px; font-weight: 600;">{{role}}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 32px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="{{invitationUrl}}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6, #a855f7); color: white; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 15px;">Accept Invitation</a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Alternative link -->
+              <p style="margin: 24px 0 8px 0; font-size: 13px; color: #9ca3af; text-align: center;">Or copy and paste this link into your browser:</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <p style="margin: 0; font-size: 13px; color: #3b82f6; word-break: break-all; line-height: 1.5;">{{invitationUrl}}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 32px 0;">
+
+              <!-- Expiration Notice -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
+                <tr>
+                  <td style="padding: 14px 16px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0;">
+                    <p style="margin: 0; color: #92400e; font-size: 13px; font-weight: 500;">This invitation will expire on <strong>{{expiresAt}}</strong></p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0; font-size: 13px; color: #9ca3af; line-height: 1.6;">If you did not expect this invitation or have any questions, please contact the person who invited you. You can safely ignore this email if you're not interested.</p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f9fafb; padding: 20px 32px; border-radius: 0 0 16px 16px; border: 1px solid #e5e7eb; border-top: none; text-align: center;">
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">Automated notification from StackRadar</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
