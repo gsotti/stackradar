@@ -35,12 +35,14 @@ export default function Sidebar() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Logs', href: '/logs/live', icon: Activity },
-    { name: 'Sites', href: '/sites', icon: Server },
-    ...(!isViewer() ? [
-      { name: 'Environments', href: '/environments', icon: Globe },
-      { name: 'Systems', href: '/systems', icon: Package }
+    ...(!isSuperadmin() ? [
+      { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      { name: 'Logs', href: '/logs/live', icon: Activity },
+      { name: 'Sites', href: '/sites', icon: Server },
+      ...(!isViewer() ? [
+        { name: 'Environments', href: '/environments', icon: Globe },
+        { name: 'Systems', href: '/systems', icon: Package }
+      ] : []),
     ] : []),
     ...(isOrgAdmin() ? [
       { name: 'Tenants', href: '/tenants', icon: Building2 },
@@ -166,8 +168,8 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Tenant Selector - Show for users with multiple tenants */}
-        {!sidebarCollapsed && tenants.length > 1 && (
+        {/* Tenant Selector - Show for users with multiple tenants (except superadmins) */}
+        {!sidebarCollapsed && !isSuperadmin() && tenants.length > 1 && (
           <div className="px-4 pt-3 pb-2">
             <select
               value={selectedTenant}

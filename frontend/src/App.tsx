@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -22,6 +22,14 @@ import TenantUsersPage from './pages/TenantUsersPage';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import OrgUsersPage from './pages/OrgUsersPage';
 
+function RootRedirect() {
+  const { isSuperadmin } = useAuth();
+  if (isSuperadmin()) {
+    return <Navigate to="/superadmin" replace />;
+  }
+  return <DashboardPage />;
+}
+
 export default function App() {
   return (
     <BrowserRouter
@@ -37,7 +45,7 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/invitation/:token" element={<AcceptInvitationPage />} />
-              <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute><RootRedirect /></ProtectedRoute>} />
               <Route path="/logs/live" element={<ProtectedRoute><LogsLivePage /></ProtectedRoute>} />
               <Route path="/logs/table" element={<ProtectedRoute><LogsTablePage /></ProtectedRoute>} />
               <Route path="/logs" element={<Navigate to="/logs/live" replace />} />

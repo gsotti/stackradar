@@ -18,11 +18,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      const response = await login(email, password);
+      
+      const isSuperadmin = response.user?.global_role === 'superadmin' || 
+                          (response as any).global_role === 'superadmin';
 
       // Small delay to ensure state is updated before navigation
       setTimeout(() => {
-        navigate('/');
+        if (isSuperadmin) {
+          navigate('/superadmin');
+        } else {
+          navigate('/');
+        }
       }, 100);
     } catch (err: any) {
       setError(err.message);
