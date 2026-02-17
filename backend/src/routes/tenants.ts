@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
-import { orgAdminMiddleware } from '../middleware/roleMiddleware.js';
+import { orgAdminMiddleware, tenantMemberMiddleware } from '../middleware/roleMiddleware.js';
 import db from '../db/database.js';
 import { AuthRequest, Tenant } from '../types/index.js';
 
@@ -19,6 +19,19 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response): Promise
          GROUP BY t.id
          ORDER BY t.name`,
         [req.organizationId]
+      );
+      res.json(result.rows);
+      return;
+    }
+
+    // For superadmin, show ALL tenants
+    if (req.globalRole === 'superadmin') {
+      const result = await db.query<Tenant>(
+        `SELECT t.*, COUNT(DISTINCT ut.user_id) as user_count
+         FROM tenants t
+         LEFT JOIN user_tenants ut ON t.id = ut.tenant_id
+         GROUP BY t.id
+         ORDER BY t.name`
       );
       res.json(result.rows);
       return;
@@ -48,7 +61,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response): Promise
 });
 
 // Get a single tenant by ID
-router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+router.get('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const result = await db.query<Tenant>(
@@ -101,7 +114,7 @@ router.post('/', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, re
 });
 
 // Update a tenant
-router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+router.put('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
@@ -109,6 +122,18 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
     if (!name || name.trim() === '') {
       res.status(400).json({ error: 'Tenant name is required' });
       return;
+    }
+
+    // Double check permission for non-global admins
+    if (req.globalRole !== 'superadmin' && req.globalRole !== 'org_admin') {
+      const roleResult = await db.query<{ role: string }>(
+        'SELECT role FROM user_tenants WHERE user_id = $1 AND tenant_id = $2',
+        [req.userId, id]
+      );
+      if (!roleResult.rows[0] || roleResult.rows[0].role !== 'tenant_admin') {
+        res.status(403).json({ detail: 'Tenant admin access required' });
+        return;
+      }
     }
 
     const result = await db.query<Tenant>(
@@ -143,9 +168,16 @@ router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthReques
     }
 
     // Verify tenant exists and user has access
-    const tenantCheck = await db.query('SELECT id FROM tenants WHERE id = $1', [id]);
+    // For org_admin, must be in their organization
+    let tenantCheck;
+    if (req.globalRole === 'org_admin' && req.organizationId) {
+      tenantCheck = await db.query('SELECT id FROM tenants WHERE id = $1 AND organization_id = $2', [id, req.organizationId]);
+    } else {
+      tenantCheck = await db.query('SELECT id FROM tenants WHERE id = $1', [id]);
+    }
+
     if (tenantCheck.rows.length === 0) {
-      res.status(404).json({ error: 'Tenant not found' });
+      res.status(404).json({ error: 'Tenant not found or access denied' });
       return;
     }
 
