@@ -260,6 +260,11 @@ router.put('/users/:id', authMiddleware, superadminMiddleware, async (
     }
 
     if (password && password.length > 0) {
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        res.status(400).json({ detail: passwordCheck.message });
+        return;
+      }
       const { hashPassword } = await import('../middleware/auth.js');
       updates.push(`password_hash = $${paramIndex}`);
       values.push(hashPassword(password));
