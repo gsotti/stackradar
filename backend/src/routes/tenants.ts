@@ -135,6 +135,19 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
 router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const { confirm } = req.body;
+
+    if (confirm !== true) {
+      res.status(400).json({ detail: 'Tenant deletion requires confirm: true in request body' });
+      return;
+    }
+
+    // Verify tenant exists and user has access
+    const tenantCheck = await db.query('SELECT id FROM tenants WHERE id = $1', [id]);
+    if (tenantCheck.rows.length === 0) {
+      res.status(404).json({ error: 'Tenant not found' });
+      return;
+    }
 
     const result = await db.query<Tenant>(
       'DELETE FROM tenants WHERE id = $1 RETURNING *',

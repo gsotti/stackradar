@@ -111,10 +111,11 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 // Error handler
-app.use((err: any, _req: Request, res: Response) => {
+app.use((err: any, _req: Request, res: Response, _next: Function) => {
   console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
+  const status = err.status || 500;
+  res.status(status).json({
+    error: status < 500 ? err.message : 'Internal server error'
   });
 });
 

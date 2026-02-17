@@ -230,23 +230,24 @@ router.get('/:id/k8s-metrics', authMiddleware, async (
   try {
     const siteId = req.params.id;
 
-    // Verify site belongs to user's tenant
-    const siteCheck = await db.query<{ tenant_id: number }>(
-      'SELECT tenant_id FROM sites WHERE id = $1',
-      [siteId]
-    );
-    if (siteCheck.rows.length === 0 || !req.userTenantIds?.includes(siteCheck.rows[0].tenant_id)) {
-      res.status(404).json({ detail: 'Site not found' });
-      return;
-    }
-
     const result = await db.query(
-      'SELECT * FROM site_metrics WHERE site_id = $1',
-      [siteId]
+      `SELECT m.* FROM site_metrics m
+       INNER JOIN sites s ON m.site_id = s.id
+       WHERE m.site_id = $1 AND s.tenant_id = ANY($2)`,
+      [siteId, req.userTenantIds || []]
     );
 
     if (result.rows.length === 0) {
-      res.json(null); // No metrics available for this site yet
+      // Check if site exists but has no metrics, vs site not found
+      const siteExists = await db.query(
+        'SELECT id FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+        [siteId, req.userTenantIds || []]
+      );
+      if (siteExists.rows.length === 0) {
+        res.status(404).json({ detail: 'Site not found' });
+        return;
+      }
+      res.json(null);
       return;
     }
 
@@ -278,12 +279,12 @@ router.get('/:id/k8s-metrics/history', authMiddleware, async (
     const siteId = parseInt(req.params.id);
     const { from, to, step } = req.query as { from?: string; to?: string; step?: string };
 
-    // Verify site belongs to user's tenant
-    const siteCheck = await db.query<{ tenant_id: number }>(
-      'SELECT tenant_id FROM sites WHERE id = $1',
-      [req.params.id]
+    // Verify site access
+    const siteCheck = await db.query(
+      'SELECT id FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+      [req.params.id, req.userTenantIds || []]
     );
-    if (siteCheck.rows.length === 0 || !req.userTenantIds?.includes(siteCheck.rows[0].tenant_id)) {
+    if (siteCheck.rows.length === 0) {
       res.status(404).json({ detail: 'Site not found' });
       return;
     }
@@ -293,18 +294,20 @@ router.get('/:id/k8s-metrics/history', authMiddleware, async (
     const stepSeconds = parseStepToSeconds(step);
 
     // Compute time bucket using epoch division to support arbitrary minute steps
+    // Also JOIN on sites for defense in depth against TOCTOU
     const result = await db.query(
       `SELECT
          to_timestamp(floor(extract(epoch from h.timestamp) / $3) * $3) AS bucket,
          AVG(h.cpu_usage_percent)::float AS cpu_usage_percent,
          AVG(h.memory_usage_percent)::float AS memory_usage_percent
        FROM site_metrics_history h
-       WHERE h.site_id = $1
+       INNER JOIN sites s ON h.site_id = s.id
+       WHERE h.site_id = $1 AND s.tenant_id = ANY($5)
          AND h.timestamp >= $2
          AND h.timestamp <= $4
        GROUP BY bucket
        ORDER BY bucket ASC`,
-      [siteId, fromDate.toISOString(), stepSeconds, toDate.toISOString()]
+      [siteId, fromDate.toISOString(), stepSeconds, toDate.toISOString(), req.userTenantIds || []]
     );
 
     res.json({
@@ -332,12 +335,12 @@ router.get('/:id/k8s-metrics/live', authMiddleware, async (
   try {
     const siteId = parseInt(req.params.id);
 
-    // Verify site belongs to user's tenant
-    const siteCheck = await db.query<{ tenant_id: number }>(
-      'SELECT tenant_id FROM sites WHERE id = $1',
-      [req.params.id]
+    // Verify site access
+    const siteCheck = await db.query(
+      'SELECT id FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+      [req.params.id, req.userTenantIds || []]
     );
-    if (siteCheck.rows.length === 0 || !req.userTenantIds?.includes(siteCheck.rows[0].tenant_id)) {
+    if (siteCheck.rows.length === 0) {
       res.status(404).json({ detail: 'Site not found' });
       return;
     }
@@ -346,18 +349,20 @@ router.get('/:id/k8s-metrics/live', authMiddleware, async (
     const fromDate = new Date(toDate.getTime() - 30 * 60 * 1000);
     const stepSeconds = 60; // 1m
 
+    // Also JOIN on sites for defense in depth against TOCTOU
     const result = await db.query(
       `SELECT
          to_timestamp(floor(extract(epoch from h.timestamp) / $3) * $3) AS bucket,
          AVG(h.cpu_usage_percent)::float AS cpu_usage_percent,
          AVG(h.memory_usage_percent)::float AS memory_usage_percent
        FROM site_metrics_history h
-       WHERE h.site_id = $1
+       INNER JOIN sites s ON h.site_id = s.id
+       WHERE h.site_id = $1 AND s.tenant_id = ANY($5)
          AND h.timestamp >= $2
          AND h.timestamp <= $4
        GROUP BY bucket
        ORDER BY bucket ASC`,
-      [siteId, fromDate.toISOString(), stepSeconds, toDate.toISOString()]
+      [siteId, fromDate.toISOString(), stepSeconds, toDate.toISOString(), req.userTenantIds || []]
     );
 
     res.json({

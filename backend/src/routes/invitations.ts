@@ -28,6 +28,14 @@ const acceptInvitationLimiter = rateLimit({
   legacyHeaders: false
 });
 
+const invitationCreateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 invitations per hour
+  message: { detail: 'Too many invitations created. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 /**
  * Generate secure random token for invitation
  */
@@ -39,7 +47,7 @@ function generateInvitationToken(): string {
  * POST /api/invitations - Create invitation
  * Requires tenant admin access (validated via body.tenant_id)
  */
-router.post('/', authMiddleware, async (
+router.post('/', authMiddleware, invitationCreateLimiter, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {

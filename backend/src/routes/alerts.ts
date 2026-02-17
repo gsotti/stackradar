@@ -484,6 +484,22 @@ router.post(
         return;
       }
 
+      // Validate webhook headers - block dangerous headers
+      if (body.webhook_headers && typeof body.webhook_headers === 'object') {
+        const forbiddenHeaders = ['host', 'cookie', 'set-cookie', 'transfer-encoding', 'content-length'];
+        for (const key of Object.keys(body.webhook_headers)) {
+          if (forbiddenHeaders.includes(key.toLowerCase())) {
+            res.status(400).json({ detail: `Webhook header '${key}' is not allowed` });
+            return;
+          }
+          // Validate header values are strings
+          if (typeof body.webhook_headers[key] !== 'string') {
+            res.status(400).json({ detail: 'Webhook header values must be strings' });
+            return;
+          }
+        }
+      }
+
       // Create notification channel
       const result = await db.query<NotificationChannel>(
         `INSERT INTO notification_channels (
@@ -531,6 +547,22 @@ router.put(
       if (accessCheck.rows.length === 0) {
         res.status(404).json({ detail: 'Notification channel not found' });
         return;
+      }
+
+      // Validate webhook headers - block dangerous headers
+      if (body.webhook_headers && typeof body.webhook_headers === 'object') {
+        const forbiddenHeaders = ['host', 'cookie', 'set-cookie', 'transfer-encoding', 'content-length'];
+        for (const key of Object.keys(body.webhook_headers)) {
+          if (forbiddenHeaders.includes(key.toLowerCase())) {
+            res.status(400).json({ detail: `Webhook header '${key}' is not allowed` });
+            return;
+          }
+          // Validate header values are strings
+          if (typeof body.webhook_headers[key] !== 'string') {
+            res.status(400).json({ detail: 'Webhook header values must be strings' });
+            return;
+          }
+        }
       }
 
       // Build update query

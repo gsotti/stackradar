@@ -3,6 +3,7 @@ import db from '../db/database.js';
 import { authMiddleware, editorMiddleware } from '../middleware/auth.js';
 import { AuthRequest, UptimeMonitor, UptimeCheck } from '../types/index.js';
 import { triggerManualCheck } from '../services/uptime/checker.js';
+import { isPrivateUrl } from '../utils/validation.js';
 
 const router = Router();
 
@@ -162,6 +163,11 @@ router.post('/monitors', authMiddleware, editorMiddleware, async (
       return;
     }
 
+    if (isPrivateUrl(url)) {
+      res.status(400).json({ detail: 'Monitoring private/internal URLs is not allowed' });
+      return;
+    }
+
     // Verify site access
     const siteResult = await db.query(
       'SELECT id FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
@@ -239,6 +245,11 @@ router.put('/monitors/:id', authMiddleware, editorMiddleware, async (
         new URL(url);
       } catch {
         res.status(400).json({ detail: 'Invalid URL format' });
+        return;
+      }
+
+      if (isPrivateUrl(url)) {
+        res.status(400).json({ detail: 'Monitoring private/internal URLs is not allowed' });
         return;
       }
     }

@@ -9,7 +9,7 @@ if (!JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is required. Exiting.');
   process.exit(1);
 }
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '4h';
 
 export function hashPassword(password: string): string {
   return bcrypt.hashSync(password, 10);
