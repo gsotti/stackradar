@@ -4,6 +4,7 @@ import { tenantAdminMiddleware, tenantMemberMiddleware } from '../middleware/rol
 import { AuthRequest, User, TenantRole } from '../types/index.js';
 import db from '../db/database.js';
 import { validatePassword } from '../utils/validation.js';
+import { logAudit } from '../services/auditLogger.js';
 
 const router = Router();
 
@@ -97,7 +98,22 @@ router.post('/:tenantId/users/:userId/add', authMiddleware, tenantAdminMiddlewar
       [userId, tenantId]
     );
 
-    res.status(201).json(result.rows[0]);
+    const addedUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: req.organizationId,
+      tenantId: parseInt(tenantId),
+      action: 'TENANT_USER_ADD',
+      resourceType: 'user_tenant',
+      resourceId: `${userId}:${tenantId}`,
+      newValues: { user_id: userId, tenant_id: tenantId, role: userRole, email: addedUser.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(201).json(addedUser);
   } catch (error) {
     console.error('Add user to tenant error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -236,17 +252,32 @@ router.post('/:tenantId/users', authMiddleware, tenantAdminMiddleware, async (
 
       await client.query('COMMIT');
 
-      // Fetch and return the complete user info
-      const result = await db.query<Omit<User, 'password_hash'> & { role: TenantRole }>(
-        `SELECT u.id, u.email, u.name, u.is_active, u.is_approved, u.global_role, u.email_verified, u.created_by, u.created_at,
-                ut.role
-         FROM users u
-         INNER JOIN user_tenants ut ON u.id = ut.user_id
-         WHERE u.id = $1 AND ut.tenant_id = $2`,
-        [userId, tenantId]
-      );
+    // Fetch and return the complete user info
+    const result = await db.query<Omit<User, 'password_hash'> & { role: TenantRole }>(
+      `SELECT u.id, u.email, u.name, u.is_active, u.is_approved, u.global_role, u.email_verified, u.created_by, u.created_at,
+              ut.role
+       FROM users u
+       INNER JOIN user_tenants ut ON u.id = ut.user_id
+       WHERE u.id = $1 AND ut.tenant_id = $2`,
+      [userId, tenantId]
+    );
 
-      res.status(201).json(result.rows[0]);
+    const newUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: req.organizationId,
+      tenantId: parseInt(tenantId),
+      action: 'TENANT_USER_CREATE',
+      resourceType: 'user_tenant',
+      resourceId: `${userId}:${tenantId}`,
+      newValues: { user_id: userId, tenant_id: tenantId, role: role || 'viewer', email: newUser.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(201).json(newUser);
     } catch (e) {
       await client.query('ROLLBACK');
       throw e;
@@ -287,8 +318,8 @@ router.put('/:tenantId/users/:userId', authMiddleware, tenantAdminMiddleware, as
     }
 
     // Check if user is in tenant
-    const existingResult = await db.query<{ role: TenantRole }>(
-      'SELECT role FROM user_tenants WHERE user_id = $1 AND tenant_id = $2',
+    const existingResult = await db.query<{ role: TenantRole, name: string }>(
+      'SELECT ut.role, u.name FROM user_tenants ut JOIN users u ON ut.user_id = u.id WHERE ut.user_id = $1 AND ut.tenant_id = $2',
       [userId, tenantId]
     );
 
@@ -296,6 +327,7 @@ router.put('/:tenantId/users/:userId', authMiddleware, tenantAdminMiddleware, as
       res.status(404).json({ detail: 'User not found in this tenant' });
       return;
     }
+    const oldValues = existingResult.rows[0];
 
     // Update role in user_tenants if provided
     if (role) {
@@ -323,7 +355,23 @@ router.put('/:tenantId/users/:userId', authMiddleware, tenantAdminMiddleware, as
       [userId, tenantId]
     );
 
-    res.json(result.rows[0]);
+    const updatedUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: req.organizationId,
+      tenantId: parseInt(tenantId),
+      action: 'TENANT_USER_UPDATE',
+      resourceType: 'user_tenant',
+      resourceId: `${userId}:${tenantId}`,
+      oldValues: { role: oldValues.role, name: oldValues.name },
+      newValues: { role: updatedUser.role, name: updatedUser.name },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json(updatedUser);
   } catch (error) {
     console.error('Update tenant user error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -348,8 +396,8 @@ router.delete('/:tenantId/users/:userId', authMiddleware, tenantAdminMiddleware,
     }
 
     // Check if user is in tenant
-    const existingResult = await db.query(
-      'SELECT user_id FROM user_tenants WHERE user_id = $1 AND tenant_id = $2',
+    const existingResult = await db.query<{ role: TenantRole, email: string }>(
+      'SELECT ut.role, u.email FROM user_tenants ut JOIN users u ON ut.user_id = u.id WHERE ut.user_id = $1 AND ut.tenant_id = $2',
       [userId, tenantId]
     );
 
@@ -357,12 +405,26 @@ router.delete('/:tenantId/users/:userId', authMiddleware, tenantAdminMiddleware,
       res.status(404).json({ detail: 'User not found in this tenant' });
       return;
     }
+    const oldValues = existingResult.rows[0];
 
     // Remove user from tenant
     await db.query(
       'DELETE FROM user_tenants WHERE user_id = $1 AND tenant_id = $2',
       [userId, tenantId]
     );
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: req.organizationId,
+      tenantId: parseInt(tenantId),
+      action: 'TENANT_USER_REMOVE',
+      resourceType: 'user_tenant',
+      resourceId: `${userId}:${tenantId}`,
+      oldValues: { user_id: userId, tenant_id: tenantId, role: oldValues.role, email: oldValues.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     res.json({ message: 'User removed from tenant successfully' });
   } catch (error) {

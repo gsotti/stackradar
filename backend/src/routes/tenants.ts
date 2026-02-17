@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { orgAdminMiddleware, tenantMemberMiddleware } from '../middleware/roleMiddleware.js';
 import db from '../db/database.js';
 import { AuthRequest, Tenant } from '../types/index.js';
+import { logAudit } from '../services/auditLogger.js';
 
 const router = Router();
 
@@ -98,7 +99,21 @@ router.post('/', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, re
       [name.trim(), description || null, req.userId, req.organizationId || null]
     );
 
-    const tenantId = result.rows[0].id;
+    const newTenant = result.rows[0];
+    const tenantId = newTenant.id;
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: req.organizationId,
+      tenantId: tenantId,
+      action: 'TENANT_CREATE',
+      resourceType: 'tenant',
+      resourceId: tenantId,
+      newValues: { name: newTenant.name, description: newTenant.description },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     // Automatically add the creating org admin to the tenant as tenant_admin
     await db.query(
@@ -136,6 +151,14 @@ router.put('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthReque
       }
     }
 
+    // Get current values for audit
+    const currentResult = await db.query<Tenant>('SELECT * FROM tenants WHERE id = $1', [id]);
+    if (currentResult.rows.length === 0) {
+      res.status(404).json({ error: 'Tenant not found' });
+      return;
+    }
+    const oldValues = currentResult.rows[0];
+
     const result = await db.query<Tenant>(
       `UPDATE tenants
        SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP
@@ -144,12 +167,23 @@ router.put('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthReque
       [name.trim(), description || null, id]
     );
 
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Tenant not found' });
-      return;
-    }
+    const updatedTenant = result.rows[0];
 
-    res.json(result.rows[0]);
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: req.organizationId,
+      tenantId: updatedTenant.id,
+      action: 'TENANT_UPDATE',
+      resourceType: 'tenant',
+      resourceId: updatedTenant.id,
+      oldValues: { name: oldValues.name, description: oldValues.description },
+      newValues: { name: updatedTenant.name, description: updatedTenant.description },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json(updatedTenant);
   } catch (error: any) {
     console.error('Error updating tenant:', error);
     res.status(500).json({ error: 'Failed to update tenant' });
@@ -181,6 +215,10 @@ router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthReques
       return;
     }
 
+    // Get current values for audit
+    const currentResult = await db.query<Tenant>('SELECT * FROM tenants WHERE id = $1', [id]);
+    const oldValues = currentResult.rows[0];
+
     const result = await db.query<Tenant>(
       'DELETE FROM tenants WHERE id = $1 RETURNING *',
       [id]
@@ -190,6 +228,19 @@ router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthReques
       res.status(404).json({ error: 'Tenant not found' });
       return;
     }
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: req.organizationId,
+      tenantId: parseInt(id),
+      action: 'TENANT_DELETE',
+      resourceType: 'tenant',
+      resourceId: id,
+      oldValues: { name: oldValues?.name, description: oldValues?.description },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     res.json({ message: 'Tenant deleted successfully', tenant: result.rows[0] });
   } catch (error) {

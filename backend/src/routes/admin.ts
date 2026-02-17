@@ -5,6 +5,7 @@ import { superadminMiddleware } from '../middleware/roleMiddleware.js';
 import { AuthRequest, User } from '../types/index.js';
 import { validatePassword } from '../utils/validation.js';
 import db from '../db/database.js';
+import { logAudit } from '../services/auditLogger.js';
 
 const router = Router();
 
@@ -77,7 +78,20 @@ router.post('/users', authMiddleware, superadminMiddleware, async (
       [email, passwordHash, name || null, global_role || null, isApproved, req.userId]
     );
 
-    res.status(201).json(result.rows[0]);
+    const newUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      action: 'USER_CREATE',
+      resourceType: 'user',
+      resourceId: newUser.id,
+      newValues: { email, name, global_role, is_approved: isApproved },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(201).json(newUser);
   } catch (error) {
     console.error('Create user error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -122,6 +136,17 @@ router.post('/users/:id/approve', authMiddleware, superadminMiddleware, async (
       return;
     }
 
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      action: 'USER_APPROVE',
+      resourceType: 'user',
+      resourceId: id,
+      newValues: { is_approved: true },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
     res.json({ message: 'User approved successfully', user: result.rows[0] });
   } catch (error) {
     console.error('Approve user error:', error);
@@ -143,8 +168,8 @@ router.delete('/users/:id', authMiddleware, superadminMiddleware, async (
       return;
     }
 
-    const result = await db.query<Pick<User, 'email'>>(
-      'DELETE FROM users WHERE id = $1 RETURNING email',
+    const result = await db.query<Pick<User, 'email' | 'name'>>(
+      'DELETE FROM users WHERE id = $1 RETURNING email, name',
       [id]
     );
 
@@ -152,6 +177,17 @@ router.delete('/users/:id', authMiddleware, superadminMiddleware, async (
       res.status(404).json({ detail: 'User not found' });
       return;
     }
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      action: 'USER_DELETE',
+      resourceType: 'user',
+      resourceId: id,
+      oldValues: { email: result.rows[0].email, name: result.rows[0].name },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     res.json({ message: `User ${result.rows[0].email} deleted successfully` });
   } catch (error) {
@@ -183,6 +219,17 @@ router.post('/users/:id/deactivate', authMiddleware, superadminMiddleware, async
       res.status(404).json({ detail: 'User not found' });
       return;
     }
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      action: 'USER_DEACTIVATE',
+      resourceType: 'user',
+      resourceId: id,
+      newValues: { is_active: false },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     res.json({ message: 'User deactivated successfully', user: result.rows[0] });
   } catch (error) {

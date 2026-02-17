@@ -24,6 +24,7 @@ import uptimeRoutes from './routes/uptime.js';
 import superadminRoutes from './routes/superadmin.js';
 import invitationsRoutes from './routes/invitations.js';
 import organizationsRoutes from './routes/organizations.js';
+import auditLogsRoutes from './routes/audit-logs.js';
 import { cleanupOldLogs } from './services/cleanup.js';
 import { evaluateAllAlerts } from './services/alerting/evaluator.js';
 import { runUptimeChecksForInterval } from './services/uptime/checker.js';
@@ -91,6 +92,7 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/uptime', uptimeRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/invitations', invitationsRoutes);
+app.use('/api/audit-logs', auditLogsRoutes);
 
 // Health check
 app.get('/api/health', (_req: Request, res: Response) => {

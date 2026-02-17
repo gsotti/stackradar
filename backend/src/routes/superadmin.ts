@@ -5,6 +5,7 @@ import { superadminMiddleware } from '../middleware/roleMiddleware.js';
 import { AuthRequest, User } from '../types/index.js';
 import { validatePassword } from '../utils/validation.js';
 import db from '../db/database.js';
+import { logAudit } from '../services/auditLogger.js';
 
 const router = Router();
 
@@ -72,7 +73,21 @@ router.post('/org-admins', authMiddleware, superadminMiddleware, superadminCreat
       [email, passwordHash, name || null, organization_id, req.userId]
     );
 
-    res.status(201).json(result.rows[0]);
+    const newUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: organization_id,
+      action: 'ORG_ADMIN_CREATE',
+      resourceType: 'user',
+      resourceId: newUser.id,
+      newValues: { email, name, organization_id, global_role: 'org_admin' },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(201).json(newUser);
   } catch (error) {
     console.error('Create org admin error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -179,13 +194,32 @@ router.put('/org-admins/:id', authMiddleware, superadminMiddleware, async (
 
     values.push(id);
 
+    // Get current values for audit
+    const currentResult = await db.query<User>('SELECT * FROM users WHERE id = $1', [id]);
+    const oldUser = currentResult.rows[0];
+
     const result = await db.query<Omit<User, 'password_hash'>>(
       `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex}
-       RETURNING id, email, name, is_active, is_approved, global_role, email_verified, created_by, created_at`,
+       RETURNING id, email, name, is_active, is_approved, global_role, email_verified, created_by, created_at, organization_id`,
       values
     );
 
-    res.json(result.rows[0]);
+    const updatedUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: updatedUser.organization_id || undefined,
+      action: 'ORG_ADMIN_UPDATE',
+      resourceType: 'user',
+      resourceId: id,
+      oldValues: { name: oldUser.name, email: oldUser.email, is_active: oldUser.is_active },
+      newValues: { name: updatedUser.name, email: updatedUser.email, is_active: updatedUser.is_active },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json(updatedUser);
   } catch (error) {
     console.error('Update org admin error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -225,12 +259,26 @@ router.delete('/org-admins/:id', authMiddleware, superadminMiddleware, async (
       return;
     }
 
-    const result = await db.query<Pick<User, 'id' | 'email' | 'is_active'>>(
-      'UPDATE users SET is_active = false WHERE id = $1 RETURNING id, email, is_active',
+    const result = await db.query<Pick<User, 'id' | 'email' | 'is_active' | 'organization_id'>>(
+      'UPDATE users SET is_active = false WHERE id = $1 RETURNING id, email, is_active, organization_id',
       [id]
     );
 
-    res.json({ message: 'Organization admin deactivated successfully', user: result.rows[0] });
+    const deactivatedUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: deactivatedUser.organization_id || undefined,
+      action: 'ORG_ADMIN_DEACTIVATE',
+      resourceType: 'user',
+      resourceId: id,
+      newValues: { is_active: false },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({ message: 'Organization admin deactivated successfully', user: deactivatedUser });
   } catch (error) {
     console.error('Deactivate org admin error:', error);
     res.status(500).json({ detail: 'Internal server error' });

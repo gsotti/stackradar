@@ -5,6 +5,7 @@ import db from '../db/database.js';
 import { AuthRequest, Organization, User } from '../types/index.js';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '../utils/validation.js';
+import { logAudit } from '../services/auditLogger.js';
 
 const router = Router();
 
@@ -113,7 +114,21 @@ router.post('/', authMiddleware, superadminMiddleware, async (req: AuthRequest, 
       [name.trim(), description || null, req.userId]
     );
 
-    res.status(201).json(result.rows[0]);
+    const newOrg = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: newOrg.id,
+      action: 'ORG_CREATE',
+      resourceType: 'organization',
+      resourceId: newOrg.id,
+      newValues: { name: newOrg.name, description: newOrg.description },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(201).json(newOrg);
   } catch (error) {
     console.error('Create organization error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -139,6 +154,14 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
       return;
     }
 
+    // Get current values for audit
+    const currentResult = await db.query<Organization>('SELECT * FROM organizations WHERE id = $1', [id]);
+    if (currentResult.rows.length === 0) {
+      res.status(404).json({ detail: 'Organization not found' });
+      return;
+    }
+    const oldValues = currentResult.rows[0];
+
     const result = await db.query<Organization>(
       `UPDATE organizations
        SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP
@@ -147,12 +170,22 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
       [name.trim(), description || null, id]
     );
 
-    if (result.rows.length === 0) {
-      res.status(404).json({ detail: 'Organization not found' });
-      return;
-    }
+    const updatedOrg = result.rows[0];
 
-    res.json(result.rows[0]);
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: updatedOrg.id,
+      action: 'ORG_UPDATE',
+      resourceType: 'organization',
+      resourceId: updatedOrg.id,
+      oldValues: { name: oldValues.name, description: oldValues.description },
+      newValues: { name: updatedOrg.name, description: updatedOrg.description },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json(updatedOrg);
   } catch (error) {
     console.error('Update organization error:', error);
     res.status(500).json({ detail: 'Internal server error' });
@@ -166,15 +199,27 @@ router.delete('/:id', authMiddleware, superadminMiddleware, async (req: AuthRequ
   try {
     const { id } = req.params;
 
-    const result = await db.query<Organization>(
-      'DELETE FROM organizations WHERE id = $1 RETURNING *',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
+    // Get current values for audit
+    const currentResult = await db.query<Organization>('SELECT * FROM organizations WHERE id = $1', [id]);
+    if (currentResult.rows.length === 0) {
       res.status(404).json({ detail: 'Organization not found' });
       return;
     }
+    const org = currentResult.rows[0];
+
+    await db.query('DELETE FROM organizations WHERE id = $1', [id]);
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: parseInt(id),
+      action: 'ORG_DELETE',
+      resourceType: 'organization',
+      resourceId: id,
+      oldValues: { name: org.name, description: org.description },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     res.json({ message: 'Organization deleted successfully' });
   } catch (error) {
