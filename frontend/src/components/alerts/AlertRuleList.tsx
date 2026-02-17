@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Power, AlertTriangle, Info, BarChart2, Radio } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { api } from '../../utils/api';
 import AlertRuleForm from './AlertRuleForm';
 import { AlertRule, AlertSeverity, AlertType, MetricType } from '../../types';
@@ -20,8 +20,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingRule, setEditingRule] = useState<AlertRuleWithChannels | null>(null);
   const { showError, showSuccess } = useNotification();
-  const { user } = useAuth();
-  const isViewer = user?.is_viewer;
+  const { isViewer } = usePermissions();
 
   useEffect(() => {
     loadRules();
@@ -139,7 +138,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
         {/* Header */}
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alert Rules</h3>
-          {!isViewer && (
+          {!isViewer() && (
             <button
               onClick={handleCreate}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
@@ -190,7 +189,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                     </div>
                   </div>
 
-                  {!isViewer && (
+                  {!isViewer() && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleToggle(rule)}

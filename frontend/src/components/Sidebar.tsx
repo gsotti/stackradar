@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Server, Activity, LogOut, Menu, X,
-  Moon, Sun, ChevronLeft, ChevronRight, Package, Globe, Shield, Building2
+  Moon, Sun, ChevronLeft, ChevronRight, Package, Globe, Shield, Building2, Users
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -43,7 +43,8 @@ export default function Sidebar() {
       { name: 'Systems', href: '/systems', icon: Package }
     ] : []),
     ...(isOrgAdmin() ? [
-      { name: 'Tenants', href: '/tenants', icon: Building2 }
+      { name: 'Tenants', href: '/tenants', icon: Building2 },
+      { name: 'Users', href: '/organization/users', icon: Users }
     ] : []),
     ...(isSuperadmin() ? [
       { name: 'Superadmin', href: '/superadmin', icon: Shield }

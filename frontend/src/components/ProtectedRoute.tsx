@@ -143,12 +143,12 @@ export default function ProtectedRoute({
   }
 
   // Legacy checks for backwards compatibility
-  if (requireAdmin && !user.is_admin && !isSuperadmin() && !isOrgAdmin()) {
+  if (requireAdmin && !isSuperadmin() && !isOrgAdmin()) {
     return <Navigate to="/" replace />;
   }
 
-  if (requireNotViewer && user.is_viewer) {
-    // Also check new role system
+  if (requireNotViewer) {
+    // Check new role system
     if (currentTenantId) {
       const role = getTenantRole(currentTenantId);
       if (role === 'viewer') {

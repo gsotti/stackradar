@@ -3,6 +3,7 @@ import { authMiddleware, hashPassword } from '../middleware/auth.js';
 import { tenantAdminMiddleware, tenantMemberMiddleware } from '../middleware/roleMiddleware.js';
 import { AuthRequest, User, TenantRole } from '../types/index.js';
 import db from '../db/database.js';
+import { validatePassword } from '../utils/validation.js';
 
 const router = Router();
 
@@ -153,6 +154,12 @@ router.post('/:tenantId/users', authMiddleware, tenantAdminMiddleware, async (
       return;
     }
 
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
+      res.status(400).json({ detail: passwordCheck.message });
+      return;
+    }
+
     // Validate role
     const validRoles: TenantRole[] = ['tenant_admin', 'editor', 'viewer'];
     if (role && !validRoles.includes(role)) {
@@ -162,9 +169,9 @@ router.post('/:tenantId/users', authMiddleware, tenantAdminMiddleware, async (
 
     const userRole: TenantRole = role || 'viewer';
 
-    // Check tenant exists
-    const tenantResult = await db.query(
-      'SELECT id FROM tenants WHERE id = $1',
+    // Check tenant exists and get its organization
+    const tenantResult = await db.query<{ id: number; organization_id: number | null }>(
+      'SELECT id, organization_id FROM tenants WHERE id = $1',
       [tenantId]
     );
 
@@ -172,6 +179,8 @@ router.post('/:tenantId/users', authMiddleware, tenantAdminMiddleware, async (
       res.status(404).json({ detail: 'Tenant not found' });
       return;
     }
+
+    const tenantOrgId = tenantResult.rows[0].organization_id;
 
     const client = await db.connect();
     try {
@@ -206,14 +215,14 @@ router.post('/:tenantId/users', authMiddleware, tenantAdminMiddleware, async (
           [userId, tenantId, userRole]
         );
       } else {
-        // Create new user
+        // Create new user with the tenant's organization
         const passwordHash = hashPassword(password);
 
         const userResult = await client.query<Pick<User, 'id'>>(
-          `INSERT INTO users (email, password_hash, name, is_active, is_approved, email_verified, created_by)
-           VALUES ($1, $2, $3, true, true, true, $4)
+          `INSERT INTO users (email, password_hash, name, organization_id, is_active, is_approved, email_verified, created_by)
+           VALUES ($1, $2, $3, $4, true, true, true, $5)
            RETURNING id`,
-          [email, passwordHash, name || null, req.userId]
+          [email, passwordHash, name || null, tenantOrgId, req.userId]
         );
 
         userId = userResult.rows[0].id;

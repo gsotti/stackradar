@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { parseAsUTC, formatInLocalTime } from '../../utils/dateUtils';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import UptimeMonitorForm from './UptimeMonitorForm';
 import { UptimeMonitor, UptimeCheck, UptimeStatus, CreateUptimeMonitorRequest } from '../../types';
 
@@ -110,10 +110,10 @@ interface MonitorCardProps {
   onDelete: (monitor: UptimeMonitor) => void;
   onManualCheck: (monitor: UptimeMonitor) => void;
   checking: boolean;
-  isViewer: boolean;
+  isViewerProp: boolean;
 }
 
-function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checking, isViewer }: MonitorCardProps) {
+function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checking, isViewerProp }: MonitorCardProps) {
   const config = statusConfig[monitor.current_status] || statusConfig.unknown;
   const Icon = config.icon;
 
@@ -219,7 +219,7 @@ function MonitorCard({ monitor, checks, onEdit, onDelete, onManualCheck, checkin
           <div className="text-xs text-gray-400">
             Expected: {monitor.expected_status} · Timeout: {monitor.timeout_ms / 1000}s
           </div>
-          {!isViewer && (
+          {!isViewerProp && (
             <div className="flex items-center gap-1">
               <button
                 onClick={() => onManualCheck(monitor)}
@@ -261,8 +261,7 @@ interface UptimeMonitorsViewProps {
 
 export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) {
   const { showSuccess, showError } = useNotification();
-  const { user } = useAuth();
-  const isViewer = user?.is_viewer ?? false;
+  const { isViewer } = usePermissions();
   const [monitors, setMonitors] = useState<UptimeMonitor[]>([]);
   const [checksMap, setChecksMap] = useState<Record<number, UptimeCheck[]>>({});
   const [loading, setLoading] = useState(true);
@@ -350,7 +349,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
   const handleManualCheck = async (monitor: UptimeMonitor) => {
     setCheckingId(monitor.id);
     try {
-      const result = await api.post<any>(`/uptime/monitors/${monitor.id}/check`);
+      const result = await api.post<any>(`/uptime/monitors/${monitor.id}/check`, {});
       showSuccess(`Check complete: ${result.status} (${result.responseTimeMs}ms)`);
       fetchData();
     } catch (error: any) {
@@ -414,7 +413,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                   </span>
                 </div>
               )}
-              {!isViewer && (
+              {!isViewer() && (
                 <button
                   onClick={() => setShowForm(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all font-medium text-sm"
@@ -436,9 +435,9 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
           </div>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Monitors Yet</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-            {isViewer ? 'No uptime monitors have been configured for this site.' : 'Start monitoring your endpoints to track uptime and receive alerts when they go down.'}
+            {isViewer() ? 'No uptime monitors have been configured for this site.' : 'Start monitoring your endpoints to track uptime and receive alerts when they go down.'}
           </p>
-          {!isViewer && (
+          {!isViewer() && (
             <button
               onClick={() => setShowForm(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all font-semibold"
@@ -460,7 +459,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
               onDelete={handleDelete}
               onManualCheck={handleManualCheck}
               checking={checkingId === monitor.id}
-              isViewer={isViewer}
+              isViewerProp={isViewer()}
             />
           ))}
         </div>

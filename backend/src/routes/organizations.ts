@@ -1,8 +1,10 @@
 import { Router, Response } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
-import { superadminMiddleware } from '../middleware/roleMiddleware.js';
+import { superadminMiddleware, orgAdminMiddleware } from '../middleware/roleMiddleware.js';
 import db from '../db/database.js';
 import { AuthRequest, Organization, User } from '../types/index.js';
+import bcrypt from 'bcryptjs';
+import { validatePassword } from '../utils/validation.js';
 
 const router = Router();
 
@@ -205,6 +207,206 @@ router.get('/:id/users', authMiddleware, async (req: AuthRequest, res: Response)
     res.json(result.rows);
   } catch (error) {
     console.error('List org users error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/organizations/:id/users - Create user in organization
+ */
+router.post('/:id/users', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { email, name, password } = req.body;
+
+    // Check org access
+    if (req.globalRole !== 'superadmin' && req.organizationId !== parseInt(id)) {
+      res.status(403).json({ detail: 'Access denied' });
+      return;
+    }
+
+    // Validate required fields
+    if (!email || !password) {
+      res.status(400).json({ detail: 'Email and password are required' });
+      return;
+    }
+
+    // Validate password strength
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
+      res.status(400).json({ detail: passwordCheck.message });
+      return;
+    }
+
+    // Check email uniqueness
+    const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      res.status(400).json({ detail: 'Email already exists' });
+      return;
+    }
+
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10);
+
+    // Create user
+    const result = await db.query<Omit<User, 'password_hash'>>(
+      `INSERT INTO users (email, name, password_hash, organization_id, is_active, is_approved)
+       VALUES ($1, $2, $3, $4, true, true)
+       RETURNING id, email, name, is_active, is_approved, global_role, email_verified, organization_id, created_at`,
+      [email, name || null, password_hash, id]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Create org user error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+/**
+ * PUT /api/organizations/:id/users/:userId - Edit user in organization
+ */
+router.put('/:id/users/:userId', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id, userId } = req.params;
+    const { name, email, password, is_active } = req.body;
+
+    // Check org access
+    if (req.globalRole !== 'superadmin' && req.organizationId !== parseInt(id)) {
+      res.status(403).json({ detail: 'Access denied' });
+      return;
+    }
+
+    // Cannot modify self
+    if (parseInt(userId) === req.userId) {
+      res.status(400).json({ detail: 'Cannot modify your own account' });
+      return;
+    }
+
+    // Check user belongs to org
+    const userCheck = await db.query<{ global_role: string | null }>(
+      'SELECT global_role FROM users WHERE id = $1 AND organization_id = $2',
+      [userId, id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      res.status(404).json({ detail: 'User not found in this organization' });
+      return;
+    }
+
+    // Cannot modify superadmin or org_admin users
+    const userRole = userCheck.rows[0].global_role;
+    if (userRole === 'superadmin' || userRole === 'org_admin') {
+      res.status(403).json({ detail: 'Cannot modify superadmin or org_admin users' });
+      return;
+    }
+
+    // Build dynamic update
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramCount++}`);
+      values.push(name || null);
+    }
+
+    if (email !== undefined) {
+      // Check email uniqueness
+      const existingUser = await db.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, userId]);
+      if (existingUser.rows.length > 0) {
+        res.status(400).json({ detail: 'Email already exists' });
+        return;
+      }
+      updates.push(`email = $${paramCount++}`);
+      values.push(email);
+    }
+
+    if (password !== undefined && password !== '') {
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        res.status(400).json({ detail: passwordCheck.message });
+        return;
+      }
+      const password_hash = await bcrypt.hash(password, 10);
+      updates.push(`password_hash = $${paramCount++}`);
+      values.push(password_hash);
+    }
+
+    if (is_active !== undefined) {
+      updates.push(`is_active = $${paramCount++}`);
+      values.push(is_active);
+    }
+
+    if (updates.length === 0) {
+      res.status(400).json({ detail: 'No fields to update' });
+      return;
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(userId);
+
+    const result = await db.query<Omit<User, 'password_hash'>>(
+      `UPDATE users
+       SET ${updates.join(', ')}
+       WHERE id = $${paramCount}
+       RETURNING id, email, name, is_active, is_approved, global_role, email_verified, organization_id, created_at`,
+      values
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Update org user error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/organizations/:id/users/:userId - Delete user from organization
+ */
+router.delete('/:id/users/:userId', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id, userId } = req.params;
+
+    // Check org access
+    if (req.globalRole !== 'superadmin' && req.organizationId !== parseInt(id)) {
+      res.status(403).json({ detail: 'Access denied' });
+      return;
+    }
+
+    // Cannot delete self
+    if (parseInt(userId) === req.userId) {
+      res.status(400).json({ detail: 'Cannot delete your own account' });
+      return;
+    }
+
+    // Check user belongs to org
+    const userCheck = await db.query<{ global_role: string | null }>(
+      'SELECT global_role FROM users WHERE id = $1 AND organization_id = $2',
+      [userId, id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      res.status(404).json({ detail: 'User not found in this organization' });
+      return;
+    }
+
+    // Cannot delete superadmin or org_admin users
+    const userRole = userCheck.rows[0].global_role;
+    if (userRole === 'superadmin' || userRole === 'org_admin') {
+      res.status(403).json({ detail: 'Cannot delete superadmin or org_admin users' });
+      return;
+    }
+
+    // Delete user_tenants entries first
+    await db.query('DELETE FROM user_tenants WHERE user_id = $1', [userId]);
+
+    // Delete user
+    await db.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete org user error:', error);
     res.status(500).json({ detail: 'Internal server error' });
   }
 });

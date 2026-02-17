@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Mail, Webhook, Power, Zap } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { api } from '../../utils/api';
 import NotificationChannelForm from './NotificationChannelForm';
 import { NotificationChannel } from '../../types';
@@ -17,8 +17,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   const [editingChannel, setEditingChannel] = useState<NotificationChannel | null>(null);
   const [testingChannelId, setTestingChannelId] = useState<number | null>(null);
   const { showError, showSuccess, showInfo } = useNotification();
-  const { user } = useAuth();
-  const isViewer = user?.is_viewer;
+  const { isViewer } = usePermissions();
 
   useEffect(() => {
     loadChannels();
@@ -112,7 +111,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Notification Channels
           </h3>
-          {!isViewer && (
+          {!isViewer() && (
             <button
               onClick={handleCreate}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
@@ -156,7 +155,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
                       </p>
                     </div>
                   </div>
-                  {!isViewer && (
+                  {!isViewer() && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleToggle(channel)}

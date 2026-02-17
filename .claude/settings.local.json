@@ -16,7 +16,8 @@
       "Bash(npm run build:no-obfuscate:*)",
       "Bash(npx tsc:*)",
       "Bash(ls:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

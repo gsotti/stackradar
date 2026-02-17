@@ -12,8 +12,6 @@ export interface User {
   name: string | null;
   is_active: boolean;
   is_approved: boolean;
-  is_admin: boolean;
-  is_viewer: boolean;
   global_role: string | null;
   email_verified: boolean;
   organization_id: number | null;

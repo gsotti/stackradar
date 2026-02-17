@@ -7,10 +7,8 @@ import Logo from '../components/Logo';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -20,33 +18,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (isRegister) {
-        // For register, we'll use the API directly
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, name })
-        });
-
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.detail || 'Registration failed');
-        }
-
-        // Store credentials for login
-        const userEmail = email;
-        const userPassword = password;
-
-        // Reset form after successful registration
-        setEmail('');
-        setPassword('');
-        setName('');
-
-        // After successful registration, login
-        await login(userEmail, userPassword);
-      } else {
-        await login(email, password);
-      }
+      await login(email, password);
 
       // Small delay to ensure state is updated before navigation
       setTimeout(() => {
@@ -74,19 +46,6 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {isRegister && (
-            <div className="transform transition-all duration-300">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500"
-                placeholder="Your name"
-              />
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
             <input
@@ -128,19 +87,10 @@ export default function LoginPage() {
                 Loading...
               </span>
             ) : (
-              isRegister ? 'Create Account' : 'Sign In'
+              'Sign In'
             )}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => setIsRegister(!isRegister)}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium hover:underline transition-all"
-          >
-            {isRegister ? 'Already have an account? Sign in' : "Don't have an account? Register"}
-          </button>
-        </div>
       </div>
 
       {/* Version footer */}

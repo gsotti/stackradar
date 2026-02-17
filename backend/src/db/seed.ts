@@ -41,7 +41,7 @@ async function seedPostgres(): Promise<void> {
     // Create admin user
     const passwordHash = hashPassword(ADMIN_PASSWORD);
     const userResult = await pool.query<Pick<User, 'id'>>(
-      'INSERT INTO users (email, password_hash, name, is_active, is_approved, is_admin) VALUES ($1, $2, $3, true, true, true) RETURNING id',
+      'INSERT INTO users (email, password_hash, name, is_active, is_approved, global_role) VALUES ($1, $2, $3, true, true, \'superadmin\') RETURNING id',
       [ADMIN_EMAIL, passwordHash, ADMIN_NAME]
     );
     const userId = userResult.rows[0].id;

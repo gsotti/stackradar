@@ -1,10 +1,14 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { AuthRequest, JWTPayload, User, GlobalRole, TenantRole } from '../types';
+import { AuthRequest, JWTPayload, GlobalRole, TenantRole } from '../types';
 import db from '../db/database.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is required. Exiting.');
+  process.exit(1);
+}
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 export function hashPassword(password: string): string {
@@ -92,7 +96,6 @@ export async function authMiddleware(
 }
 
 // Admin middleware - requires authentication first
-// Updated to use global_role, with backwards compatibility for is_admin
 export async function adminMiddleware(
   req: AuthRequest,
   res: Response,
@@ -100,10 +103,9 @@ export async function adminMiddleware(
 ): Promise<void> {
   try {
     const result = await db.query<{
-      is_admin: boolean;
       global_role: GlobalRole;
     }>(
-      'SELECT is_admin, global_role FROM users WHERE id = $1',
+      'SELECT global_role FROM users WHERE id = $1',
       [req.userId]
     );
     const user = result.rows[0];
@@ -113,11 +115,9 @@ export async function adminMiddleware(
       return;
     }
 
-    // Check new role system first, fallback to old is_admin for backwards compatibility
     const hasAdminAccess =
       user.global_role === 'superadmin' ||
-      user.global_role === 'org_admin' ||
-      user.is_admin;
+      user.global_role === 'org_admin';
 
     if (!hasAdminAccess) {
       res.status(403).json({ detail: 'Admin access required' });
@@ -137,21 +137,15 @@ export async function editorMiddleware(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  try {
-    const result = await db.query<Pick<User, 'is_viewer'>>(
-      'SELECT is_viewer FROM users WHERE id = $1',
-      [req.userId]
-    );
-    const user = result.rows[0];
-
-    if (user?.is_viewer) {
-      res.status(403).json({ detail: 'Viewers cannot modify data' });
-      return;
-    }
-
+  // Superadmins and org admins can always edit
+  if (req.globalRole === 'superadmin' || req.globalRole === 'org_admin') {
     next();
-  } catch (error) {
-    console.error('Editor middleware error:', error);
-    res.status(500).json({ detail: 'Internal server error' });
+    return;
   }
+  // Check tenant role - viewers cannot edit
+  if (req.tenantRole === 'viewer') {
+    res.status(403).json({ detail: 'Viewers cannot modify data' });
+    return;
+  }
+  next();
 }

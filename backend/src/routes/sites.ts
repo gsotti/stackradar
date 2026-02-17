@@ -230,6 +230,16 @@ router.get('/:id/k8s-metrics', authMiddleware, async (
   try {
     const siteId = req.params.id;
 
+    // Verify site belongs to user's tenant
+    const siteCheck = await db.query<{ tenant_id: number }>(
+      'SELECT tenant_id FROM sites WHERE id = $1',
+      [siteId]
+    );
+    if (siteCheck.rows.length === 0 || !req.userTenantIds?.includes(siteCheck.rows[0].tenant_id)) {
+      res.status(404).json({ detail: 'Site not found' });
+      return;
+    }
+
     const result = await db.query(
       'SELECT * FROM site_metrics WHERE site_id = $1',
       [siteId]
@@ -267,6 +277,16 @@ router.get('/:id/k8s-metrics/history', authMiddleware, async (
   try {
     const siteId = parseInt(req.params.id);
     const { from, to, step } = req.query as { from?: string; to?: string; step?: string };
+
+    // Verify site belongs to user's tenant
+    const siteCheck = await db.query<{ tenant_id: number }>(
+      'SELECT tenant_id FROM sites WHERE id = $1',
+      [req.params.id]
+    );
+    if (siteCheck.rows.length === 0 || !req.userTenantIds?.includes(siteCheck.rows[0].tenant_id)) {
+      res.status(404).json({ detail: 'Site not found' });
+      return;
+    }
 
     const toDate = to ? new Date(to) : new Date();
     const fromDate = from ? new Date(from) : new Date(toDate.getTime() - 24 * 60 * 60 * 1000);
@@ -311,6 +331,17 @@ router.get('/:id/k8s-metrics/live', authMiddleware, async (
 ): Promise<void> => {
   try {
     const siteId = parseInt(req.params.id);
+
+    // Verify site belongs to user's tenant
+    const siteCheck = await db.query<{ tenant_id: number }>(
+      'SELECT tenant_id FROM sites WHERE id = $1',
+      [req.params.id]
+    );
+    if (siteCheck.rows.length === 0 || !req.userTenantIds?.includes(siteCheck.rows[0].tenant_id)) {
+      res.status(404).json({ detail: 'Site not found' });
+      return;
+    }
+
     const toDate = new Date();
     const fromDate = new Date(toDate.getTime() - 30 * 60 * 1000);
     const stepSeconds = 60; // 1m

@@ -5,11 +5,13 @@ import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { UptimeStatusDot } from '../components/uptime/UptimeStatusBadge';
 import { Site, K8sMetrics, UptimeStatus } from '../types';
 
 export default function SitesPage() {
   const { user } = useAuth();
+  const { isViewer } = usePermissions();
   const { selectedTenant } = useApp();
   const { showError, showSuccess } = useNotification();
   const [sites, setSites] = useState<Site[]>([]);
@@ -122,7 +124,7 @@ export default function SitesPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Sites</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your Docker hosts, Kubernetes clusters, and generic sites</p>
         </div>
-        {!user?.is_viewer && (
+        {!isViewer() && (
           <button
             onClick={() => { setShowForm(true); setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' }); }}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-medium"
@@ -213,7 +215,7 @@ export default function SitesPage() {
           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">
             Create your first site to start monitoring your infrastructure.
           </p>
-          {!user?.is_viewer && (
+          {!isViewer() && (
             <button
               onClick={() => setShowForm(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"

@@ -20,6 +20,7 @@ import TenantsPage from './pages/TenantsPage';
 import TenantSettingsPage from './pages/TenantSettingsPage';
 import TenantUsersPage from './pages/TenantUsersPage';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
+import OrgUsersPage from './pages/OrgUsersPage';
 
 export default function App() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/tenants/:id/settings" element={<ProtectedRoute requireOrgAdmin><TenantSettingsPage /></ProtectedRoute>} />
               <Route path="/tenants/:id/settings/users" element={<ProtectedRoute requireOrgAdmin><TenantSettingsPage /></ProtectedRoute>} />
               <Route path="/tenants/:tenantId/users" element={<ProtectedRoute requireTenantAdmin><TenantUsersPage /></ProtectedRoute>} />
+              <Route path="/organization/users" element={<ProtectedRoute requireOrgAdmin><OrgUsersPage /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute requireAdmin><UsersPage /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>} />
               <Route path="/superadmin" element={<ProtectedRoute requireSuperadmin><SuperadminPage /></ProtectedRoute>} />

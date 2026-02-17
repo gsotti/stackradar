@@ -15,10 +15,22 @@ router.post('/org-admins', authMiddleware, superadminMiddleware, async (
   res: Response
 ): Promise<void> => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, organization_id } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ detail: 'Email and password are required' });
+      return;
+    }
+
+    if (!organization_id) {
+      res.status(400).json({ detail: 'Organization ID is required' });
+      return;
+    }
+
+    // Verify organization exists
+    const orgCheck = await db.query('SELECT id FROM organizations WHERE id = $1', [organization_id]);
+    if (orgCheck.rows.length === 0) {
+      res.status(404).json({ detail: 'Organization not found' });
       return;
     }
 
@@ -35,12 +47,12 @@ router.post('/org-admins', authMiddleware, superadminMiddleware, async (
 
     const passwordHash = hashPassword(password);
 
-    // Create user with org_admin role
+    // Create user with org_admin role and organization
     const result = await db.query<Omit<User, 'password_hash'>>(
-      `INSERT INTO users (email, password_hash, name, global_role, is_active, is_approved, email_verified, created_by)
-       VALUES ($1, $2, $3, 'org_admin', true, true, true, $4)
-       RETURNING id, email, name, is_active, is_approved, global_role, email_verified, created_by, created_at`,
-      [email, passwordHash, name || null, req.userId]
+      `INSERT INTO users (email, password_hash, name, global_role, organization_id, is_active, is_approved, email_verified, created_by)
+       VALUES ($1, $2, $3, 'org_admin', $4, true, true, true, $5)
+       RETURNING id, email, name, is_active, is_approved, global_role, email_verified, organization_id, created_by, created_at`,
+      [email, passwordHash, name || null, organization_id, req.userId]
     );
 
     res.status(201).json(result.rows[0]);

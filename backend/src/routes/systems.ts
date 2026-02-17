@@ -71,8 +71,8 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
        JOIN environments e ON sys.environment_id = e.id
        JOIN sites si ON e.site_id = si.id
        JOIN tenants t ON si.tenant_id = t.id
-       WHERE sys.id = $1`,
-      [id]
+       WHERE sys.id = $1 AND si.tenant_id = ANY($2)`,
+      [id, req.userTenantIds || []]
     );
 
     if (result.rows.length === 0) {
@@ -100,10 +100,12 @@ router.post('/', authMiddleware, editorMiddleware, async (req: AuthRequest, res:
       return;
     }
 
-    // Check if environment exists
+    // Verify environment belongs to user's tenant
     const environmentCheck = await db.query(
-      'SELECT id FROM environments WHERE id = $1',
-      [environment_id]
+      `SELECT e.id FROM environments e
+       JOIN sites s ON e.site_id = s.id
+       WHERE e.id = $1 AND s.tenant_id = ANY($2)`,
+      [environment_id, req.userTenantIds || []]
     );
 
     if (environmentCheck.rows.length === 0) {
@@ -154,6 +156,31 @@ router.put('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, re
       return;
     }
 
+    // Verify system belongs to user's tenant
+    const sysCheck = await db.query(
+      `SELECT sys.id FROM systems sys
+       JOIN environments e ON sys.environment_id = e.id
+       JOIN sites s ON e.site_id = s.id
+       WHERE sys.id = $1 AND s.tenant_id = ANY($2)`,
+      [id, req.userTenantIds || []]
+    );
+    if (sysCheck.rows.length === 0) {
+      res.status(404).json({ error: 'System not found' });
+      return;
+    }
+
+    // Also verify target environment belongs to user's tenant
+    const envCheck = await db.query(
+      `SELECT e.id FROM environments e
+       JOIN sites s ON e.site_id = s.id
+       WHERE e.id = $1 AND s.tenant_id = ANY($2)`,
+      [environment_id, req.userTenantIds || []]
+    );
+    if (envCheck.rows.length === 0) {
+      res.status(404).json({ error: 'Environment not found' });
+      return;
+    }
+
     const result = await db.query<System>(
       `UPDATE systems
        SET environment_id = $1, name = $2, description = $3, updated_at = CURRENT_TIMESTAMP
@@ -195,8 +222,14 @@ router.delete('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest,
     const { id } = req.params;
 
     const result = await db.query<System>(
-      'DELETE FROM systems WHERE id = $1 RETURNING *',
-      [id]
+      `DELETE FROM systems
+       WHERE id = $1 AND environment_id IN (
+         SELECT e.id FROM environments e
+         JOIN sites s ON e.site_id = s.id
+         WHERE s.tenant_id = ANY($2)
+       )
+       RETURNING *`,
+      [id, req.userTenantIds || []]
     );
 
     if (result.rows.length === 0) {

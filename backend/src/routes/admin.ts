@@ -1,26 +1,25 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { cleanupOldLogs } from '../services/cleanup.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, hashPassword } from '../middleware/auth.js';
 import { superadminMiddleware } from '../middleware/roleMiddleware.js';
 import { AuthRequest, User } from '../types/index.js';
+import { validatePassword } from '../utils/validation.js';
 import db from '../db/database.js';
 
 const router = Router();
 
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'changeme';
-
-// Manual cleanup endpoint (uses API key)
-router.post('/cleanup', (req: Request, res: Response): void => {
-  const { admin_key } = req.query;
-
-  if (admin_key !== ADMIN_API_KEY) {
-    res.status(401).json({ detail: 'Invalid admin key' });
-    return;
+// Manual cleanup endpoint (requires superadmin JWT auth)
+router.post('/cleanup', authMiddleware, superadminMiddleware, async (
+  _req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const deleted = await cleanupOldLogs();
+    res.json({ message: `Deleted ${deleted} old log entries` });
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
   }
-
-  const deleted = cleanupOldLogs();
-
-  res.json({ message: `Deleted ${deleted} old log entries` });
 });
 
 // Get all users (superadmin only - org admins should use /api/tenants/:id/users)
@@ -30,7 +29,7 @@ router.get('/users', authMiddleware, superadminMiddleware, async (
 ): Promise<void> => {
   try {
     const result = await db.query<Omit<User, 'password_hash'>>(`
-      SELECT id, email, name, is_active, is_approved, is_admin, created_at
+      SELECT id, email, name, is_active, is_approved, global_role, created_at
       FROM users
       ORDER BY created_at DESC
     `);
@@ -38,6 +37,49 @@ router.get('/users', authMiddleware, superadminMiddleware, async (
     res.json(result.rows);
   } catch (error) {
     console.error('Get users error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+// Create user (superadmin only)
+router.post('/users', authMiddleware, superadminMiddleware, async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email, password, name, global_role, auto_approve } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ detail: 'Email and password are required' });
+      return;
+    }
+
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
+      res.status(400).json({ detail: passwordCheck.message });
+      return;
+    }
+
+    // Check if user exists
+    const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) {
+      res.status(400).json({ detail: 'Email already registered' });
+      return;
+    }
+
+    const passwordHash = hashPassword(password);
+    const isApproved = auto_approve !== false; // default to true
+
+    const result = await db.query<Omit<User, 'password_hash'>>(
+      `INSERT INTO users (email, password_hash, name, global_role, is_active, is_approved, created_by)
+       VALUES ($1, $2, $3, $4, true, $5, $6)
+       RETURNING id, email, name, is_active, is_approved, global_role, created_at`,
+      [email, passwordHash, name || null, global_role || null, isApproved, req.userId]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Create user error:', error);
     res.status(500).json({ detail: 'Internal server error' });
   }
 });
@@ -181,7 +223,7 @@ router.put('/users/:id', authMiddleware, superadminMiddleware, async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, email, password, is_admin } = req.body;
+    const { name, email, password, global_role } = req.body;
 
     // Prevent modifying yourself
     if (parseInt(id) === req.userId) {
@@ -224,9 +266,9 @@ router.put('/users/:id', authMiddleware, superadminMiddleware, async (
       paramIndex++;
     }
 
-    if (is_admin !== undefined) {
-      updates.push(`is_admin = $${paramIndex}`);
-      values.push(is_admin);
+    if (global_role !== undefined) {
+      updates.push(`global_role = $${paramIndex}`);
+      values.push(global_role);
       paramIndex++;
     }
 
@@ -239,7 +281,7 @@ router.put('/users/:id', authMiddleware, superadminMiddleware, async (
 
     const result = await db.query<Omit<User, 'password_hash'>>(
       `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex}
-       RETURNING id, email, name, is_active, is_approved, is_admin, created_at`,
+       RETURNING id, email, name, is_active, is_approved, global_role, created_at`,
       values
     );
 

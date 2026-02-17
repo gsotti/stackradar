@@ -14,8 +14,8 @@ export default function UsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [newUser, setNewUser] = useState({ email: '', password: '', name: '', is_admin: false, auto_approve: true });
-  const [editForm, setEditForm] = useState({ name: '', email: '', password: '', is_admin: false });
+  const [newUser, setNewUser] = useState({ email: '', password: '', name: '', global_role: null as string | null, auto_approve: true });
+  const [editForm, setEditForm] = useState({ name: '', email: '', password: '', global_role: null as string | null });
 
   const loadUsers = async () => {
     try {
@@ -75,24 +75,16 @@ export default function UsersPage() {
     }
 
     try {
-      // Register the user
-      await api.post('/auth/register', {
+      await api.post('/admin/users', {
         email: newUser.email,
         password: newUser.password,
-        name: newUser.name || null
+        name: newUser.name || null,
+        global_role: newUser.global_role || null,
+        auto_approve: newUser.auto_approve
       });
 
-      // If auto-approve is enabled, get the user and approve them
-      if (newUser.auto_approve) {
-        const allUsers = await api.get<User[]>('/admin/users');
-        const createdUser = allUsers.find(u => u.email === newUser.email);
-        if (createdUser && !createdUser.is_approved) {
-          await api.post(`/admin/users/${createdUser.id}/approve`, {});
-        }
-      }
-
       // Reset form and close modal
-      setNewUser({ email: '', password: '', name: '', is_admin: false, auto_approve: true });
+      setNewUser({ email: '', password: '', name: '', global_role: null, auto_approve: true });
       setShowCreateModal(false);
       await loadUsers();
     } catch (error: any) {
@@ -106,7 +98,7 @@ export default function UsersPage() {
       name: user.name || '',
       email: user.email,
       password: '',
-      is_admin: user.is_admin
+      global_role: user.global_role
     });
     setShowEditModal(true);
   };
@@ -119,7 +111,7 @@ export default function UsersPage() {
       const payload: any = {
         name: editForm.name || null,
         email: editForm.email,
-        is_admin: editForm.is_admin
+        global_role: editForm.global_role
       };
 
       if (editForm.password) {
@@ -250,14 +242,14 @@ export default function UsersPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    {user.is_admin && (
+                    {user.global_role === 'superadmin' && (
                       <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-purple-200 dark:border-purple-800">
-                        Admin
+                        Superadmin
                       </span>
                     )}
-                    {user.is_viewer && (
+                    {user.global_role === 'org_admin' && (
                       <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-blue-200 dark:border-blue-800">
-                        Viewer
+                        Org Admin
                       </span>
                     )}
                   </div>
@@ -358,18 +350,18 @@ export default function UsersPage() {
                 />
               </div>
               <div className="flex flex-col gap-4 py-2">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={newUser.is_admin}
-                      onChange={(e) => setNewUser({ ...newUser, is_admin: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
-                  </div>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors">Grant Administrator Privileges</span>
-                </label>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Global Role</label>
+                  <select
+                    value={newUser.global_role || ''}
+                    onChange={(e) => setNewUser({ ...newUser, global_role: e.target.value || null })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  >
+                    <option value="">No global role</option>
+                    <option value="superadmin">Superadmin</option>
+                    <option value="org_admin">Organization Admin</option>
+                  </select>
+                </div>
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative">
                     <input
@@ -447,18 +439,18 @@ export default function UsersPage() {
                 />
               </div>
               <div className="flex flex-col gap-4 py-2">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={editForm.is_admin}
-                      onChange={(e) => setEditForm({ ...editForm, is_admin: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
-                  </div>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-purple-600 transition-colors">Administrator Status</span>
-                </label>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Global Role</label>
+                  <select
+                    value={editForm.global_role || ''}
+                    onChange={(e) => setEditForm({ ...editForm, global_role: e.target.value || null })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  >
+                    <option value="">No global role</option>
+                    <option value="superadmin">Superadmin</option>
+                    <option value="org_admin">Organization Admin</option>
+                  </select>
+                </div>
               </div>
               <div className="pt-4 flex gap-3">
                 <button

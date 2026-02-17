@@ -6,6 +6,7 @@ import { AuthRequest, Invitation, TenantRole, User } from '../types/index.js';
 import db from '../db/database.js';
 import { sendEmail } from '../services/alerting/smtp.js';
 import { renderTemplate } from '../services/email/templateRenderer.js';
+import { validatePassword } from '../utils/validation.js';
 
 const router = Router();
 
@@ -265,50 +266,56 @@ router.post('/:token/accept', acceptInvitationLimiter, async (
     const { token } = req.params;
     const { password, name } = req.body;
 
-    // Find invitation first
-    const invitationResult = await db.query<Invitation>(
-      'SELECT * FROM invitations WHERE token = $1 AND accepted_at IS NULL',
-      [token]
-    );
-
-    if (invitationResult.rows.length === 0) {
-      res.status(404).json({ detail: 'Invalid or expired invitation' });
-      return;
-    }
-
-    const invitation = invitationResult.rows[0];
-
-    // Check if invitation is expired
-    if (new Date(invitation.expires_at) < new Date()) {
-      res.status(404).json({ detail: 'Invalid or expired invitation' });
-      return;
-    }
-
-    // Check if user already exists
-    const existingUserResult = await db.query<Pick<User, 'id'>>(
-      'SELECT id FROM users WHERE email = $1',
-      [invitation.email]
-    );
-
-    if (existingUserResult.rows.length > 0) {
-      res.status(404).json({ detail: 'Invalid or expired invitation' });
-      return;
-    }
-
-    // Now validate password (only after token is validated)
-    if (!password) {
-      res.status(400).json({ detail: 'Password is required' });
-      return;
-    }
-
-    if (password.length < 8) {
-      res.status(400).json({ detail: 'Password must be at least 8 characters' });
-      return;
-    }
-
     const client = await db.connect();
     try {
       await client.query('BEGIN');
+
+      // Lock the invitation row to prevent race conditions
+      const invitationResult = await client.query<Invitation>(
+        'SELECT * FROM invitations WHERE token = $1 AND accepted_at IS NULL FOR UPDATE',
+        [token]
+      );
+
+      if (invitationResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        res.status(404).json({ detail: 'Invalid or expired invitation' });
+        return;
+      }
+
+      const invitation = invitationResult.rows[0];
+
+      // Check if invitation is expired
+      if (new Date(invitation.expires_at) < new Date()) {
+        await client.query('ROLLBACK');
+        res.status(404).json({ detail: 'Invalid or expired invitation' });
+        return;
+      }
+
+      // Check if user already exists
+      const existingUserResult = await client.query<Pick<User, 'id'>>(
+        'SELECT id FROM users WHERE email = $1',
+        [invitation.email]
+      );
+
+      if (existingUserResult.rows.length > 0) {
+        await client.query('ROLLBACK');
+        res.status(404).json({ detail: 'Invalid or expired invitation' });
+        return;
+      }
+
+      // Now validate password (only after token is validated)
+      if (!password) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ detail: 'Password is required' });
+        return;
+      }
+
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ detail: passwordCheck.message });
+        return;
+      }
 
       // Create user
       const passwordHash = hashPassword(password);

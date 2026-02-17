@@ -4,17 +4,21 @@ const { Pool } = pkg;
 
 dotenv.config();
 
-// Debug: Print connection details for main pool
 const dbConfig = {
   host: process.env.POSTGRES_HOST || 'localhost',
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  user: process.env.POSTGRES_USER || 'logpilot',
-  password: process.env.POSTGRES_PASSWORD || 'logpilot_password',
-  database: process.env.POSTGRES_DB || 'logpilot',
-  max: 20, // Maximum number of connections in pool
+  user: process.env.POSTGRES_USER || 'stackradar',
+  password: process.env.POSTGRES_PASSWORD || 'stackradar_password',
+  database: process.env.POSTGRES_DB || 'stackradar',
+  max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 };
+
+if (process.env.NODE_ENV === 'production' && !process.env.POSTGRES_PASSWORD) {
+  console.error('FATAL: POSTGRES_PASSWORD environment variable is required in production. Exiting.');
+  process.exit(1);
+}
 
 // Create a PostgreSQL connection pool
 const pool = new Pool(dbConfig);

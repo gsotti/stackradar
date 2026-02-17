@@ -153,7 +153,7 @@ async function runMigrations(): Promise<void> {
     if (appliedCount > 0) {
       console.log('\nCurrent users:');
       const users = await pool.query<Partial<User>>(`
-        SELECT id, email, name, is_active, is_approved, is_admin
+        SELECT id, email, name, is_active, is_approved, global_role
         FROM users
         ORDER BY id
       `);

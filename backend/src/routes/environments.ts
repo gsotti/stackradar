@@ -90,6 +90,16 @@ router.post('/', authMiddleware, editorMiddleware, async (
       return;
     }
 
+    // Verify site belongs to user's tenant
+    const siteCheck = await db.query(
+      'SELECT id FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+      [site_id, req.userTenantIds || []]
+    );
+    if (siteCheck.rows.length === 0) {
+      res.status(404).json({ detail: 'Site not found' });
+      return;
+    }
+
     const result = await db.query<Environment>(
       'INSERT INTO environments (site_id, name, display_name) VALUES ($1, $2, $3) RETURNING *',
       [site_id, name, display_name || null]
@@ -113,6 +123,18 @@ router.put('/:id', authMiddleware, editorMiddleware, async (
 ): Promise<void> => {
   try {
     const { name, display_name } = req.body;
+
+    // Verify environment belongs to user's tenant
+    const envCheck = await db.query(
+      `SELECT e.id FROM environments e
+       JOIN sites s ON e.site_id = s.id
+       WHERE e.id = $1 AND s.tenant_id = ANY($2)`,
+      [req.params.id, req.userTenantIds || []]
+    );
+    if (envCheck.rows.length === 0) {
+      res.status(404).json({ detail: 'Environment not found' });
+      return;
+    }
 
     // Build dynamic UPDATE query based on what fields are provided
     const updates: string[] = [];
@@ -163,8 +185,10 @@ router.delete('/:id', authMiddleware, editorMiddleware, async (
 ): Promise<void> => {
   try {
     const result = await db.query<Environment>(
-      'DELETE FROM environments WHERE id = $1 RETURNING *',
-      [req.params.id]
+      `DELETE FROM environments
+       WHERE id = $1 AND site_id IN (SELECT id FROM sites WHERE tenant_id = ANY($2))
+       RETURNING *`,
+      [req.params.id, req.userTenantIds || []]
     );
 
     if (result.rows.length === 0) {

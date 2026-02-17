@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import db from '../db/database.js';
-import { hashPassword, verifyPassword, generateToken, authMiddleware } from '../middleware/auth.js';
+import { verifyPassword, generateToken, authMiddleware } from '../middleware/auth.js';
 import {
-  RegisterRequest,
   LoginRequest,
   LoginResponse,
   User,
@@ -22,69 +21,9 @@ const loginLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Register
-router.post('/register', async (
-  req: Request<{}, {}, RegisterRequest>,
-  res: Response
-): Promise<void> => {
-  try {
-    const { email, password, name } = req.body;
-
-    if (!email || !password) {
-      res.status(400).json({ detail: 'Email and password are required' });
-      return;
-    }
-
-    // Check if user exists
-    const existing = await db.query<Pick<User, 'id'>>(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
-    );
-
-    if (existing.rows.length > 0) {
-      res.status(400).json({ detail: 'Email already registered' });
-      return;
-    }
-
-    const passwordHash = hashPassword(password);
-
-    const client = await db.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Create user
-      const userResult = await client.query<Omit<User, 'password_hash' | 'is_approved' | 'is_admin'>>(
-        'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name, is_active, created_at',
-        [email, passwordHash, name || null]
-      );
-      const createdUser = userResult.rows[0];
-
-      // Create a tenant named "Default" for this user
-      const tenantResult = await client.query<{ id: number }>(
-        'INSERT INTO tenants (name) VALUES ($1) RETURNING id',
-        ['Default']
-      );
-      const tenantId = tenantResult.rows[0].id;
-
-      // Map user to tenant
-      await client.query(
-        'INSERT INTO user_tenants (user_id, tenant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [createdUser.id, tenantId]
-      );
-
-      await client.query('COMMIT');
-
-      res.status(201).json(createdUser);
-    } catch (e) {
-      await client.query('ROLLBACK');
-      throw e;
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ detail: 'Internal server error' });
-  }
+// Self-registration disabled — users are created by admins or via invitations
+router.post('/register', (_req: Request, res: Response): void => {
+  res.status(403).json({ detail: 'Self-registration is disabled. Please contact an administrator.' });
 });
 
 // Login
@@ -169,7 +108,7 @@ router.get('/me', authMiddleware, async (
 ): Promise<void> => {
   try {
     const result = await db.query<Omit<User, 'password_hash'>>(
-      `SELECT u.id, u.email, u.name, u.is_active, u.is_admin, u.is_viewer,
+      `SELECT u.id, u.email, u.name, u.is_active,
               u.global_role, u.email_verified, u.organization_id, u.created_at,
               o.name as organization_name
        FROM users u

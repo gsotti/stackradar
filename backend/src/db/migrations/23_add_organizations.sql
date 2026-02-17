@@ -2,7 +2,7 @@
 -- Creates explicit organizational boundaries for users and tenants
 
 -- ============================================================================
--- 1. CREATE ORGANIZATIONS TABLE
+-- 1. CREATE ORGANIZATIONS TABLEno
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS organizations (
