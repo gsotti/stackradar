@@ -299,9 +299,9 @@ router.post('/:token/accept', acceptInvitationLimiter, async (
         return;
       }
 
-      // Check if user already exists
+      // Check if user already exists (FOR UPDATE to prevent race condition)
       const existingUserResult = await client.query<Pick<User, 'id'>>(
-        'SELECT id FROM users WHERE email = $1',
+        'SELECT id FROM users WHERE email = $1 FOR UPDATE',
         [invitation.email]
       );
 

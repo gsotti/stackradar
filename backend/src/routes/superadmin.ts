@@ -1,16 +1,27 @@
 import { Router, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authMiddleware, hashPassword } from '../middleware/auth.js';
 import { superadminMiddleware } from '../middleware/roleMiddleware.js';
 import { AuthRequest, User } from '../types/index.js';
+import { validatePassword } from '../utils/validation.js';
 import db from '../db/database.js';
 
 const router = Router();
+
+// Rate limiter for superadmin user creation
+const superadminCreateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // 20 requests per hour
+  message: { detail: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 /**
  * POST /api/superadmin/org-admins - Create organization admin
  * Only superadmins can create org admins
  */
-router.post('/org-admins', authMiddleware, superadminMiddleware, async (
+router.post('/org-admins', authMiddleware, superadminMiddleware, superadminCreateLimiter, async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -19,6 +30,12 @@ router.post('/org-admins', authMiddleware, superadminMiddleware, async (
 
     if (!email || !password) {
       res.status(400).json({ detail: 'Email and password are required' });
+      return;
+    }
+
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
+      res.status(400).json({ detail: passwordCheck.message });
       return;
     }
 
@@ -139,6 +156,11 @@ router.put('/org-admins/:id', authMiddleware, superadminMiddleware, async (
     }
 
     if (password && password.length > 0) {
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        res.status(400).json({ detail: passwordCheck.message });
+        return;
+      }
       updates.push(`password_hash = $${paramIndex}`);
       values.push(hashPassword(password));
       paramIndex++;

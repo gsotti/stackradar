@@ -140,8 +140,8 @@ router.put('/:id', authMiddleware, editorMiddleware, async (
     }
 
     const existingResult = await db.query<Site>(
-      'SELECT * FROM sites WHERE id = $1',
-      [req.params.id]
+      'SELECT * FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+      [req.params.id, req.userTenantIds || []]
     );
 
     if (existingResult.rows.length === 0) {
@@ -155,9 +155,9 @@ router.put('/:id', authMiddleware, editorMiddleware, async (
            description = COALESCE($2, description),
            retention_days = COALESCE($3, retention_days),
            site_type = COALESCE($4, site_type)
-       WHERE id = $5
+       WHERE id = $5 AND tenant_id = ANY($6)
        RETURNING *`,
-      [name, description, retention_days, site_type, req.params.id]
+      [name, description, retention_days, site_type, req.params.id, req.userTenantIds || []]
     );
 
     res.json(result.rows[0]);
@@ -174,8 +174,8 @@ router.delete('/:id', authMiddleware, editorMiddleware, async (
 ): Promise<void> => {
   try {
     const existingResult = await db.query<Site>(
-      'SELECT * FROM sites WHERE id = $1',
-      [req.params.id]
+      'SELECT * FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+      [req.params.id, req.userTenantIds || []]
     );
 
     if (existingResult.rows.length === 0) {
@@ -183,7 +183,7 @@ router.delete('/:id', authMiddleware, editorMiddleware, async (
       return;
     }
 
-    await db.query('DELETE FROM sites WHERE id = $1', [req.params.id]);
+    await db.query('DELETE FROM sites WHERE id = $1 AND tenant_id = ANY($2)', [req.params.id, req.userTenantIds || []]);
 
     res.json({ message: 'Site deleted' });
   } catch (error) {
@@ -199,8 +199,8 @@ router.post('/:id/regenerate-token', authMiddleware, editorMiddleware, async (
 ): Promise<void> => {
   try {
     const existingResult = await db.query<Site>(
-      'SELECT * FROM sites WHERE id = $1',
-      [req.params.id]
+      'SELECT * FROM sites WHERE id = $1 AND tenant_id = ANY($2)',
+      [req.params.id, req.userTenantIds || []]
     );
 
     if (existingResult.rows.length === 0) {
@@ -211,8 +211,8 @@ router.post('/:id/regenerate-token', authMiddleware, editorMiddleware, async (
     const newToken = generateApiToken();
 
     const result = await db.query<Site>(
-      'UPDATE sites SET api_token = $1 WHERE id = $2 RETURNING *',
-      [newToken, req.params.id]
+      'UPDATE sites SET api_token = $1 WHERE id = $2 AND tenant_id = ANY($3) RETURNING *',
+      [newToken, req.params.id, req.userTenantIds || []]
     );
 
     res.json(result.rows[0]);

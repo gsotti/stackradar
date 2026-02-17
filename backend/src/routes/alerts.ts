@@ -9,6 +9,7 @@ import {
 } from '../services/alerting/smtp.js';
 import { evaluateRule, getCurrentMetricValue } from '../services/alerting/evaluator.js';
 import { renderTemplate } from '../services/email/templateRenderer.js';
+import { isPrivateUrl } from '../utils/validation.js';
 import {
   AuthRequest,
   AlertRule,
@@ -484,6 +485,12 @@ router.post(
         return;
       }
 
+      // Validate webhook URL is not targeting private/internal networks
+      if (body.webhook_url && isPrivateUrl(body.webhook_url)) {
+        res.status(400).json({ detail: 'Webhook URL must not target private or internal networks' });
+        return;
+      }
+
       // Validate webhook headers - block dangerous headers
       if (body.webhook_headers && typeof body.webhook_headers === 'object') {
         const forbiddenHeaders = ['host', 'cookie', 'set-cookie', 'transfer-encoding', 'content-length'];
@@ -546,6 +553,12 @@ router.put(
 
       if (accessCheck.rows.length === 0) {
         res.status(404).json({ detail: 'Notification channel not found' });
+        return;
+      }
+
+      // Validate webhook URL is not targeting private/internal networks
+      if (body.webhook_url && isPrivateUrl(body.webhook_url)) {
+        res.status(400).json({ detail: 'Webhook URL must not target private or internal networks' });
         return;
       }
 
