@@ -17,7 +17,18 @@
       "Bash(npx tsc:*)",
       "Bash(ls:*)",
       "Bash(echo:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(corepack enable:*)",
+      "Bash(yarn:*)",
+      "Bash(corepack prepare:*)",
+      "Bash(node -e:*)",
+      "Bash(npm info:*)",
+      "Bash(corepack use:*)",
+      "Bash(COREPACK_ENABLE_STRICT=0 corepack yarn:*)",
+      "Bash(corepack:*)",
+      "Bash(PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\" corepack enable:*)",
+      "Bash(PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\" yarn:*)",
+      "Bash(export PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\")"
     ],
     "deny": [],
     "ask": []

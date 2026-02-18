@@ -6,8 +6,8 @@ ARG BUILD_VERSION=1.0.0
 ARG BUILD_COMMIT=unknown
 
 WORKDIR /app/frontend
-COPY frontend/package.json frontend/yarn.lock ./
-RUN corepack enable && yarn install --frozen-lockfile
+COPY frontend/package.json frontend/yarn.lock frontend/.yarnrc.yml ./
+RUN corepack enable && yarn install --immutable
 COPY frontend/ ./
 RUN BUILD_VERSION=${BUILD_VERSION} BUILD_COMMIT=${BUILD_COMMIT} yarn build
 
@@ -23,8 +23,8 @@ RUN apk add --no-cache python3 make g++
 ARG DISABLE_OBFUSCATION=false
 ENV DISABLE_OBFUSCATION=${DISABLE_OBFUSCATION}
 
-COPY backend/package.json backend/yarn.lock ./
-RUN corepack enable && yarn install --frozen-lockfile
+COPY backend/package.json backend/yarn.lock backend/.yarnrc.yml ./
+RUN corepack enable && yarn install --immutable
 COPY backend/src ./src
 COPY backend/tsconfig.json ./
 COPY backend/obfuscate.mjs ./
