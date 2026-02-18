@@ -65,15 +65,21 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
   };
 
   const renderDockerInstructions = () => {
+    const apiToken = site.api_token;
+    const stackradarUrl = window.location.origin;
+    const tenantName = site.tenant_name || 'default';
+    const siteName = site.name;
+    const envName = getEnvName();
+
     const logCollectorCmd = `docker run -d \\
   --name stackradar-docker-logs-collector \\
   --restart unless-stopped \\
   -v /var/run/docker.sock:/var/run/docker.sock:ro \\
-  -e STACKRADAR_API_URL="${window.location.origin}" \\
-  -e API_TOKEN="${site.api_token}" \\
-  -e TENANT="${site.tenant_name || 'default'}" \\
-  -e SITE="${site.name}" \\
-  -e ENVIRONMENT="${getEnvName()}"${selectedSystem ? ` \\
+  -e STACKRADAR_API_URL="${stackradarUrl}" \\
+  -e API_TOKEN="${apiToken}" \\
+  -e TENANT="${tenantName}" \\
+  -e SITE="${siteName}" \\
+  -e ENVIRONMENT="${envName}"${selectedSystem ? ` \\
   -e CONTAINER_FILTER="${selectedSystem}"` : ''} \\
   ghcr.io/gsotti/stackradar-docker-logs-collector:latest`;
 
@@ -81,8 +87,8 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
   --name stackradar-docker-stats-collector \\
   --restart unless-stopped \\
   -v /var/run/docker.sock:/var/run/docker.sock:ro \\
-  -e STACKRADAR_API_URL="${window.location.origin}" \\
-  -e API_TOKEN="${site.api_token}" \\
+  -e STACKRADAR_API_URL="${stackradarUrl}" \\
+  -e API_TOKEN="${apiToken}" \\
   -e COLLECTION_INTERVAL_MS="60000" \\
   ghcr.io/gsotti/stackradar-docker-stats-collector:latest`;
 
@@ -94,144 +100,396 @@ services:
     container_name: stackradar-docker-logs-collector
     restart: unless-stopped
     environment:
-      STACKRADAR_API_URL: "${window.location.origin}"
-      API_TOKEN: "${site.api_token}"
-      TENANT: "${site.tenant_name || 'default'}"
-      SITE: "${site.name}"
-      ENVIRONMENT: "${getEnvName()}"${selectedSystem ? `\n      CONTAINER_FILTER: "${selectedSystem}"` : ''}
+      STACKRADAR_API_URL: "${stackradarUrl}"
+      API_TOKEN: "${apiToken}"
+      TENANT: "${tenantName}"
+      SITE: "${siteName}"
+      ENVIRONMENT: "${envName}"${selectedSystem ? `\n      CONTAINER_FILTER: "${selectedSystem}"` : ''}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   stackradar-docker-stats-collector:
     image: ghcr.io/gsotti/stackradar-docker-stats-collector:latest
     container_name: stackradar-docker-stats-collector
     restart: unless-stopped
     environment:
-      STACKRADAR_API_URL: "${window.location.origin}"
-      API_TOKEN: "${site.api_token}"
+      STACKRADAR_API_URL: "${stackradarUrl}"
+      API_TOKEN: "${apiToken}"
       COLLECTION_INTERVAL_MS: "60000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro`;
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      resources:
+        limits:
+          memory: 128M`;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
+          <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
             Deploy the collectors on your Docker host to start collecting logs and metrics.
           </p>
         </div>
 
         {/* Environment/System Selection */}
-        {(environments.length > 0 || systems.length > 0) && (
-          <div className="grid grid-cols-2 gap-4">
-            {environments.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Environment
-                </label>
-                <select
-                  value={selectedEnv}
-                  onChange={(e) => setSelectedEnv(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {environments.map((env) => (
-                    <option key={env.id} value={env.id}>{env.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {systems.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Filter by System (Optional)
-                </label>
-                <select
-                  value={selectedSystem}
-                  onChange={(e) => setSelectedSystem(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">All containers</option>
-                  {systems.map((sys) => (
-                    <option key={sys.id} value={sys.name}>{sys.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Log Collector Command */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Log Collector (Docker Run)
-            </h3>
-            <button
-              onClick={() => copyToClipboard(logCollectorCmd, 'log-cmd')}
-              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target Environment
+            </label>
+            <select
+              value={selectedEnv}
+              onChange={(e) => setSelectedEnv(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <Copy className="w-4 h-4" />
-              {copied['log-cmd'] ? 'Copied!' : 'Copy'}
-            </button>
+              {environments.length > 0 ? (
+                environments.map((env) => (
+                  <option key={env.id} value={env.id}>{env.name}</option>
+                ))
+              ) : (
+                <option value="">dev</option>
+              )}
+            </select>
           </div>
-          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
-            {logCollectorCmd}
-          </pre>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target System (for Log Filter)
+            </label>
+            <select
+              value={selectedSystem}
+              onChange={(e) => setSelectedSystem(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">All containers</option>
+              {systems.map((sys) => (
+                <option key={sys.id} value={sys.name}>{sys.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Stats Collector Command */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Stats Collector (Docker Run)
-            </h3>
-            <button
-              onClick={() => copyToClipboard(statsCollectorCmd, 'stats-cmd')}
-              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
-            >
-              <Copy className="w-4 h-4" />
-              {copied['stats-cmd'] ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
-            {statsCollectorCmd}
-          </pre>
-        </div>
+        <div className="space-y-6">
+          {/* Log Collector */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                1. Docker Log Collector
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Collects real-time logs from all or specific containers on your host.
+            </p>
+            
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Docker Run Command</span>
+                <button
+                  onClick={() => copyToClipboard(logCollectorCmd, 'log-cmd')}
+                  className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                >
+                  <Copy className="w-4 h-4" />
+                  {copied['log-cmd'] ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                {logCollectorCmd}
+              </pre>
+            </div>
 
-        {/* Docker Compose */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Docker Compose (Both Collectors)
-            </h3>
-            <button
-              onClick={() => copyToClipboard(composeFile, 'compose')}
-              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
-            >
-              <Copy className="w-4 h-4" />
-              {copied['compose'] ? 'Copied!' : 'Copy'}
-            </button>
+            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment:</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                Run the command above on your Docker host. The collector will automatically discover all running containers and stream their logs.
+              </p>
+              <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
+                # Verify logs after starting
+                docker logs -f stackradar-docker-logs-collector
+              </code>
+            </div>
           </div>
-          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
-            {composeFile}
-          </pre>
+
+          <hr className="border-gray-200 dark:border-gray-700" />
+
+          {/* Stats Collector */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                2. Docker Stats Collector
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Collects resource usage metrics (CPU, Memory, Network) from your containers.
+            </p>
+            
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Docker Run Command</span>
+                <button
+                  onClick={() => copyToClipboard(statsCollectorCmd, 'stats-cmd')}
+                  className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                >
+                  <Copy className="w-4 h-4" />
+                  {copied['stats-cmd'] ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                {statsCollectorCmd}
+              </pre>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment:</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                This collector gathers performance data from the Docker engine every 60 seconds.
+              </p>
+              <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
+                # Verify metrics collection
+                docker logs stackradar-docker-stats-collector
+              </code>
+            </div>
+          </div>
+
+          <hr className="border-gray-200 dark:border-gray-700" />
+
+          {/* Docker Compose */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                Alternative: Docker Compose
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Run both collectors together using a compose file. This is the recommended way for production.
+            </p>
+            
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">docker-compose.yml</span>
+                <button
+                  onClick={() => copyToClipboard(composeFile, 'compose')}
+                  className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                >
+                  <Copy className="w-4 h-4" />
+                  {copied['compose'] ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                {composeFile}
+              </pre>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment:</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                Save the snippet above as <code className="text-blue-600 dark:text-blue-400">docker-compose.yml</code> and start both services:
+              </p>
+              <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
+                docker-compose up -d
+              </code>
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
   const renderKubernetesInstructions = () => {
+    const apiToken = site.api_token;
+    const stackradarUrl = window.location.origin;
+    const tenantName = site.tenant_name || 'default';
+    const siteName = site.name;
+    const envName = getEnvName();
+
+    const statsConfigYaml = `apiVersion: v1
+kind: Secret
+metadata:
+  name: stackradar-stats-config
+  namespace: stackradar-system
+type: Opaque
+stringData:
+  STACKRADAR_URL: "${stackradarUrl}"
+  API_TOKEN: "${apiToken}"
+  CLUSTER_NAME: "${siteName}"`;
+
+    const logsConfigYaml = `apiVersion: v1
+kind: Secret
+metadata:
+  name: stackradar-log-config-${selectedSystem || 'app'}
+  namespace: stackradar-system
+type: Opaque
+stringData:
+  STACKRADAR_URL: "${stackradarUrl}"
+  API_TOKEN: "${apiToken}"
+  TENANT: "${tenantName}"
+  SITE: "${siteName}"
+  ENVIRONMENT: "${envName}"
+  APP_NAME: "${selectedSystem || 'my-app'}"
+  LOG_TAIL_LINES: "100"
+  POLL_INTERVAL: "1000"
+  FOLLOW_LOGS: "true"`;
+
+    const logCollectorEnv = `env:
+  - name: POD_NAMESPACE
+    value: "default" # Target namespace
+  - name: POD_LABEL_SELECTOR
+    value: "app=${selectedSystem || 'my-app'}"
+  - name: APP_NAME
+    value: "${selectedSystem || 'my-app'}"
+  - name: ENVIRONMENT
+    value: "${envName}"
+  - name: TENANT
+    value: "${tenantName}"
+  - name: SITE
+    value: "${siteName}"`;
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-8">
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-          <p className="text-sm text-purple-800 dark:text-purple-200">
-            Deploy the log collector to your Kubernetes cluster using the provided manifests.
+          <p className="text-sm text-purple-800 dark:text-purple-200 font-medium">
+            Monitor your Kubernetes cluster with two specialized collectors.
           </p>
         </div>
-        <div className="bg-gray-900 text-green-400 p-4 rounded-lg">
-          <code className="text-xs">
-            kubectl apply -f https://raw.githubusercontent.com/your-repo/k8s-collector/main/deployment.yaml
-          </code>
+
+        {/* Environment/System Selection */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target Environment
+            </label>
+            <select
+              value={selectedEnv}
+              onChange={(e) => setSelectedEnv(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              {environments.length > 0 ? (
+                environments.map((env) => (
+                  <option key={env.id} value={env.id}>{env.name}</option>
+                ))
+              ) : (
+                <option value="">dev</option>
+              )}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target System (for Log Collector)
+            </label>
+            <select
+              value={selectedSystem}
+              onChange={(e) => setSelectedSystem(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">Select a system...</option>
+              {systems.map((sys) => (
+                <option key={sys.id} value={sys.name}>{sys.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Stats Collector */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              1. Cluster Stats Collector
+            </h3>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Collects cluster-wide metrics like node status, pod counts, and resource usage.
+          </p>
+          
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
+              <button
+                onClick={() => copyToClipboard(statsConfigYaml, 'k8s-stats-conf')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {copied['k8s-stats-conf'] ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {statsConfigYaml}
+            </pre>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
+            <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
+              <li>Create the <code className="text-blue-600 dark:text-blue-400">stackradar-system</code> namespace if it doesn't exist.</li>
+              <li>Apply the configuration secret shown above.</li>
+              <li>Deploy the stats collector from the <code className="text-blue-600 dark:text-blue-400">collector-k8s/stats-collector</code> directory.</li>
+            </ol>
+            <div className="mt-4">
+              <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
+                kubectl apply -k collector-k8s/stats-collector
+              </code>
+            </div>
+          </div>
+        </div>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
+        {/* Log Collector */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              2. Pod Log Collector
+            </h3>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Streams real-time logs from specific pods in your cluster.
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
+              <button
+                onClick={() => copyToClipboard(logsConfigYaml, 'k8s-logs-conf')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {copied['k8s-logs-conf'] ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {logsConfigYaml}
+            </pre>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Target Environment Variables</span>
+              <button
+                onClick={() => copyToClipboard(logCollectorEnv, 'k8s-logs-env')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {copied['k8s-logs-env'] ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {logCollectorEnv}
+            </pre>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
+            <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
+              <li>Apply the configuration secret shown above.</li>
+              <li>In <code className="text-blue-600 dark:text-blue-400">collector-k8s/log-collector/deployment.yaml</code>, update the environment variables to target your pod.</li>
+              <li>Deploy the log collector:</li>
+            </ol>
+            <div className="mt-4">
+              <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
+                kubectl apply -f collector-k8s/log-collector/deployment.yaml
+              </code>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -304,43 +562,41 @@ sendLog(log).catch(console.error);`;
         </div>
 
         {/* Environment/System Selection */}
-        {(environments.length > 0 || systems.length > 0) && (
-          <div className="grid grid-cols-2 gap-4">
-            {environments.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Environment
-                </label>
-                <select
-                  value={selectedEnv}
-                  onChange={(e) => setSelectedEnv(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {environments.map((env) => (
-                    <option key={env.id} value={env.id}>{env.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {systems.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Target System
-                </label>
-                <select
-                  value={selectedSystem}
-                  onChange={(e) => setSelectedSystem(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">Default (my-app)</option>
-                  {systems.map((sys) => (
-                    <option key={sys.id} value={sys.name}>{sys.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target Environment
+            </label>
+            <select
+              value={selectedEnv}
+              onChange={(e) => setSelectedEnv(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              {environments.length > 0 ? (
+                environments.map((env) => (
+                  <option key={env.id} value={env.id}>{env.name}</option>
+                ))
+              ) : (
+                <option value="">dev</option>
+              )}
+            </select>
           </div>
-        )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target System
+            </label>
+            <select
+              value={selectedSystem}
+              onChange={(e) => setSelectedSystem(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">Default (my-app)</option>
+              {systems.map((sys) => (
+                <option key={sys.id} value={sys.name}>{sys.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {/* cURL Snippet */}
         <div>
