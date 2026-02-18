@@ -1,28 +1,27 @@
-# stackradar Kubernetes Collectors
+# StackRadar Kubernetes Collectors
 
-Two specialized collectors for comprehensive Kubernetes monitoring with stackradar.
+Two specialized collectors for comprehensive Kubernetes monitoring with StackRadar:
 
-## Directory Structure
+- **Stats Collector** — cluster-wide metrics and health monitoring
+- **Logs Collector** — pod log streaming to StackRadar
 
-```
-k8s-collector/
-├── stats-collector/          # Cluster metrics collector
-│   ├── stats-collector.mjs   # Node.js collector script
-│   ├── Dockerfile            # Docker image for stats
-│   ├── deployment.yaml       # Kubernetes Deployment
-│   └── README.md            # Stats collector docs
-│
-├── log-collector/            # Pod log collector
-│   ├── log-collector.mjs    # Node.js collector script
-│   ├── Dockerfile           # Docker image for logs
-│   ├── deployment.yaml      # Kubernetes Deployment
-│   └── README.md           # Log collector docs
-│
-├── deploy-collectors.sh     # Automated deployment script
-└── README.md               # This file
-```
+> **Note on registry owner**: All image and chart references below use `gsotti` as the registry owner. This is the default value configurable in StackRadar's superadmin settings under **System Settings → Container Registry Owner**.
 
-## Quick Start
+---
+
+## Installation Methods
+
+Choose the method that best fits your workflow:
+
+- [Method 1: kubectl (raw YAML)](#method-1-kubectl-raw-yaml)
+- [Method 2: Helm](#method-2-helm)
+- [Method 3: Helmfile](#method-3-helmfile)
+
+---
+
+## Method 1: kubectl (raw YAML)
+
+Use this approach to deploy the collectors by applying Kubernetes manifests directly.
 
 ### 1. Configure Environment Variables
 
@@ -43,20 +42,20 @@ CLUSTER_NAME=my-cluster  # optional
 ### 2. Deploy Both Collectors
 
 ```bash
-./deploy-collectors.sh -r your-registry/username
+./deploy-collectors.sh
 ```
 
-Or simply (uses default registry from script):
+Or with a custom registry owner:
 
 ```bash
-./deploy-collectors.sh
+./deploy-collectors.sh -r ghcr.io/gsotti
 ```
 
 This will:
 - Load configuration from `.env` file
-- Build both Docker images
-- Push to your registry
-- Deploy to your Kubernetes cluster with your stackradar credentials
+- Build both Docker images (`ghcr.io/gsotti/stackradar-stats-collector`, `ghcr.io/gsotti/stackradar-logs-collector`)
+- Push to the registry
+- Deploy to your Kubernetes cluster with your StackRadar credentials
 
 ### 3. Deploy Only Stats Collector
 
@@ -70,7 +69,174 @@ This will:
 ./deploy-collectors.sh -l
 ```
 
-**Important**: After deploying the log collector, edit `log-collector/deployment.yaml` to specify which pod to monitor!
+> **Important**: After deploying the log collector, edit `log-collector/deployment.yaml` to specify which pod to monitor.
+
+### Image References
+
+| Collector | Image |
+|-----------|-------|
+| Stats Collector | `ghcr.io/gsotti/stackradar-stats-collector:latest` |
+| Logs Collector | `ghcr.io/gsotti/stackradar-logs-collector:latest` |
+
+Replace `gsotti` with the registry owner configured in your StackRadar instance.
+
+### Deployment Script Options
+
+```bash
+./deploy-collectors.sh [OPTIONS]
+
+Required:
+  -r, --registry REGISTRY    Docker registry (e.g., ghcr.io/gsotti)
+
+Optional:
+  -t, --tag TAG              Image tag (default: latest)
+  -k, --kubeconfig PATH      Path to kubeconfig file (default: $KUBECONFIG or ~/.kube/config)
+  -s, --stats-only           Deploy only stats collector
+  -l, --logs-only            Deploy only log collector
+  -n, --no-build             Skip building images
+  -p, --no-push              Skip pushing images
+  -d, --no-deploy            Skip kubectl deployment
+  -h, --help                 Show help
+```
+
+#### Examples
+
+```bash
+# Build and deploy everything with custom tag
+./deploy-collectors.sh -r ghcr.io/gsotti -t v1.2.0
+
+# Only build images, don't push or deploy
+./deploy-collectors.sh -r ghcr.io/gsotti -p -d
+
+# Deploy using existing images (no build, no push)
+./deploy-collectors.sh -r ghcr.io/gsotti -n -p
+
+# Deploy only log collector with version tag
+./deploy-collectors.sh -r ghcr.io/gsotti -t v2.0.0 -l
+```
+
+---
+
+## Method 2: Helm
+
+Install the collectors using Helm charts published to the OCI registry at `ghcr.io/gsotti/charts`.
+
+### Prerequisites
+
+- Helm v3.8+ (OCI support is built-in)
+
+### Install Stats Collector
+
+```bash
+helm install stackradar-stats-collector oci://ghcr.io/gsotti/charts/stackradar-stats-collector \
+  --namespace stackradar-system --create-namespace \
+  --set stackradar.url=https://your-stackradar-instance.com \
+  --set stackradar.apiToken=your-api-token \
+  --set collector.clusterName=my-cluster
+```
+
+### Install Logs Collector
+
+```bash
+helm install stackradar-logs-collector oci://ghcr.io/gsotti/charts/stackradar-logs-collector \
+  --namespace stackradar-system \
+  --set stackradar.url=https://your-stackradar-instance.com \
+  --set stackradar.apiToken=your-api-token \
+  --set collector.podNamespace=default \
+  --set collector.podLabelSelector=app=my-app
+```
+
+### Upgrade
+
+```bash
+helm upgrade stackradar-stats-collector oci://ghcr.io/gsotti/charts/stackradar-stats-collector \
+  --namespace stackradar-system \
+  --reuse-values
+
+helm upgrade stackradar-logs-collector oci://ghcr.io/gsotti/charts/stackradar-logs-collector \
+  --namespace stackradar-system \
+  --reuse-values
+```
+
+### Uninstall
+
+```bash
+helm uninstall stackradar-stats-collector -n stackradar-system
+helm uninstall stackradar-logs-collector -n stackradar-system
+```
+
+---
+
+## Method 3: Helmfile
+
+Use Helmfile to manage both collectors as a single deployment unit. A ready-to-use example is provided in [`helmfile.yaml.example`](./helmfile.yaml.example).
+
+### Prerequisites
+
+- Helm v3.8+
+- [Helmfile](https://helmfile.readthedocs.io/en/latest/#installation)
+
+### Setup
+
+1. Copy the example file:
+
+```bash
+cp helmfile.yaml.example helmfile.yaml
+```
+
+2. Edit `helmfile.yaml` and replace the placeholder values:
+
+```yaml
+repositories:
+  - name: stackradar
+    url: oci://ghcr.io/gsotti/charts
+
+releases:
+  - name: stackradar-stats-collector
+    chart: stackradar/stackradar-stats-collector
+    namespace: stackradar-system
+    createNamespace: true
+    values:
+      - stackradar:
+          url: https://your-stackradar-instance.com
+          apiToken: your-api-token
+          clusterName: my-cluster
+
+  - name: stackradar-logs-collector
+    chart: stackradar/stackradar-logs-collector
+    namespace: stackradar-system
+    values:
+      - stackradar:
+          url: https://your-stackradar-instance.com
+          apiToken: your-api-token
+        collector:
+          podNamespace: default
+          podLabelSelector: app=my-app
+```
+
+3. Apply:
+
+```bash
+helmfile apply
+```
+
+### Helmfile Commands
+
+```bash
+# Preview changes without applying
+helmfile diff
+
+# Apply all releases
+helmfile apply
+
+# Sync (equivalent to apply)
+helmfile sync
+
+# Destroy all releases
+helmfile destroy
+```
+
+---
 
 ## Collectors Overview
 
@@ -89,8 +255,6 @@ This will:
 - CPU/memory usage
 - Cluster alerts
 
-📖 [Full Stats Collector Documentation](stats-collector/README.md)
-
 ### Log Collector
 
 **Purpose**: Application log streaming from specific pods
@@ -98,83 +262,31 @@ This will:
 **Runs as**: Deployment (continuous)
 
 **Collects**:
-- Real-time logs from one specified pod
+- Real-time logs from targeted pods
 - Automatic log level detection
 - Container-specific logs
 
-📖 [Full Log Collector Documentation](log-collector/README.md)
+---
 
-## Deployment Script Options
+## Configuration Reference
 
-```bash
-./deploy-collectors.sh [OPTIONS]
+### Environment Variables
 
-Required:
-  -r, --registry REGISTRY    Docker registry (e.g., ghcr.io/username)
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `STACKRADAR_URL` | Yes | — | Base URL of your StackRadar instance |
+| `API_TOKEN` | Yes | — | Site API token from StackRadar |
+| `CLUSTER_NAME` | No | `my-cluster` | Cluster identifier shown in StackRadar |
+| `COLLECTION_INTERVAL` | No | `10000` | Stats collection interval in ms |
+| `POLL_INTERVAL` | No | `1000` | Log collector poll interval in ms |
+| `LOG_TAIL_LINES` | No | `100` | Number of tail lines for log collector |
+| `FOLLOW_LOGS` | No | `true` | Enable follow mode for log collector |
+| `POD_NAMESPACE` | No | — | Namespace to watch (log collector) |
+| `POD_LABEL_SELECTOR` | No | — | Label selector for pods (log collector) |
 
-Optional:
-  -t, --tag TAG              Image tag (default: latest)
-  -k, --kubeconfig PATH      Path to kubeconfig file (default: $KUBECONFIG or ~/.kube/config)
-  -s, --stats-only           Deploy only stats collector
-  -l, --logs-only            Deploy only log collector
-  -n, --no-build             Skip building images
-  -p, --no-push              Skip pushing images
-  -d, --no-deploy            Skip kubectl deployment
-  -h, --help                 Show help
-```
+### Manual Configuration (kubectl only)
 
-### Examples
-
-```bash
-# Build and deploy everything with custom tag
-./deploy-collectors.sh -r ghcr.io/myuser -t v1.2.0
-
-# Only build images, don't push or deploy
-./deploy-collectors.sh -r ghcr.io/myuser -p -d
-
-# Deploy using existing images
-./deploy-collectors.sh -r ghcr.io/myuser -n -p
-
-# Deploy only log collector with version tag
-./deploy-collectors.sh -r docker.io/username -t v2.0.0 -l
-```
-
-## Configuration
-
-### Environment Variables (.env file)
-
-The deployment script automatically loads configuration from a `.env` file:
-
-```bash
-# Required
-STACKRADAR_URL=https://your-stackradar-instance.com
-API_TOKEN=your-api-token-here
-
-# Optional
-CLUSTER_NAME=production-cluster
-KUBECONFIG=/path/to/kubeconfig
-APP_NAME=dev
-COLLECTION_INTERVAL=10000   # Stats collection interval in ms
-POLL_INTERVAL=1000          # Log collector poll interval in ms
-LOG_TAIL_LINES=100          # Log collector tail lines
-FOLLOW_LOGS=true            # Log collector follow mode
-```
-
-**Setup:**
-
-1. Copy the example file: `cp .env.example .env`
-2. Edit `.env` with your values
-3. Run `./deploy-collectors.sh`
-
-The script will:
-- ✅ Validate required variables (STACKRADAR_URL, API_TOKEN)
-- ✅ Automatically inject them into Kubernetes Secrets
-- ✅ Use CLUSTER_NAME if provided, or default to "my-cluster"
-- ✅ Show first 8 characters of API_TOKEN for verification (security)
-
-### Manual Configuration (Advanced)
-
-If you prefer to manually edit deployment files instead of using `.env`:
+If you prefer to edit deployment files directly instead of using `.env`:
 
 **Stats Collector Secret** (`stats-collector/deployment.yaml`):
 ```yaml
@@ -194,6 +306,8 @@ stringData:
   POLL_INTERVAL: "1000"
   FOLLOW_LOGS: "true"
 ```
+
+---
 
 ## Monitoring Deployments
 
@@ -223,6 +337,8 @@ kubectl get pods -n stackradar-system -l app=stackradar-log-collector
 kubectl logs -n stackradar-system -l app=stackradar-log-collector --tail=50 -f
 ```
 
+---
+
 ## Architecture
 
 ```
@@ -245,12 +361,14 @@ kubectl logs -n stackradar-system -l app=stackradar-log-collector --tail=50 -f
                                                │
                                                ▼
                                     ┌──────────────────┐
-                                    │   stackradar API   │
+                                    │  StackRadar API  │
                                     │                  │
                                     │  /api/k8s/metrics│
                                     │  /api/ingest     │
                                     └──────────────────┘
 ```
+
+---
 
 ## Security
 
@@ -258,22 +376,26 @@ Both collectors use:
 - Separate Kubernetes ServiceAccounts
 - Minimal RBAC permissions (ClusterRole)
 - Read-only access to Kubernetes resources
-- Secrets for sensitive configuration
+- Kubernetes Secrets for sensitive configuration
+
+---
 
 ## Troubleshooting
 
-### Images not building
+### Images not pulling
+
+Ensure you're authenticated to the registry:
+```bash
+docker login ghcr.io
+# or for Helm OCI
+helm registry login ghcr.io
+```
+
+### Images not building (kubectl method)
 
 Make sure Docker is running:
 ```bash
 docker ps
-```
-
-### Images not pushing
-
-Ensure you're logged into your registry:
-```bash
-docker login your-registry
 ```
 
 ### Deployments failing
@@ -289,21 +411,37 @@ kubectl describe deployment -n stackradar-system -l app=stackradar-stats-collect
 kubectl describe deployment -n stackradar-system -l app=stackradar-log-collector
 ```
 
-### No logs appearing in stackradar
+### No data appearing in StackRadar
 
 1. Check collector logs for errors
-2. Verify `STACKRADAR_URL` is correct and accessible
-3. Verify `API_TOKEN` is valid
-4. Check network policies allow egress to stackradar
+2. Verify `STACKRADAR_URL` is correct and reachable from within the cluster
+3. Verify `API_TOKEN` is valid for the target site
+4. Check network policies allow egress to StackRadar
 
-## Migration from Old Setup
+---
 
-If you were using the old `collect.mjs`:
+## Directory Structure
 
-1. The stats collection is now in `stats-collector/`
-2. The log collection is now in `log-collector/`
-3. Update your deployments to use the new separate images
-4. Benefits: Better resource allocation, easier scaling, clearer monitoring
+```
+collector-k8s/
+├── stats-collector/          # Cluster metrics collector
+│   ├── stats-collector.mjs   # Node.js collector script
+│   ├── Dockerfile            # Docker image for stats
+│   ├── deployment.yaml       # Kubernetes Deployment
+│   └── README.md             # Stats collector docs
+│
+├── log-collector/            # Pod log collector
+│   ├── log-collector.mjs     # Node.js collector script
+│   ├── Dockerfile            # Docker image for logs
+│   ├── deployment.yaml       # Kubernetes Deployment
+│   └── README.md             # Log collector docs
+│
+├── deploy-collectors.sh      # Automated deployment script
+├── helmfile.yaml.example     # Helmfile example
+└── README.md                 # This file
+```
+
+---
 
 ## Notes
 
@@ -311,14 +449,5 @@ If you were using the old `collect.mjs`:
 - Labels:
   - Stats: `app=stackradar-stats-collector`
   - Logs: `app=stackradar-log-collector`, plus optional `target=<your-label>`
-- Log collector requires you to set at least `POD_NAMESPACE` and either `POD_NAME` or `POD_LABEL_SELECTOR` in the deployment or via environment before deploying.
-
-## Contributing
-
-When making changes:
-
-1. Update the respective collector's script in its folder
-2. Update the Dockerfile if dependencies change
-3. Test locally with Docker
-4. Update the deployment.yaml if env vars change
-5. Update the README.md in the collector's folder
+- Log collector requires you to set at least `POD_NAMESPACE` and either `POD_NAME` or `POD_LABEL_SELECTOR` before deploying.
+- The registry owner (`gsotti` in all examples) can be changed in **StackRadar Superadmin → System Settings**.

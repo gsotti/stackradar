@@ -4,35 +4,34 @@ import db from '../../db/database.js';
 import { SmtpConfig } from '../../types/index.js';
 
 // Cache for SMTP config to avoid frequent database queries
-let cachedConfig: SmtpConfig | null = null;
-let cacheTime: number = 0;
+// Keyed by organization_id, or 'global' for the null/fallback row
+const configCache = new Map<number | 'global', SmtpConfig | null>();
+const cacheTimeMap = new Map<number | 'global', number>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Get SMTP configuration from database
+ * Get SMTP configuration for a specific organization.
+ * Returns null if no config exists for that organization.
  */
-export async function getSmtpConfig(): Promise<SmtpConfig | null> {
+export async function getSmtpConfig(organizationId?: number | null): Promise<SmtpConfig | null> {
   const now = Date.now();
+  const cacheKey = organizationId ?? 'global';
+  const cached = configCache.get(cacheKey);
+  const cachedTime = cacheTimeMap.get(cacheKey) ?? 0;
 
-  // Return cached config if still valid
-  if (cachedConfig && (now - cacheTime) < CACHE_TTL) {
-    return cachedConfig;
+  if (cached !== undefined && (now - cachedTime) < CACHE_TTL) {
+    return cached;
   }
 
   try {
-    const result = await db.query<SmtpConfig>(
-      'SELECT * FROM smtp_config LIMIT 1'
-    );
+    const result = organizationId != null
+      ? await db.query<SmtpConfig>('SELECT * FROM smtp_config WHERE organization_id = $1 LIMIT 1', [organizationId])
+      : await db.query<SmtpConfig>('SELECT * FROM smtp_config WHERE organization_id IS NULL LIMIT 1');
 
-    if (result.rows.length === 0) {
-      cachedConfig = null;
-      cacheTime = now;
-      return null;
-    }
-
-    cachedConfig = result.rows[0];
-    cacheTime = now;
-    return cachedConfig;
+    const config = result.rows[0] ?? null;
+    configCache.set(cacheKey, config);
+    cacheTimeMap.set(cacheKey, now);
+    return config;
   } catch (error) {
     console.error('Failed to get SMTP config:', error);
     return null;
@@ -40,18 +39,30 @@ export async function getSmtpConfig(): Promise<SmtpConfig | null> {
 }
 
 /**
- * Clear SMTP config cache (call after updating config)
+ * Clear SMTP config cache.
+ * If organizationId is provided, clears only that org's cache entry.
+ * If no argument, clears all cache entries.
  */
-export function clearSmtpConfigCache(): void {
-  cachedConfig = null;
-  cacheTime = 0;
+export function clearSmtpConfigCache(organizationId?: number | null): void {
+  if (organizationId != null) {
+    configCache.delete(organizationId);
+    cacheTimeMap.delete(organizationId);
+  } else if (organizationId === null) {
+    // Explicit null means clear global
+    configCache.delete('global');
+    cacheTimeMap.delete('global');
+  } else {
+    // No argument — clear everything
+    configCache.clear();
+    cacheTimeMap.clear();
+  }
 }
 
 /**
  * Create nodemailer transporter from SMTP config
  */
-export async function createTransporter() {
-  const config = await getSmtpConfig();
+export async function createTransporter(organizationId?: number | null) {
+  const config = await getSmtpConfig(organizationId);
 
   if (!config) {
     throw new Error('SMTP configuration not found');
@@ -81,15 +92,16 @@ export async function sendEmail(
   to: string | string[],
   subject: string,
   htmlBody: string,
-  textBody?: string
+  textBody?: string,
+  organizationId?: number | null
 ): Promise<void> {
-  const config = await getSmtpConfig();
+  const config = await getSmtpConfig(organizationId);
 
   if (!config) {
     throw new Error('SMTP configuration not found');
   }
 
-  const transporter = await createTransporter();
+  const transporter = await createTransporter(organizationId);
 
   const recipients = Array.isArray(to) ? to.join(', ') : to;
 
@@ -115,14 +127,14 @@ export async function sendEmail(
 /**
  * Test SMTP configuration by sending a test email
  */
-export async function testSmtpConfig(testEmail: string): Promise<void> {
-  const config = await getSmtpConfig();
+export async function testSmtpConfig(testEmail: string, organizationId?: number | null): Promise<void> {
+  const config = await getSmtpConfig(organizationId);
 
   if (!config) {
     throw new Error('SMTP configuration not found');
   }
 
-  const transporter = await createTransporter();
+  const transporter = await createTransporter(organizationId);
 
   // Verify connection
   await transporter.verify();
@@ -132,6 +144,7 @@ export async function testSmtpConfig(testEmail: string): Promise<void> {
     testEmail,
     'StackRadar SMTP Test',
     '<h1>SMTP Configuration Test</h1><p>This is a test email from StackRadar. If you received this, your SMTP configuration is working correctly.</p>',
-    'SMTP Configuration Test\n\nThis is a test email from StackRadar. If you received this, your SMTP configuration is working correctly.'
+    'SMTP Configuration Test\n\nThis is a test email from StackRadar. If you received this, your SMTP configuration is working correctly.',
+    organizationId
   );
 }

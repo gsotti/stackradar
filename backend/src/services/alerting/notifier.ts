@@ -43,9 +43,12 @@ export async function sendNotifications(
 
     const rule = ruleResult.rows[0];
 
-    // Get site details
-    const siteResult = await db.query<{ id: number; name: string }>(
-      'SELECT id, name FROM sites WHERE id = $1',
+    // Get site details including org_id via the tenant
+    const siteResult = await db.query<{ id: number; name: string; organization_id: number | null }>(
+      `SELECT s.id, s.name, t.organization_id
+       FROM sites s
+       JOIN tenants t ON t.id = s.tenant_id
+       WHERE s.id = $1`,
       [alert.site_id]
     );
 
@@ -77,7 +80,7 @@ export async function sendNotifications(
     for (const channel of channels) {
       try {
         if (channel.channel_type === 'email') {
-          await sendEmailNotification(channel, alert, rule, site);
+          await sendEmailNotification(channel, alert, rule, site, site.organization_id);
         } else if (channel.channel_type === 'webhook') {
           await sendWebhookNotification(channel, alert, rule, site);
         }
@@ -108,7 +111,8 @@ async function sendEmailNotification(
   channel: NotificationChannel,
   alert: AlertHistory,
   rule: AlertRule,
-  site: { id: number; name: string }
+  site: { id: number; name: string },
+  organizationId?: number | null
 ): Promise<void> {
   if (!channel.email_recipients || channel.email_recipients.length === 0) {
     throw new Error('No email recipients configured');
@@ -138,7 +142,7 @@ async function sendEmailNotification(
     resolvedAtHtml: alert.resolved_at ? `<div class="field"><span class="label">Resolved At:</span><span class="value">${new Date(alert.resolved_at).toLocaleString()}</span></div>` : '',
   });
 
-  await sendEmail(channel.email_recipients, subject, htmlBody, textBody);
+  await sendEmail(channel.email_recipients, subject, htmlBody, textBody, organizationId);
 }
 
 /**

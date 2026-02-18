@@ -285,4 +285,110 @@ router.delete('/org-admins/:id', authMiddleware, superadminMiddleware, async (
   }
 });
 
+/**
+ * GET /api/superadmin/settings - Get all system settings
+ * Only superadmins can view system settings
+ */
+router.get('/settings', authMiddleware, superadminMiddleware, async (
+  _req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const result = await db.query<{ key: string; value: string }>(
+      'SELECT key, value FROM system_settings ORDER BY key'
+    );
+
+    const settings: Record<string, string> = {};
+    for (const row of result.rows) {
+      settings[row.key] = row.value;
+    }
+
+    res.json(settings);
+  } catch (error) {
+    console.error('Get system settings error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+/**
+ * PUT /api/superadmin/settings - Upsert system settings
+ * Only superadmins can update system settings
+ * Body: { key: value, ... }
+ */
+router.put('/settings', authMiddleware, superadminMiddleware, async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const updates = req.body as Record<string, string>;
+
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      res.status(400).json({ detail: 'Request body must be a key-value object' });
+      return;
+    }
+
+    const entries = Object.entries(updates);
+    if (entries.length === 0) {
+      res.status(400).json({ detail: 'No settings provided' });
+      return;
+    }
+
+    for (const [key, value] of entries) {
+      if (typeof key !== 'string' || key.trim() === '') {
+        res.status(400).json({ detail: 'Setting keys must be non-empty strings' });
+        return;
+      }
+      if (typeof value !== 'string') {
+        res.status(400).json({ detail: `Value for key "${key}" must be a string` });
+        return;
+      }
+    }
+
+    // Fetch old values for audit log
+    const oldResult = await db.query<{ key: string; value: string }>(
+      'SELECT key, value FROM system_settings WHERE key = ANY($1)',
+      [entries.map(([k]) => k)]
+    );
+    const oldValues: Record<string, string> = {};
+    for (const row of oldResult.rows) {
+      oldValues[row.key] = row.value;
+    }
+
+    // Upsert each setting
+    for (const [key, value] of entries) {
+      await db.query(
+        `INSERT INTO system_settings (key, value, updated_at)
+         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
+        [key, value]
+      );
+    }
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      action: 'SYSTEM_SETTINGS_UPDATE',
+      resourceType: 'system_settings',
+      oldValues,
+      newValues: Object.fromEntries(entries),
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    // Return updated settings
+    const result = await db.query<{ key: string; value: string }>(
+      'SELECT key, value FROM system_settings ORDER BY key'
+    );
+    const settings: Record<string, string> = {};
+    for (const row of result.rows) {
+      settings[row.key] = row.value;
+    }
+
+    res.json(settings);
+  } catch (error) {
+    console.error('Update system settings error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
 export default router;

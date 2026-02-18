@@ -1,0 +1,25 @@
+repositories:
+  - name: stackradar
+    url: oci://ghcr.io/gsotti/charts
+
+releases:
+  - name: stackradar-stats-collector
+    chart: stackradar/stackradar-stats-collector
+    namespace: stackradar-system
+    createNamespace: true
+    values:
+      - stackradar:
+          url: https://your-stackradar-instance.com
+          apiToken: your-api-token
+          clusterName: my-cluster
+
+  - name: stackradar-logs-collector
+    chart: stackradar/stackradar-logs-collector
+    namespace: stackradar-system
+    values:
+      - stackradar:
+          url: https://your-stackradar-instance.com
+          apiToken: your-api-token
+        collector:
+          podNamespace: default
+          podLabelSelector: app=my-app

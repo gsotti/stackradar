@@ -775,12 +775,28 @@ router.get(
   '/smtp-config',
   authMiddleware,
   adminMiddleware,
-  async (_req: AuthRequest, res: Response): Promise<void> => {
+  async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const result = await db.query<SmtpConfig>('SELECT * FROM smtp_config LIMIT 1');
+      const orgId = req.organizationId ?? null;
+      const result = await db.query<SmtpConfig>(
+        'SELECT * FROM smtp_config WHERE organization_id IS NOT DISTINCT FROM $1 LIMIT 1',
+        [orgId]
+      );
+
+      // If no config for this org, try global config (org_id is NULL) as fallback
+      if (result.rows.length === 0 && orgId !== null) {
+        const globalResult = await db.query<SmtpConfig>(
+          'SELECT * FROM smtp_config WHERE organization_id IS NULL LIMIT 1'
+        );
+        if (globalResult.rows.length > 0) {
+          const config = { ...globalResult.rows[0], auth_password: undefined };
+          res.json(config);
+          return;
+        }
+      }
 
       if (result.rows.length === 0) {
-        res.status(404).json({ detail: 'SMTP configuration not found' });
+        res.json(null);
         return;
       }
 
@@ -802,6 +818,7 @@ router.post(
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const body = req.body as CreateSmtpConfigRequest;
+      const orgId = req.organizationId ?? null;
 
       // Validate required fields
       if (!body.host || !body.port || !body.from_email) {
@@ -809,8 +826,11 @@ router.post(
         return;
       }
 
-      // Check if config already exists
-      const existingResult = await db.query('SELECT id FROM smtp_config LIMIT 1');
+      // Check if a config already exists for this organization
+      const existingResult = await db.query(
+        'SELECT id FROM smtp_config WHERE organization_id IS NOT DISTINCT FROM $1 LIMIT 1',
+        [orgId]
+      );
       if (existingResult.rows.length > 0) {
         res.status(400).json({ detail: 'SMTP configuration already exists. Use PUT to update.' });
         return;
@@ -819,10 +839,11 @@ router.post(
       // Create SMTP config
       const result = await db.query<SmtpConfig>(
         `INSERT INTO smtp_config (
-          host, port, secure, auth_user, auth_password, from_email, from_name
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          organization_id, host, port, secure, auth_user, auth_password, from_email, from_name
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`,
         [
+          orgId,
           body.host,
           body.port,
           body.secure || false,
@@ -833,7 +854,7 @@ router.post(
         ]
       );
 
-      clearSmtpConfigCache();
+      clearSmtpConfigCache(orgId);
 
       const config = { ...result.rows[0], auth_password: undefined };
       res.status(201).json(config);
@@ -852,9 +873,13 @@ router.put(
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const body = req.body as UpdateSmtpConfigRequest;
+      const orgId = req.organizationId ?? null;
 
-      // Get existing config
-      const existingResult = await db.query<SmtpConfig>('SELECT * FROM smtp_config LIMIT 1');
+      // Get existing config for this organization
+      const existingResult = await db.query<SmtpConfig>(
+        'SELECT * FROM smtp_config WHERE organization_id IS NOT DISTINCT FROM $1 LIMIT 1',
+        [orgId]
+      );
       if (existingResult.rows.length === 0) {
         res.status(404).json({ detail: 'SMTP configuration not found. Use POST to create.' });
         return;
@@ -887,7 +912,7 @@ router.put(
         ]
       );
 
-      clearSmtpConfigCache();
+      clearSmtpConfigCache(orgId);
 
       const config = { ...result.rows[0], auth_password: undefined };
       res.json(config);
@@ -912,7 +937,7 @@ router.post(
         return;
       }
 
-      await testSmtpConfig(test_email);
+      await testSmtpConfig(test_email, req.organizationId ?? null);
 
       res.json({ detail: 'Test email sent successfully' });
     } catch (error) {
@@ -993,6 +1018,13 @@ router.post(
       // Send notification to this specific channel directly
       const { sendEmail } = await import('../services/alerting/smtp.js');
 
+      // Resolve organization_id for this site to use the correct SMTP config
+      const siteOrgResult = await db.query<{ organization_id: number | null }>(
+        'SELECT t.organization_id FROM tenants t JOIN sites s ON s.tenant_id = t.id WHERE s.id = $1',
+        [site_id]
+      );
+      const siteOrgId = siteOrgResult.rows[0]?.organization_id ?? null;
+
       try {
         if (channel.channel_type === 'email') {
           // Send email notification
@@ -1003,7 +1035,7 @@ router.post(
             channelName: channel.name,
           });
 
-          await sendEmail(channel.email_recipients!, subject, htmlBody, textBody);
+          await sendEmail(channel.email_recipients!, subject, htmlBody, textBody, siteOrgId);
         } else if (channel.channel_type === 'webhook') {
           // Send webhook notification
           const payload = {

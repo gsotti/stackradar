@@ -60,7 +60,7 @@ export default function App() {
               <Route path="/tenants/:tenantId/users" element={<ProtectedRoute requireTenantAdmin><TenantUsersPage /></ProtectedRoute>} />
               <Route path="/organization/users" element={<ProtectedRoute requireOrgAdmin><OrgUsersPage /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute requireAdmin><UsersPage /></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute requireOrgAdmin><AdminSettingsPage /></ProtectedRoute>} />
               <Route path="/superadmin" element={<ProtectedRoute requireSuperadmin><SuperadminPage /></ProtectedRoute>} />
             </Routes>
           </NotificationProvider>

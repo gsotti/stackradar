@@ -28,23 +28,23 @@ export default function AdminSettingsPage() {
   const loadSmtpConfig = async () => {
     try {
       setLoading(true);
-      const config = await api.get<SmtpConfig>('/alerts/smtp-config');
-      setSmtpConfig({
-        host: config.host || '',
-        port: config.port || 587,
-        secure: config.secure || false,
-        auth_user: config.auth_user || '',
-        auth_password: '', // Never send password from server
-        from_email: config.from_email || '',
-        from_name: config.from_name || 'StackRadar Alerts',
-      });
-      setConfigExists(true);
-    } catch (error: any) {
-      if (error.message?.includes('not found')) {
-        setConfigExists(false);
+      const config = await api.get<SmtpConfig | null>('/alerts/smtp-config');
+      if (config) {
+        setSmtpConfig({
+          host: config.host || '',
+          port: config.port || 587,
+          secure: config.secure || false,
+          auth_user: config.auth_user || '',
+          auth_password: '', // Never send password from server
+          from_email: config.from_email || '',
+          from_name: config.from_name || 'StackRadar Alerts',
+        });
+        setConfigExists(true);
       } else {
-        showError('Failed to load SMTP configuration');
+        setConfigExists(false);
       }
+    } catch (error: any) {
+      showError('Failed to load SMTP configuration');
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ export default function AdminSettingsPage() {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Admin Settings
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Configure global platform settings and integrations</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Configure platform-wide settings — these apply to all organizations</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

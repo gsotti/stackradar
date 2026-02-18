@@ -1,8 +1,8 @@
-import React, { useState, FormEvent } from 'react';
-import { X, Mail, Send } from 'lucide-react';
+import React, { useState, useEffect, FormEvent } from 'react';
+import { X, Mail, Send, AlertTriangle } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
-import { TenantRoleName } from '../../types';
+import { TenantRoleName, SmtpConfig } from '../../types';
 import RoleSelect from './RoleSelect';
 
 interface UserInviteFormProps {
@@ -14,7 +14,21 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<TenantRoleName>('viewer');
   const [loading, setLoading] = useState(false);
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
   const { showError, showSuccess } = useNotification();
+
+  useEffect(() => {
+    checkSmtpConfig();
+  }, []);
+
+  const checkSmtpConfig = async () => {
+    try {
+      const config = await api.get<SmtpConfig | null>('/alerts/smtp-config');
+      setSmtpConfigured(!!config);
+    } catch {
+      setSmtpConfigured(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -63,6 +77,20 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {smtpConfigured === false && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                  SMTP Not Configured
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                  Email sending is currently disabled. You must configure SMTP in Admin Settings before you can send invitations.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Email Address *
@@ -104,8 +132,8 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold disabled:opacity-50"
+              disabled={loading || smtpConfigured === false}
+              className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100"
             >
               <Send className="w-4 h-4" />
               {loading ? 'Sending...' : 'Send Invitation'}

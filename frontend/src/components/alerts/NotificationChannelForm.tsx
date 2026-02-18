@@ -7,13 +7,14 @@ import { NotificationChannel, ChannelType } from '../../types';
 interface NotificationChannelFormProps {
   siteId: string | number;
   channel?: NotificationChannel | null;
+  smtpConfigured?: boolean;
   onClose: (updated?: boolean) => void;
 }
 
-export default function NotificationChannelForm({ siteId, channel, onClose }: NotificationChannelFormProps) {
+export default function NotificationChannelForm({ siteId, channel, smtpConfigured = true, onClose }: NotificationChannelFormProps) {
   const [formData, setFormData] = useState({
     name: '',
-    channel_type: 'email' as ChannelType,
+    channel_type: (smtpConfigured ? 'email' : 'webhook') as ChannelType,
     email_recipients: '',
     webhook_url: '',
     webhook_method: 'POST',
@@ -146,7 +147,9 @@ export default function NotificationChannelForm({ siteId, channel, onClose }: No
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
               >
-                <option value="email">Email</option>
+                <option value="email" disabled={!smtpConfigured}>
+                  Email{!smtpConfigured ? ' (SMTP not configured)' : ''}
+                </option>
                 <option value="webhook">Webhook</option>
               </select>
             </div>

@@ -149,9 +149,12 @@ async function sendUptimeNotification(
   const now = new Date();
 
   try {
-    // Get site details
-    const siteResult = await db.query<{ id: number; name: string; tenant_id: number }>(
-      'SELECT id, name, tenant_id FROM sites WHERE id = $1',
+    // Get site details including org_id via the tenant
+    const siteResult = await db.query<{ id: number; name: string; tenant_id: number; organization_id: number | null }>(
+      `SELECT s.id, s.name, s.tenant_id, t.organization_id
+       FROM sites s
+       JOIN tenants t ON t.id = s.tenant_id
+       WHERE s.id = $1`,
       [monitor.site_id]
     );
 
@@ -315,7 +318,7 @@ async function sendUptimeNotification(
     for (const channel of channels) {
       try {
         if (channel.channel_type === 'email' && channel.email_recipients?.length) {
-          await sendEmail(channel.email_recipients, subject, htmlBody, textBody);
+          await sendEmail(channel.email_recipients, subject, htmlBody, textBody, site.organization_id);
         } else if (channel.channel_type === 'webhook' && channel.webhook_url) {
           await sendWebhookNotification(channel, monitor, site, eventType);
         }

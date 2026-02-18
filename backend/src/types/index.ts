@@ -288,6 +288,7 @@ export interface AlertHistory {
 
 export interface SmtpConfig {
   id: number;
+  organization_id: number | null;
   host: string;
   port: number;
   secure: boolean;

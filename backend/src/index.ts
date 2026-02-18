@@ -9,6 +9,7 @@ import os from 'os';
 import cluster from 'cluster';
 
 import { initDatabase } from './db/database.js';
+import db from './db/database.js';
 import authRoutes from './routes/auth.js';
 import siteRoutes from './routes/sites.js';
 import systemRoutes from './routes/systems.js';
@@ -25,6 +26,7 @@ import superadminRoutes from './routes/superadmin.js';
 import invitationsRoutes from './routes/invitations.js';
 import organizationsRoutes from './routes/organizations.js';
 import auditLogsRoutes from './routes/audit-logs.js';
+import settingsRoutes from './routes/settings.js';
 import { cleanupOldLogs } from './services/cleanup.js';
 import { evaluateAllAlerts } from './services/alerting/evaluator.js';
 import { runUptimeChecksForInterval } from './services/uptime/checker.js';
@@ -40,6 +42,27 @@ const CLUSTER_MODE = (process.env.CLUSTER_MODE || 'true').toLowerCase() === 'tru
 const WORKERS = Number(process.env.WORKERS || os.cpus().length || 1);
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim());
+
+// Cache the app_url from DB so CORS doesn't hit the DB on every request
+let cachedAppUrl = '';
+let appUrlCachedAt = 0;
+const APP_URL_CACHE_TTL = 60_000; // 60s
+
+async function getEffectiveOrigins(): Promise<string[]> {
+  const now = Date.now();
+  if (now - appUrlCachedAt > APP_URL_CACHE_TTL) {
+    try {
+      const result = await db.query(`SELECT value FROM system_settings WHERE key = 'app_url'`);
+      cachedAppUrl = result.rows[0]?.value?.trim() || '';
+      appUrlCachedAt = now;
+    } catch {
+      // keep stale cached value on DB error
+    }
+  }
+  const origins = [...ALLOWED_ORIGINS];
+  if (cachedAppUrl) origins.push(cachedAppUrl);
+  return origins;
+}
 
 // Middleware
 app.use(helmet({
@@ -58,9 +81,11 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 app.use(cors({
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  origin: async (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (!origin) return callback(null, true);
+    const allowed = await getEffectiveOrigins();
+    if (allowed.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -93,6 +118,7 @@ app.use('/api/uptime', uptimeRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/invitations', invitationsRoutes);
 app.use('/api/audit-logs', auditLogsRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check
 app.get('/api/health', (_req: Request, res: Response) => {

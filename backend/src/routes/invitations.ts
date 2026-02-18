@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { authMiddleware, hashPassword } from '../middleware/auth.js';
 import { AuthRequest, Invitation, TenantRole, User } from '../types/index.js';
 import db from '../db/database.js';
-import { sendEmail } from '../services/alerting/smtp.js';
+import { sendEmail, getSmtpConfig } from '../services/alerting/smtp.js';
 import { renderTemplate } from '../services/email/templateRenderer.js';
 import { validatePassword } from '../utils/validation.js';
 
@@ -97,7 +97,7 @@ router.post('/', authMiddleware, invitationCreateLimiter, async (
 
     // Check if tenant exists
     const tenantResult = await db.query(
-      'SELECT id, name FROM tenants WHERE id = $1',
+      'SELECT id, name, organization_id FROM tenants WHERE id = $1',
       [tenant_id]
     );
 
@@ -106,7 +106,23 @@ router.post('/', authMiddleware, invitationCreateLimiter, async (
       return;
     }
 
-    const tenantName = tenantResult.rows[0].name;
+    const tenant = tenantResult.rows[0];
+    const tenantName = tenant.name;
+    const organizationId = tenant.organization_id;
+
+    // Check if SMTP is configured for this organization or globally
+    const smtpConfig = await getSmtpConfig(organizationId);
+    let finalSmtpConfig = smtpConfig;
+    if (!finalSmtpConfig && organizationId !== null) {
+      finalSmtpConfig = await getSmtpConfig(null);
+    }
+
+    if (!finalSmtpConfig) {
+      res.status(400).json({
+        detail: 'SMTP is not configured. Invitations cannot be sent. Please configure SMTP in Admin Settings first.'
+      });
+      return;
+    }
 
     // Check if user already exists
     const existingUserResult = await db.query<Pick<User, 'id'>>(
@@ -149,7 +165,9 @@ router.post('/', authMiddleware, invitationCreateLimiter, async (
 
     // Send invitation email
     try {
-      const invitationUrl = `${process.env.APP_URL || 'http://localhost:5173'}/invitation/${token}`;
+      const appUrlResult = await db.query(`SELECT value FROM system_settings WHERE key = 'app_url'`);
+      const appUrl = appUrlResult.rows[0]?.value || process.env.APP_URL || 'http://localhost:5173';
+      const invitationUrl = `${appUrl}/invitation/${token}`;
 
       const { html: htmlBody, text: textBody } = renderTemplate('invitation', {
         tenantName,
@@ -158,7 +176,13 @@ router.post('/', authMiddleware, invitationCreateLimiter, async (
         expiresAt: expiresAt.toLocaleDateString(),
       });
 
-      await sendEmail(email, 'You have been invited to StackRadar', htmlBody, textBody);
+      const orgResult = await db.query(
+        'SELECT t.organization_id FROM tenants t WHERE t.id = $1',
+        [tenant_id]
+      );
+      const orgId = orgResult.rows[0]?.organization_id ?? null;
+
+      await sendEmail(email, 'You have been invited to StackRadar', htmlBody, textBody, orgId);
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
       // Continue anyway - invitation is created, user can be manually notified
@@ -458,7 +482,13 @@ router.post('/:id/resend', authMiddleware, async (
         expiresAt: newExpiresAt.toLocaleDateString(),
       });
 
-      await sendEmail(invitation.email, 'You have been invited to StackRadar', htmlBody, textBody);
+      const orgResult = await db.query(
+        'SELECT t.organization_id FROM tenants t WHERE t.id = $1',
+        [invitation.tenant_id]
+      );
+      const orgId = orgResult.rows[0]?.organization_id ?? null;
+
+      await sendEmail(invitation.email, 'You have been invited to StackRadar', htmlBody, textBody, orgId);
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
       // Return error since the resend action failed

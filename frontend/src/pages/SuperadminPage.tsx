@@ -31,6 +31,12 @@ export default function SuperadminPage() {
   const [submitting, setSubmitting] = useState(false);
   const { showSuccess, showError } = useNotification();
 
+  // System settings state
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [registryOwner, setRegistryOwner] = useState('gsotti');
+  const [appUrl, setAppUrl] = useState('');
+
   // Organization detail view state
   const [viewingOrg, setViewingOrg] = useState<Organization | null>(null);
   const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
@@ -41,6 +47,8 @@ export default function SuperadminPage() {
   useEffect(() => {
     if (activeTab === 'organizations') {
       loadOrganizations();
+    } else if (activeTab === 'settings') {
+      loadSettings();
     }
   }, [activeTab]);
 
@@ -53,6 +61,32 @@ export default function SuperadminPage() {
       showError(error.message || 'Failed to load organizations');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const data = await api.get<Record<string, string>>('/superadmin/settings');
+      if (data.registry_owner !== undefined) setRegistryOwner(data.registry_owner);
+      if (data.app_url !== undefined) setAppUrl(data.app_url);
+    } catch (error: any) {
+      showError(error.message || 'Failed to load system settings');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsSaving(true);
+    try {
+      await api.put('/superadmin/settings', { registry_owner: registryOwner, app_url: appUrl });
+      showSuccess('System settings saved successfully');
+    } catch (error: any) {
+      showError(error.message || 'Failed to save system settings');
+    } finally {
+      setSettingsSaving(false);
     }
   };
 
@@ -599,12 +633,93 @@ export default function SuperadminPage() {
         )}
 
         {activeTab === 'settings' && (
-          <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-            <Settings className="w-16 h-16 text-gray-300 mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">System Settings</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-              System configuration and settings will be available here.
-            </p>
+          <div className="max-w-2xl">
+            {settingsLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">System Settings</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Configure global system settings for your StackRadar instance.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSaveSettings} className="p-6 space-y-6">
+                  {/* Container Registry Section */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+                      Container Registry
+                    </h3>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Container Registry Owner
+                      </label>
+                      <input
+                        type="text"
+                        value={registryOwner}
+                        onChange={(e) => setRegistryOwner(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-900 dark:text-white transition-all"
+                        placeholder="gsotti"
+                        required
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Images will be pulled from{' '}
+                        <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-blue-600 dark:text-blue-400 font-mono">
+                          ghcr.io/{registryOwner || '<owner>'}/stackradar
+                        </code>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Application Section */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+                      Application
+                    </h3>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        App URL
+                      </label>
+                      <input
+                        type="url"
+                        value={appUrl}
+                        onChange={(e) => setAppUrl(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-900 dark:text-white transition-all"
+                        placeholder="https://stackradar.example.com"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Used in invitation emails to generate the correct link. Falls back to the <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-mono">APP_URL</code> environment variable if left empty.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={settingsSaving}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {settingsSaving ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Settings className="w-4 h-4" />
+                          Save Settings
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         )}
       </div>

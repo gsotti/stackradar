@@ -15,9 +15,12 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
   const [selectedEnv, setSelectedEnv] = useState<string>('');
   const [selectedSystem, setSelectedSystem] = useState<string>('');
   const [copied, setCopied] = useState<Record<string, boolean>>({});
+  const [registryOwner, setRegistryOwner] = useState('gsotti');
+  const [k8sMethod, setK8sMethod] = useState<'kubectl' | 'helm' | 'helmfile'>('kubectl');
 
   useEffect(() => {
     fetchEnvironments();
+    fetchPublicSettings();
   }, [site.id]);
 
   useEffect(() => {
@@ -33,9 +36,6 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
     try {
       const data = await api.get<Environment[]>(`/environments?site_id=${site.id}`);
       setEnvironments(data || []);
-      if (data && data.length > 0) {
-        setSelectedEnv(String(data[0].id));
-      }
     } catch (error) {
       console.error('Error fetching environments:', error);
     }
@@ -45,11 +45,19 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
     try {
       const data = await api.get<System[]>(`/systems?environment_id=${envId}`);
       setSystems(data || []);
-      if (data && data.length > 0) {
-        setSelectedSystem(data[0].name);
-      }
     } catch (error) {
       console.error('Error fetching systems:', error);
+    }
+  };
+
+  const fetchPublicSettings = async () => {
+    try {
+      const data = await api.get<Record<string, string>>('/settings/public');
+      if (data && data.registry_owner) {
+        setRegistryOwner(data.registry_owner);
+      }
+    } catch (error) {
+      // Keep default registryOwner value on failure
     }
   };
 
@@ -61,7 +69,7 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
 
   const getEnvName = () => {
     const env = environments.find(e => e.id === parseInt(selectedEnv));
-    return env ? env.name : 'dev';
+    return env ? env.name : '<environment>';
   };
 
   const renderDockerInstructions = () => {
@@ -146,13 +154,10 @@ services:
               onChange={(e) => setSelectedEnv(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              {environments.length > 0 ? (
-                environments.map((env) => (
-                  <option key={env.id} value={env.id}>{env.name}</option>
-                ))
-              ) : (
-                <option value="">dev</option>
-              )}
+              <option value="">Select Environment</option>
+              {environments.map((env) => (
+                <option key={env.id} value={env.id}>{env.name}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -164,7 +169,7 @@ services:
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">All containers</option>
+              <option value="">Select System</option>
               {systems.map((sys) => (
                 <option key={sys.id} value={sys.name}>{sys.name}</option>
               ))}
@@ -302,7 +307,9 @@ services:
     const tenantName = site.tenant_name || 'default';
     const siteName = site.name;
     const envName = getEnvName();
+    const selectedEnvObj = environments.find(e => e.id === parseInt(selectedEnv));
 
+    // --- kubectl content ---
     const statsConfigYaml = `apiVersion: v1
 kind: Secret
 metadata:
@@ -326,7 +333,7 @@ stringData:
   TENANT: "${tenantName}"
   SITE: "${siteName}"
   ENVIRONMENT: "${envName}"
-  APP_NAME: "${selectedSystem || 'my-app'}"
+  APP_NAME: "${selectedSystem || '<system>'}"
   LOG_TAIL_LINES: "100"
   POLL_INTERVAL: "1000"
   FOLLOW_LOGS: "true"`;
@@ -335,15 +342,64 @@ stringData:
   - name: POD_NAMESPACE
     value: "default" # Target namespace
   - name: POD_LABEL_SELECTOR
-    value: "app=${selectedSystem || 'my-app'}"
+    value: "app=${selectedSystem || '<system>'}"
   - name: APP_NAME
-    value: "${selectedSystem || 'my-app'}"
+    value: "${selectedSystem || '<system>'}"
   - name: ENVIRONMENT
     value: "${envName}"
   - name: TENANT
     value: "${tenantName}"
   - name: SITE
     value: "${siteName}"`;
+
+    // --- Helm content ---
+    const helmStatsCmd = `helm install stackradar-stats-collector \\
+  oci://ghcr.io/${registryOwner}/charts/stackradar-stats-collector \\
+  --namespace stackradar-system --create-namespace \\
+  --set stackradar.url=${stackradarUrl} \\
+  --set stackradar.apiToken=${apiToken} \\
+  --set collector.clusterName=${siteName}`;
+
+    const helmLogsCmd = `helm install stackradar-logs-collector \\
+  oci://ghcr.io/${registryOwner}/charts/stackradar-logs-collector \\
+  --namespace stackradar-system \\
+  --set stackradar.url=${stackradarUrl} \\
+  --set stackradar.apiToken=${apiToken} \\
+  --set collector.podNamespace=<your-namespace> \\
+  --set collector.podLabelSelector=app=${selectedSystem || '<system>'} \\
+  --set collector.tenant=${tenantName} \\
+  --set collector.site=${siteName} \\
+  --set collector.environment=${selectedEnvObj?.name || '<environment>'}`;
+
+    // --- Helmfile content ---
+    const helmfileYaml = `repositories:
+  - name: stackradar
+    url: oci://ghcr.io/${registryOwner}/charts
+
+releases:
+  - name: stackradar-stats-collector
+    chart: stackradar/stackradar-stats-collector
+    namespace: stackradar-system
+    createNamespace: true
+    values:
+      - stackradar:
+          url: ${stackradarUrl}
+          apiToken: ${apiToken}
+          clusterName: ${siteName}
+
+  - name: stackradar-logs-collector
+    chart: stackradar/stackradar-logs-collector
+    namespace: stackradar-system
+    values:
+      - stackradar:
+          url: ${stackradarUrl}
+          apiToken: ${apiToken}
+        collector:
+          podNamespace: <your-namespace>
+          podLabelSelector: app=${selectedSystem || '<system>'}
+          tenant: ${tenantName}
+          site: ${siteName}
+          environment: ${selectedEnvObj?.name || '<environment>'}`;
 
     return (
       <div className="space-y-8">
@@ -364,13 +420,10 @@ stringData:
               onChange={(e) => setSelectedEnv(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              {environments.length > 0 ? (
-                environments.map((env) => (
-                  <option key={env.id} value={env.id}>{env.name}</option>
-                ))
-              ) : (
-                <option value="">dev</option>
-              )}
+              <option value="">Select Environment</option>
+              {environments.map((env) => (
+                <option key={env.id} value={env.id}>{env.name}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -382,7 +435,7 @@ stringData:
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">Select a system...</option>
+              <option value="">Select System</option>
               {systems.map((sys) => (
                 <option key={sys.id} value={sys.name}>{sys.name}</option>
               ))}
@@ -390,107 +443,227 @@ stringData:
           </div>
         </div>
 
-        {/* Stats Collector */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              1. Cluster Stats Collector
-            </h3>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Collects cluster-wide metrics like node status, pod counts, and resource usage.
-          </p>
-          
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
-              <button
-                onClick={() => copyToClipboard(statsConfigYaml, 'k8s-stats-conf')}
-                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
-              >
-                <Copy className="w-4 h-4" />
-                {copied['k8s-stats-conf'] ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
-              {statsConfigYaml}
-            </pre>
-          </div>
-
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
-            <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
-              <li>Create the <code className="text-blue-600 dark:text-blue-400">stackradar-system</code> namespace if it doesn't exist.</li>
-              <li>Apply the configuration secret shown above.</li>
-              <li>Deploy the stats collector from the <code className="text-blue-600 dark:text-blue-400">collector-k8s/stats-collector</code> directory.</li>
-            </ol>
-            <div className="mt-4">
-              <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
-                kubectl apply -k collector-k8s/stats-collector
-              </code>
-            </div>
-          </div>
+        {/* Installation method tabs */}
+        <div className="flex items-center gap-2">
+          {(['kubectl', 'helm', 'helmfile'] as const).map((method) => (
+            <button
+              key={method}
+              onClick={() => setK8sMethod(method)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                k8sMethod === method
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              {method}
+            </button>
+          ))}
         </div>
 
-        <hr className="border-gray-200 dark:border-gray-700" />
+        {/* kubectl tab */}
+        {k8sMethod === 'kubectl' && (
+          <>
+            {/* Stats Collector */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  1. Cluster Stats Collector
+                </h3>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Collects cluster-wide metrics like node status, pod counts, and resource usage.
+              </p>
 
-        {/* Log Collector */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              2. Pod Log Collector
-            </h3>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Streams real-time logs from specific pods in your cluster.
-          </p>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
+                  <button
+                    onClick={() => copyToClipboard(statsConfigYaml, 'k8s-stats-conf')}
+                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied['k8s-stats-conf'] ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                  {statsConfigYaml}
+                </pre>
+              </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
-              <button
-                onClick={() => copyToClipboard(logsConfigYaml, 'k8s-logs-conf')}
-                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
-              >
-                <Copy className="w-4 h-4" />
-                {copied['k8s-logs-conf'] ? 'Copied!' : 'Copy'}
-              </button>
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
+                <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
+                  <li>Create the <code className="text-blue-600 dark:text-blue-400">stackradar-system</code> namespace if it doesn't exist.</li>
+                  <li>Apply the configuration secret shown above.</li>
+                  <li>Deploy the stats collector from the <code className="text-blue-600 dark:text-blue-400">collector-k8s/stats-collector</code> directory.</li>
+                </ol>
+                <div className="mt-4">
+                  <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
+                    kubectl apply -k collector-k8s/stats-collector
+                  </code>
+                </div>
+              </div>
             </div>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
-              {logsConfigYaml}
-            </pre>
-          </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Target Environment Variables</span>
-              <button
-                onClick={() => copyToClipboard(logCollectorEnv, 'k8s-logs-env')}
-                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
-              >
-                <Copy className="w-4 h-4" />
-                {copied['k8s-logs-env'] ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
-              {logCollectorEnv}
-            </pre>
-          </div>
+            <hr className="border-gray-200 dark:border-gray-700" />
 
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
-            <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
-              <li>Apply the configuration secret shown above.</li>
-              <li>In <code className="text-blue-600 dark:text-blue-400">collector-k8s/log-collector/deployment.yaml</code>, update the environment variables to target your pod.</li>
-              <li>Deploy the log collector:</li>
-            </ol>
-            <div className="mt-4">
-              <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
-                kubectl apply -f collector-k8s/log-collector/deployment.yaml
-              </code>
+            {/* Log Collector */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  2. Pod Log Collector
+                </h3>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Streams real-time logs from specific pods in your cluster.
+              </p>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
+                  <button
+                    onClick={() => copyToClipboard(logsConfigYaml, 'k8s-logs-conf')}
+                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied['k8s-logs-conf'] ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                  {logsConfigYaml}
+                </pre>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Target Environment Variables</span>
+                  <button
+                    onClick={() => copyToClipboard(logCollectorEnv, 'k8s-logs-env')}
+                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied['k8s-logs-env'] ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                  {logCollectorEnv}
+                </pre>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
+                <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
+                  <li>Apply the configuration secret shown above.</li>
+                  <li>In <code className="text-blue-600 dark:text-blue-400">collector-k8s/log-collector/deployment.yaml</code>, update the environment variables to target your pod.</li>
+                  <li>Deploy the log collector:</li>
+                </ol>
+                <div className="mt-4">
+                  <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
+                    kubectl apply -f collector-k8s/log-collector/deployment.yaml
+                  </code>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Helm tab */}
+        {k8sMethod === 'helm' && (
+          <div className="space-y-6">
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+              <p className="text-sm text-purple-800 dark:text-purple-200">
+                Charts are published to the OCI registry. No repository <code className="font-mono">helm repo add</code> needed.
+              </p>
+            </div>
+
+            {/* Helm Stats Collector */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                1. Cluster Stats Collector
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Collects cluster-wide metrics like node status, pod counts, and resource usage.
+              </p>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Helm Install Command</span>
+                  <button
+                    onClick={() => copyToClipboard(helmStatsCmd, 'helm-stats-cmd')}
+                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied['helm-stats-cmd'] ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                  {helmStatsCmd}
+                </pre>
+              </div>
+            </div>
+
+            <hr className="border-gray-200 dark:border-gray-700" />
+
+            {/* Helm Logs Collector */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                2. Pod Log Collector
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Streams real-time logs from specific pods in your cluster.
+              </p>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Helm Install Command</span>
+                  <button
+                    onClick={() => copyToClipboard(helmLogsCmd, 'helm-logs-cmd')}
+                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied['helm-logs-cmd'] ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                  {helmLogsCmd}
+                </pre>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Helmfile tab */}
+        {k8sMethod === 'helmfile' && (
+          <div className="space-y-6">
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+              <p className="text-sm text-purple-800 dark:text-purple-200">
+                Install helmfile from <a href="https://helmfile.readthedocs.io" target="_blank" rel="noopener noreferrer" className="underline font-medium">https://helmfile.readthedocs.io</a>, then run <code className="font-mono">helmfile apply</code>.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                helmfile.yaml
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Save this file as <code className="text-blue-600 dark:text-blue-400">helmfile.yaml</code> and run <code className="text-blue-600 dark:text-blue-400">helmfile apply</code> to deploy both collectors.
+              </p>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">helmfile.yaml</span>
+                  <button
+                    onClick={() => copyToClipboard(helmfileYaml, 'helmfile-yaml')}
+                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied['helmfile-yaml'] ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+                  {helmfileYaml}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -505,7 +678,7 @@ stringData:
     "level": "INFO",
     "message": "Hello from StackRadar",
     "environment": "${envName}",
-    "system": "${selectedSystem || 'my-app'}",
+    "system": "${selectedSystem || '<system>'}",
     "source": "curl"
   }'`;
 
@@ -518,7 +691,7 @@ stringData:
     level: "INFO",
     message: "Log message from JavaScript",
     environment: "${envName}",
-    system: "${selectedSystem || 'web-app'}",
+    system: "${selectedSystem || '<system>'}",
     source: "browser"
   })
 })
@@ -538,7 +711,7 @@ const log: StackRadarLog = {
   level: 'INFO',
   message: 'Log message from TypeScript',
   environment: '${envName}',
-  system: '${selectedSystem || 'api-service'}',
+  system: '${selectedSystem || '<system>'}',
   source: 'nodejs'
 };
 
@@ -572,13 +745,10 @@ sendLog(log).catch(console.error);`;
               onChange={(e) => setSelectedEnv(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              {environments.length > 0 ? (
-                environments.map((env) => (
-                  <option key={env.id} value={env.id}>{env.name}</option>
-                ))
-              ) : (
-                <option value="">dev</option>
-              )}
+              <option value="">Select Environment</option>
+              {environments.map((env) => (
+                <option key={env.id} value={env.id}>{env.name}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -590,7 +760,7 @@ sendLog(log).catch(console.error);`;
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">Default (my-app)</option>
+              <option value="">Select System</option>
               {systems.map((sys) => (
                 <option key={sys.id} value={sys.name}>{sys.name}</option>
               ))}

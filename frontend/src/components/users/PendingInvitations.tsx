@@ -1,8 +1,8 @@
-import React from 'react';
-import { Mail, Clock, X, Copy, Check, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Clock, X, Copy, Check, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
-import { Invitation } from '../../types';
+import { Invitation, SmtpConfig } from '../../types';
 
 interface PendingInvitationsProps {
   tenantId: number;
@@ -12,7 +12,21 @@ interface PendingInvitationsProps {
 
 export default function PendingInvitations({ tenantId, invitations, onUpdate }: PendingInvitationsProps) {
   const { showError, showSuccess } = useNotification();
-  const [copiedId, setCopiedId] = React.useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkSmtpConfig();
+  }, []);
+
+  const checkSmtpConfig = async () => {
+    try {
+      const config = await api.get<SmtpConfig | null>('/alerts/smtp-config');
+      setSmtpConfigured(!!config);
+    } catch {
+      setSmtpConfigured(false);
+    }
+  };
 
   const handleCancelInvitation = async (invitationId: number, email: string) => {
     if (!confirm(`Are you sure you want to cancel the invitation to ${email}?`)) {
@@ -100,6 +114,8 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
         {invitations.map((invitation) => {
           const expired = isExpired(invitation.expires_at);
           const copied = copiedId === invitation.id;
+          const invitationId = invitation.id;
+          const email = invitation.email;
 
           return (
             <div
@@ -164,9 +180,14 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                         )}
                       </button>
                       <button
-                        onClick={() => handleResendInvitation(invitation.id, invitation.email)}
-                        className="p-2 text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all"
-                        title="Resend invitation"
+                        onClick={() => handleResendInvitation(invitationId, email)}
+                        disabled={smtpConfigured === false}
+                        className={`p-2 transition-all rounded-lg ${
+                          smtpConfigured === false
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-600 dark:hover:text-green-400'
+                        }`}
+                        title={smtpConfigured === false ? "SMTP not configured" : "Resend invitation"}
                       >
                         <RefreshCw className="w-4 h-4" />
                       </button>

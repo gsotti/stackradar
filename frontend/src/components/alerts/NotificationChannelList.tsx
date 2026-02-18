@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Mail, Webhook, Power, Zap } from 'lucide-react';
+import { Plus, Edit2, Trash2, Mail, Webhook, Power, Zap, AlertTriangle } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { api } from '../../utils/api';
@@ -16,12 +16,23 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   const [showForm, setShowForm] = useState(false);
   const [editingChannel, setEditingChannel] = useState<NotificationChannel | null>(null);
   const [testingChannelId, setTestingChannelId] = useState<number | null>(null);
+  const [smtpConfigured, setSmtpConfigured] = useState(false);
   const { showError, showSuccess, showInfo } = useNotification();
   const { isViewer } = usePermissions();
 
   useEffect(() => {
     loadChannels();
+    checkSmtpConfig();
   }, [siteId]);
+
+  const checkSmtpConfig = async () => {
+    try {
+      const config = await api.get('/alerts/smtp-config');
+      setSmtpConfigured(!!config);
+    } catch {
+      setSmtpConfigured(false);
+    }
+  };
 
   const loadChannels = async () => {
     try {
@@ -106,6 +117,20 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   return (
     <>
       <div className="space-y-4">
+        {/* SMTP not configured banner */}
+        {!smtpConfigured && (
+          <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">No SMTP configuration</p>
+              <p className="text-sm text-amber-700 dark:text-amber-300 mt-0.5">
+                Email notification channels are disabled until an SMTP server is configured in{' '}
+                <a href="/admin/settings" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-100">Admin Settings</a>.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -211,6 +236,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
         <NotificationChannelForm
           siteId={siteId}
           channel={editingChannel}
+          smtpConfigured={smtpConfigured}
           onClose={handleFormClose}
         />
       )}
