@@ -18,7 +18,7 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME%-app}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" | sed 's/-app$//' >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
         uses: docker/login-action@v3

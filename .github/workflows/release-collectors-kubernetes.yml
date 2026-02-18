@@ -26,7 +26,7 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME%-collectors-kubernetes}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" | sed 's/-collectors-kubernetes$//' >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
         uses: docker/login-action@v3

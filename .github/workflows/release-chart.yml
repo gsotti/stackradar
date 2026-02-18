@@ -18,7 +18,7 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME%-chart}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" | sed 's/-chart$//' >> $GITHUB_OUTPUT
 
       - name: Install Helm
         uses: azure/setup-helm@v4
