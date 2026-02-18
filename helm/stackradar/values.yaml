@@ -13,6 +13,15 @@ domain: stackradar.example.com
 # Cert-manager ClusterIssuer name
 certIssuer: letsencrypt-prod
 
+# App URL used in invitation emails (defaults to https://<domain>)
+appUrl: ""
+
+# Comma-separated allowed CORS origins (defaults to https://<domain>)
+allowedOrigins: ""
+
+# Node.js clustering (set to false for single-process, e.g. when using HPA)
+clusterMode: false
+
 # Database connection
 database:
   host: postgres

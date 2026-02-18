@@ -1,0 +1,5 @@
+apiVersion: v2
+name: stackradar-logs-collector
+description: StackRadar Pod Log Collector
+type: application
+version: 0.1.0

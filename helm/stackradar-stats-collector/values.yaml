@@ -1,0 +1,29 @@
+# StackRadar Stats Collector Values
+
+image:
+  repository: ghcr.io/gsotti/stackradar-stats-collector
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# StackRadar connection (required)
+stackradar:
+  url: "https://stackradar.example.com"
+  apiToken: "your-api-token-here"
+
+# Collector configuration
+collector:
+  # Name of this cluster (used in metrics metadata)
+  clusterName: "my-cluster"
+
+  # Collection interval in milliseconds
+  collectionInterval: 10000
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "64Mi"
+    cpu: "150m"
+
+imagePullSecrets: []

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "logs-collector.fullname" . }}
+  labels:
+    {{- include "logs-collector.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "logs-collector.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "logs-collector.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "logs-collector.fullname" . }}
+      containers:
+        - name: log-collector
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "logs-collector.fullname" . }}
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.collector.clusterName | quote }}
+            - name: POD_NAMESPACE
+              value: {{ .Values.collector.podNamespace | quote }}
+            - name: POD_LABEL_SELECTOR
+              value: {{ .Values.collector.podLabelSelector | quote }}
+            - name: TENANT
+              value: {{ .Values.collector.tenant | quote }}
+            - name: SITE
+              value: {{ .Values.collector.site | quote }}
+            - name: ENVIRONMENT
+              value: {{ .Values.collector.environment | quote }}
+            - name: LOG_TAIL_LINES
+              value: {{ .Values.collector.logTailLines | quote }}
+            - name: POLL_INTERVAL
+              value: {{ .Values.collector.pollInterval | quote }}
+            - name: FOLLOW_LOGS
+              value: {{ .Values.collector.followLogs | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

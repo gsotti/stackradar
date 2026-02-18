@@ -1,0 +1,39 @@
+name: Release Chart
+
+on:
+  push:
+    tags:
+      - 'v*-chart'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME%-chart}" >> $GITHUB_OUTPUT
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package and push charts
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          mkdir -p /tmp/charts
+          for chart in helm/stackradar helm/stackradar-logs-collector helm/stackradar-stats-collector; do
+            name=$(basename "$chart")
+            echo "Packaging $name @ $VERSION"
+            helm package "$chart" --version "$VERSION" --destination /tmp/charts
+            helm push "/tmp/charts/$name-$VERSION.tgz" oci://ghcr.io/gsotti/charts
+          done

@@ -1,0 +1,46 @@
+# StackRadar Log Collector Values
+
+image:
+  repository: ghcr.io/gsotti/stackradar-logs-collector
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# StackRadar connection (required)
+stackradar:
+  url: "https://stackradar.example.com"
+  apiToken: "your-api-token-here"
+
+# Collector configuration
+collector:
+  # Name of this cluster (used as site in StackRadar)
+  clusterName: "my-cluster"
+
+  # Namespace of the pod to collect logs from (required)
+  podNamespace: ""
+
+  # Label selector to find the pod, e.g. "app.kubernetes.io/name=my-app" (required)
+  podLabelSelector: ""
+
+  # StackRadar hierarchy
+  tenant: "default"
+  site: "kubernetes"
+  environment: "production"
+
+  # Number of historical log lines to fetch on startup
+  logTailLines: 100
+
+  # Polling interval in milliseconds
+  pollInterval: 10000
+
+  # Continuously follow logs (set to false for one-shot collection)
+  followLogs: true
+
+resources:
+  requests:
+    memory: "32Mi"
+    cpu: "50m"
+  limits:
+    memory: "64Mi"
+    cpu: "100m"
+
+imagePullSecrets: []

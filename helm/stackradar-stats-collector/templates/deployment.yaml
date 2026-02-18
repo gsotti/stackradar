@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stats-collector.fullname" . }}
+  labels:
+    {{- include "stats-collector.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "stats-collector.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "stats-collector.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "stats-collector.fullname" . }}
+      containers:
+        - name: stats-collector
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "stats-collector.fullname" . }}
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.collector.clusterName | quote }}
+            - name: COLLECTION_INTERVAL
+              value: {{ .Values.collector.collectionInterval | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
