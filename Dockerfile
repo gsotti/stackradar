@@ -7,9 +7,9 @@ ARG BUILD_COMMIT=unknown
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/yarn.lock frontend/.yarnrc.yml ./
-RUN corepack enable && yarn install --immutable
+RUN corepack enable && corepack yarn install --immutable
 COPY frontend/ ./
-RUN BUILD_VERSION=${BUILD_VERSION} BUILD_COMMIT=${BUILD_COMMIT} yarn build
+RUN corepack yarn build
 
 # Stage 2: Build Backend
 FROM node:20-alpine AS backend-builder
@@ -24,11 +24,11 @@ ARG DISABLE_OBFUSCATION=false
 ENV DISABLE_OBFUSCATION=${DISABLE_OBFUSCATION}
 
 COPY backend/package.json backend/yarn.lock backend/.yarnrc.yml ./
-RUN corepack enable && yarn install --immutable
+RUN corepack enable && corepack yarn install --immutable
 COPY backend/src ./src
 COPY backend/tsconfig.json ./
 COPY backend/obfuscate.mjs ./
-RUN NODE_OPTIONS="--max-old-space-size=8192" yarn build
+RUN NODE_OPTIONS="--max-old-space-size=8192" corepack yarn build
 
 # Stage 3: Production Image
 FROM node:20-alpine
