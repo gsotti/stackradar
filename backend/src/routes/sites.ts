@@ -73,6 +73,7 @@ router.get('/:id', authMiddleware, async (
 
 interface CreateSiteRequestWithTenant extends CreateSiteRequest {
   tenant_id?: number;
+  has_metrics?: boolean;
 }
 
 // Create site
@@ -81,7 +82,7 @@ router.post('/', authMiddleware, editorMiddleware, async (
   res: Response
 ): Promise<void> => {
   try {
-    const { name, description, retention_days = 30, site_type = 'kubernetes', tenant_id }: CreateSiteRequestWithTenant = req.body;
+    const { name, description, retention_days = 30, site_type = 'kubernetes', has_metrics = true, tenant_id }: CreateSiteRequestWithTenant = req.body;
 
     if (!name) {
       res.status(400).json({ detail: 'Name is required' });
@@ -111,8 +112,8 @@ router.post('/', authMiddleware, editorMiddleware, async (
     const tenantId = tenantResult.rows[0].id;
 
     const result = await db.query<Site>(
-      'INSERT INTO sites (name, description, api_token, retention_days, site_type, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [name, description || null, apiToken, retention_days, site_type, tenantId]
+      'INSERT INTO sites (name, description, api_token, retention_days, site_type, has_metrics, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [name, description || null, apiToken, retention_days, site_type, has_metrics, tenantId]
     );
 
     res.status(201).json(result.rows[0]);
@@ -128,7 +129,7 @@ router.put('/:id', authMiddleware, editorMiddleware, async (
   res: Response
 ): Promise<void> => {
   try {
-    const { name, description, retention_days, site_type } = req.body;
+    const { name, description, retention_days, site_type, has_metrics } = req.body;
 
     // Validate site_type if provided
     if (site_type) {
@@ -154,10 +155,11 @@ router.put('/:id', authMiddleware, editorMiddleware, async (
        SET name = COALESCE($1, name),
            description = COALESCE($2, description),
            retention_days = COALESCE($3, retention_days),
-           site_type = COALESCE($4, site_type)
-       WHERE id = $5 AND tenant_id = ANY($6)
+           site_type = COALESCE($4, site_type),
+           has_metrics = COALESCE($5, has_metrics)
+       WHERE id = $6 AND tenant_id = ANY($7)
        RETURNING *`,
-      [name, description, retention_days, site_type, req.params.id, req.userTenantIds || []]
+      [name, description, retention_days, site_type, has_metrics ?? null, req.params.id, req.userTenantIds || []]
     );
 
     res.json(result.rows[0]);

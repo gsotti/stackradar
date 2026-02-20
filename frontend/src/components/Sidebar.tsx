@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Server, Activity, LogOut, Menu, X,
   Moon, Sun, ChevronLeft, ChevronRight, Package, Globe, Shield, Building2, Users, Settings
@@ -29,17 +29,23 @@ export default function Sidebar() {
     setSelectedSystem
   } = useApp();
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [environments, setEnvironments] = useState<Environment[]>([]);
 
+  // Hide logs/environments/systems when all sites in the tenant are uptime-only
+  const isUptimeOnly = sites.length > 0 && sites.every(s => s.has_metrics === false);
+
   const navigation = [
     ...(!isSuperadmin() ? [
       { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-      { name: 'Logs', href: '/logs/live', icon: Activity },
+      ...(!isUptimeOnly ? [
+        { name: 'Logs', href: '/logs/live', icon: Activity },
+      ] : []),
       { name: 'Sites', href: '/sites', icon: Server },
-      ...(!isViewer() ? [
+      ...(!isViewer() && !isUptimeOnly ? [
         { name: 'Environments', href: '/environments', icon: Globe },
         { name: 'Systems', href: '/systems', icon: Package }
       ] : []),
@@ -180,6 +186,8 @@ export default function Sidebar() {
                 setSelectedSite('');
                 setSelectedEnvironment('');
                 setSelectedSystem('');
+                // Navigate to dashboard so data reloads for the new tenant
+                navigate('/');
               }}
               className="w-full px-3 py-2 text-sm border-0 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500 transition-all appearance-none cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}

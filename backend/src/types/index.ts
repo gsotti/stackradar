@@ -33,6 +33,7 @@ export interface Site {
   api_token: string;
   retention_days: number;
   site_type: 'docker' | 'kubernetes' | 'generic';
+  has_metrics: boolean;
   tenant_id: number;
   created_at: Date;
 }
@@ -145,6 +146,7 @@ export interface CreateSiteRequest {
   description?: string;
   retention_days?: number;
   site_type?: 'docker' | 'kubernetes' | 'generic';
+  has_metrics?: boolean;
 }
 
 export interface UpdateSiteRequest {
@@ -152,6 +154,7 @@ export interface UpdateSiteRequest {
   description?: string;
   retention_days?: number;
   site_type?: 'docker' | 'kubernetes' | 'generic';
+  has_metrics?: boolean;
 }
 
 export interface CreateEnvironmentRequest {

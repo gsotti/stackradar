@@ -11,6 +11,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import AlertsView from '../components/alerts/AlertsView';
 import SiteSetupInstructions from '../components/SiteSetupInstructions';
 import UptimeMonitorsView from '../components/uptime/UptimeMonitorsView';
+
 import { Site, K8sMetrics } from '../types';
 
 interface LiveMetricPoint {
@@ -42,26 +43,31 @@ export default function SiteDetailsPage() {
       navigate(`/sites/${id}/${tab}`);
     }
   };
-  const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' as const });
+  const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' as const, has_metrics: true });
   const [tokenVisible, setTokenVisible] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fetchAll = async () => {
     try {
-      const [st, l, s] = await Promise.all([
-        api.get<Site>(`/sites/${id}`),
-        api.get<LiveMetricsResponse>(`/sites/${id}/k8s-metrics/live`),
-        api.get<K8sMetrics>(`/sites/${id}/k8s-metrics`)
-      ]);
+      const st = await api.get<Site>(`/sites/${id}`);
       setSite(st);
-      setLive(l || { points: [] });
-      setSummary(s || null);
       setForm({
         name: st.name || '',
         description: st.description || '',
         retention_days: st.retention_days || 30,
-        site_type: st.site_type || 'kubernetes'
+        site_type: st.site_type || 'kubernetes',
+        has_metrics: st.has_metrics !== false
       });
+
+      // Only fetch k8s metrics when the site reports metrics
+      if (st.has_metrics !== false) {
+        const [l, s] = await Promise.all([
+          api.get<LiveMetricsResponse>(`/sites/${id}/k8s-metrics/live`),
+          api.get<K8sMetrics>(`/sites/${id}/k8s-metrics`)
+        ]);
+        setLive(l || { points: [] });
+        setSummary(s || null);
+      }
     } catch (error: any) {
       showError(error.message || 'Failed to fetch site details');
     } finally {
@@ -117,7 +123,7 @@ export default function SiteDetailsPage() {
   useEffect(() => {
     fetchAll();
     let interval: ReturnType<typeof setInterval> | undefined;
-    if (autoRefresh) {
+    if (autoRefresh && site?.has_metrics !== false) {
       interval = setInterval(async () => {
         try {
           const l = await api.get<LiveMetricsResponse>(`/sites/${id}/k8s-metrics/live`);
@@ -134,9 +140,16 @@ export default function SiteDetailsPage() {
   // Redirect viewers away from restricted tabs
   useEffect(() => {
     if (isViewer() && (activeTab === 'alerts' || activeTab === 'setup' || activeTab === 'settings')) {
-      navigate(`/sites/${id}/metrics`, { replace: true });
+      navigate(`/sites/${id}/monitors`, { replace: true });
     }
   }, [isViewer, activeTab, id, navigate]);
+
+  // When site has no metrics, redirect the "metrics" default tab to "monitors"
+  useEffect(() => {
+    if (site && site.has_metrics === false && activeTab === 'metrics') {
+      navigate(`/sites/${id}/monitors`, { replace: true });
+    }
+  }, [site, activeTab, id, navigate]);
 
   const data = live?.points || [];
 
@@ -181,7 +194,13 @@ export default function SiteDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{site?.name || `Site #${id}`}</h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              {activeTab === 'metrics' ? `${labels.platform} metrics - live CPU/Memory (last 30 minutes)` : 'Alert management and monitoring'}
+              {activeTab === 'metrics'
+                ? `${labels.platform} metrics - live CPU/Memory (last 30 minutes)`
+                : activeTab === 'monitors'
+                ? site?.has_metrics === false
+                  ? 'Uptime overview across all configured monitors'
+                  : 'Uptime monitors for this site'
+                : 'Alert management and monitoring'}
             </p>
           </div>
         </div>
@@ -198,20 +217,23 @@ export default function SiteDetailsPage() {
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-4">
-          <button
-            onClick={() => setActiveTab('metrics')}
-            className={`
-              flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
-              ${
-                activeTab === 'metrics'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
-              }
-            `}
-          >
-            <BarChart2 className="w-4 h-4" />
-            Metrics
-          </button>
+          {/* Metrics tab – hidden when site has no infrastructure metrics */}
+          {site?.has_metrics !== false && (
+            <button
+              onClick={() => setActiveTab('metrics')}
+              className={`
+                flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+                ${
+                  activeTab === 'metrics'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+                }
+              `}
+            >
+              <BarChart2 className="w-4 h-4" />
+              Metrics
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('monitors')}
             className={`
@@ -224,7 +246,7 @@ export default function SiteDetailsPage() {
             `}
           >
             <Radio className="w-4 h-4" />
-            Monitors
+            {site?.has_metrics === false ? 'Uptime Overview' : 'Monitors'}
           </button>
           {!isViewer() && (
             <>
@@ -508,6 +530,20 @@ export default function SiteDetailsPage() {
                     max={365}
                   />
                 </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <div className="relative flex-shrink-0" onClick={() => setForm({ ...form, has_metrics: !form.has_metrics })}>
+                    <div className={`w-10 h-5 rounded-full transition-colors ${form.has_metrics ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.has_metrics ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Collect infrastructure metrics</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Disable to hide the Metrics tab (e.g. for uptime-only sites)
+                    </p>
+                  </div>
+                </label>
               </div>
               <button
                 type="submit"

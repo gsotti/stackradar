@@ -17,7 +17,7 @@ export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' as const });
+  const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' as const, has_metrics: true });
   const [k8sMetrics, setK8sMetrics] = useState<Record<number, K8sMetrics>>({});
   const [uptimeStatus, setUptimeStatus] = useState<Record<number, { current_status: UptimeStatus }>>({});
 
@@ -93,7 +93,7 @@ export default function SitesPage() {
       await api.post('/sites', { ...form, tenant_id: selectedTenant });
       showSuccess('Site created successfully');
       setShowForm(false);
-      setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' });
+      setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes', has_metrics: true });
       fetchSites();
     } catch (error: any) {
       showError(error.message || 'Failed to create site');
@@ -126,7 +126,7 @@ export default function SitesPage() {
         </div>
         {!isViewer() && (
           <button
-            onClick={() => { setShowForm(true); setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' }); }}
+            onClick={() => { setShowForm(true); setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes', has_metrics: true }); }}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-medium"
           >
             <Plus className="w-4 h-4" />
@@ -187,6 +187,26 @@ export default function SitesPage() {
                     <option value="generic">Generic</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={form.has_metrics}
+                      onChange={(e) => setForm({ ...form, has_metrics: e.target.checked })}
+                      className="sr-only"
+                    />
+                    <div className={`w-10 h-5 rounded-full transition-colors ${form.has_metrics ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.has_metrics ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Collect infrastructure metrics</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Disable for uptime-only sites (no metrics tab shown)
+                    </p>
+                  </div>
+                </label>
               </div>
               <div className="flex gap-3 pt-4">
                 <button
