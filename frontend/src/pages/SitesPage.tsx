@@ -112,7 +112,7 @@ export default function SitesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
-        <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
+        <RefreshCw className="w-10 h-10 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -121,13 +121,13 @@ export default function SitesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Sites</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your Docker hosts, Kubernetes clusters, and generic sites</p>
+          <h1 className="text-heading-2">Sites</h1>
+          <p className="text-body-secondary mt-2">Manage your Docker hosts, Kubernetes clusters, and generic sites</p>
         </div>
         {!isViewer() && (
           <button
             onClick={() => { setShowForm(true); setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes', has_metrics: true }); }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-medium"
+            className="button-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Site
@@ -137,50 +137,50 @@ export default function SitesPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700 transform transition-all">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Add New Site</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="card w-full max-w-md">
+            <h2 className="text-heading-3 mb-6">Add New Site</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Identifier (Name)</label>
+                <label className="block text-label mb-2">Identifier (Name)</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="Production Cluster"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                <label className="block text-label mb-2">Description</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="Brief description of the site"
                   rows={3}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Retention (days)</label>
+                  <label className="block text-label mb-2">Retention (days)</label>
                   <input
                     type="number"
                     value={form.retention_days}
                     onChange={(e) => setForm({ ...form, retention_days: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                    className="input-base w-full"
                     min="1"
                     max="365"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site Type</label>
+                  <label className="block text-label mb-2">Site Type</label>
                   <select
                     value={form.site_type}
                     onChange={(e) => setForm({ ...form, site_type: e.target.value as any })}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                    className="input-base w-full"
                   >
                     <option value="kubernetes">Kubernetes</option>
                     <option value="docker">Docker</option>
@@ -197,12 +197,12 @@ export default function SitesPage() {
                       onChange={(e) => setForm({ ...form, has_metrics: e.target.checked })}
                       className="sr-only"
                     />
-                    <div className={`w-10 h-5 rounded-full transition-colors ${form.has_metrics ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                    <div className={`w-10 h-5 rounded-full transition-colors ${form.has_metrics ? 'bg-primary-500' : 'bg-neutral-300 dark:bg-neutral-600'}`} />
                     <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.has_metrics ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Collect infrastructure metrics</span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Collect infrastructure metrics</span>
+                    <p className="text-body-secondary text-xs mt-0.5">
                       Disable for uptime-only sites (no metrics tab shown)
                     </p>
                   </div>
@@ -211,14 +211,14 @@ export default function SitesPage() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95"
+                  className="button-primary flex-1"
                 >
                   Create Site
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600"
+                  className="button-secondary flex-1"
                 >
                   Cancel
                 </button>
@@ -229,16 +229,16 @@ export default function SitesPage() {
       )}
 
       {sites.length === 0 ? (
-        <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-          <Server className="w-16 h-16 text-gray-300 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No sites found</h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">
+        <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
+          <Server className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
+          <h3 className="text-heading-4 mb-2">No sites found</h3>
+          <p className="text-body-secondary max-w-sm mx-auto mb-8">
             Create your first site to start monitoring your infrastructure.
           </p>
           {!isViewer() && (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              className="button-primary inline-flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
               Add Your First Site
@@ -255,59 +255,59 @@ export default function SitesPage() {
               <Link
                 key={site.id}
                 to={`/sites/${site.id}`}
-                className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-xl hover:border-blue-500/50 transition-all duration-300 flex flex-col h-full"
+                className="card-hover group flex flex-col h-full"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                    <Server className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                    <Server className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                   </div>
                   <UptimeStatusDot status={status} size="sm" />
                   <div className="flex flex-col min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                    <h3 className="text-base font-semibold text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
                       {site.name}
                     </h3>
                   </div>
                   <div className="ml-auto flex-shrink-0">
-                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded-md uppercase tracking-wider">
+                    <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 text-xs font-semibold rounded-md uppercase tracking-wider">
                       {getSiteTypeLabel(site.site_type)}
                     </span>
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-1 min-h-[1.25rem]">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-1 min-h-[1.25rem]">
                   {site.description || 'No description provided.'}
                 </p>
 
-                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="mt-auto pt-4 border-t border-neutral-200 dark:border-neutral-700/50">
                   {metrics ? (
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">CPU Usage</p>
+                        <p className="text-label">CPU Usage</p>
                         <div className="flex items-end gap-1">
-                          <span className="text-base font-bold text-gray-900 dark:text-white leading-none">{safePercent(metrics.cpu_usage_percent)}%</span>
+                          <span className="text-base font-bold text-neutral-900 dark:text-white leading-none">{safePercent(metrics.cpu_usage_percent)}%</span>
                         </div>
-                        <div className="w-full h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full rounded-full transition-all duration-1000 ${Number(metrics.cpu_usage_percent) > 80 ? 'bg-red-500' : Number(metrics.cpu_usage_percent) > 50 ? 'bg-amber-500' : 'bg-blue-500'}`}
+                            className={`h-full rounded-full transition-all duration-1000 ${Number(metrics.cpu_usage_percent) > 80 ? 'bg-accent-danger' : Number(metrics.cpu_usage_percent) > 50 ? 'bg-accent-warning' : 'bg-accent-success'}`}
                             style={{ width: `${Math.min(100, Number(metrics.cpu_usage_percent))}%` }}
                           />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Memory</p>
+                        <p className="text-label">Memory</p>
                         <div className="flex items-end gap-1">
-                          <span className="text-base font-bold text-gray-900 dark:text-white leading-none">{safePercent(metrics.memory_usage_percent)}%</span>
+                          <span className="text-base font-bold text-neutral-900 dark:text-white leading-none">{safePercent(metrics.memory_usage_percent)}%</span>
                         </div>
-                        <div className="w-full h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full rounded-full transition-all duration-1000 ${Number(metrics.memory_usage_percent) > 80 ? 'bg-red-500' : Number(metrics.memory_usage_percent) > 50 ? 'bg-amber-500' : 'bg-blue-500'}`}
+                            className={`h-full rounded-full transition-all duration-1000 ${Number(metrics.memory_usage_percent) > 80 ? 'bg-accent-danger' : Number(metrics.memory_usage_percent) > 50 ? 'bg-accent-warning' : 'bg-accent-success'}`}
                             style={{ width: `${Math.min(100, Number(metrics.memory_usage_percent))}%` }}
                           />
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-gray-400 italic text-sm py-2">
+                    <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 italic text-sm py-2">
                       <Info className="w-4 h-4" />
                       Waiting for metrics...
                     </div>

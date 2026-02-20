@@ -91,12 +91,12 @@ export default function SystemsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Systems</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your systems across environments</p>
+          <h1 className="text-heading-2">Systems</h1>
+          <p className="text-body-secondary mt-2">Manage your systems across environments</p>
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-medium"
+          className="button-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Add System
@@ -105,18 +105,18 @@ export default function SystemsPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700 transform transition-all">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="card w-full max-w-md">
+            <h2 className="text-heading-3 mb-6">
               {editingSystem ? 'Edit System' : 'Add New System'}
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Environment</label>
+                <label className="block text-label mb-2">Environment</label>
                 <select
                   value={form.environment_id}
                   onChange={(e) => setForm({ ...form, environment_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   required
                 >
                   <option value="">Select an environment</option>
@@ -128,22 +128,22 @@ export default function SystemsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Identifier (Name)</label>
+                <label className="block text-label mb-2">Identifier (Name)</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="api-gateway"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                <label className="block text-label mb-2">Description</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="Main entry point for API requests"
                   rows={3}
                 />
@@ -151,14 +151,14 @@ export default function SystemsPage() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95"
+                  className="button-primary flex-1"
                 >
                   {editingSystem ? 'Save Changes' : 'Create System'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600"
+                  className="button-secondary flex-1"
                 >
                   Cancel
                 </button>
@@ -170,45 +170,45 @@ export default function SystemsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {systems.map((system) => (
-            <div key={system.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 p-4 group">
+            <div key={system.id} className="card-hover group">
               <div className="flex justify-between items-start mb-3">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg group-hover:scale-110 transition-transform">
-                  <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg group-hover:scale-110 transition-transform">
+                  <Package className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div className="flex gap-1">
                   <button
                     onClick={() => handleEdit(system)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
+                    className="p-1.5 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                   >
                     <Settings className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(system.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                    className="p-1.5 text-neutral-400 hover:text-accent-danger transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+              <h3 className="text-heading-4 mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate text-neutral-900 dark:text-white">
                 {system.name}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 min-h-[1.5rem] line-clamp-1">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 min-h-[1.5rem] line-clamp-1">
                 {system.description || 'No description provided'}
               </p>
-              <div className="pt-3 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-1.5">
+              <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700/50 flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Env:</span>
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">{system.environment_name}</span>
+                  <span className="text-label text-xs">Env:</span>
+                  <span className="text-body text-sm truncate">{system.environment_name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Site:</span>
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">{system.site_name}</span>
+                  <span className="text-label text-xs">Site:</span>
+                  <span className="text-body text-sm truncate">{system.site_name}</span>
                 </div>
               </div>
             </div>
@@ -217,15 +217,15 @@ export default function SystemsPage() {
       )}
 
       {!loading && systems.length === 0 && (
-        <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No systems found</h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">
+        <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
+          <Package className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
+          <h3 className="text-heading-4 mb-2">No systems found</h3>
+          <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-8">
             Create your first system to start collecting logs and monitoring health.
           </p>
           <button
             onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+            className="button-primary inline-flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Create First System

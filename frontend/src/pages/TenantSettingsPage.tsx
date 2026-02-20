@@ -125,8 +125,8 @@ export default function TenantSettingsPage() {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
         <div className="text-center">
-          <RefreshCw className="w-10 h-10 animate-spin text-blue-500 mx-auto mb-3" />
-          <p className="text-gray-600 dark:text-gray-400">Loading tenant details...</p>
+          <RefreshCw className="w-10 h-10 animate-spin text-primary-500 mx-auto mb-3" />
+          <p className="text-neutral-600 dark:text-neutral-400">Loading tenant details...</p>
         </div>
       </div>
     );
@@ -135,11 +135,11 @@ export default function TenantSettingsPage() {
   if (!tenant) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)]">
-        <Building2 className="w-16 h-16 text-gray-300 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tenant not found</h2>
+        <Building2 className="w-16 h-16 text-neutral-400 dark:text-neutral-600 mb-3" />
+        <h2 className="text-heading-4 mb-2">Tenant not found</h2>
         <Link
           to="/tenants"
-          className="text-blue-600 dark:text-blue-400 hover:underline"
+          className="text-primary-600 dark:text-primary-400 hover:underline"
         >
           Return to tenants list
         </Link>
@@ -150,23 +150,21 @@ export default function TenantSettingsPage() {
   const canManage = canManageTenant(tenant.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
             to="/tenants"
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-lg">
             <Building2 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{tenant.name}</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Tenant settings and management
-            </p>
+            <h1 className="text-heading-3 text-neutral-900 dark:text-white">{tenant.name}</h1>
+            <p className="text-body-secondary text-sm">Tenant settings and management</p>
           </div>
         </div>
 
@@ -175,23 +173,23 @@ export default function TenantSettingsPage() {
           <div className="flex gap-2">
             <button
               onClick={loadUsersData}
-              className="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+              className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${usersLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold"
+              className="button-primary flex items-center gap-2"
             >
-              <UserPlus className="w-5 h-5" />
+              <UserPlus className="w-4 h-4" />
               Create User
             </button>
             <button
               onClick={() => setShowInviteForm(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold"
+              className="button-primary flex items-center gap-2"
             >
-              <UserPlus className="w-5 h-5" />
+              <UserPlus className="w-4 h-4" />
               Invite User
             </button>
           </div>
@@ -239,9 +237,9 @@ export default function TenantSettingsPage() {
 
       {/* Content based on active tab */}
       {activeTab === 'settings' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Column - Tenant Settings Form */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="card transition-none">
             <TenantForm
               mode="edit"
               initialData={{
@@ -255,13 +253,13 @@ export default function TenantSettingsPage() {
 
           {/* Right Column - Danger Zone */}
           {isOrgAdmin() && (
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-red-200 dark:border-red-900">
-                <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+            <div className="space-y-4">
+              <div className="card border-l-4 border-l-accent-danger">
+                <h2 className="text-lg font-semibold text-accent-danger mb-2 flex items-center gap-2">
                   <Trash2 className="w-5 h-5" />
                   Danger Zone
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
                   Deleting this tenant will permanently remove all associated users, sites, environments, systems, and logs. This action cannot be undone.
                 </p>
                 <button
@@ -318,18 +316,18 @@ export default function TenantSettingsPage() {
             <>
               {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                <div className="card-compact">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                      <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <div className="p-3 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                      <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{users.length}</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">Active Users</p>
+                      <p className="text-2xl font-bold text-neutral-900 dark:text-white">{users.length}</p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                <div className="card-compact">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
                       <UserPlus className="w-6 h-6 text-amber-600 dark:text-amber-400" />
@@ -344,7 +342,7 @@ export default function TenantSettingsPage() {
 
               {/* Pending Invitations */}
               {invitations.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                <div className="card">
                   <PendingInvitations
                     tenantId={parseInt(id!, 10)}
                     invitations={invitations}
@@ -354,7 +352,7 @@ export default function TenantSettingsPage() {
               )}
 
               {/* Users List */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+              <div className="card">
                 <div className="flex items-center gap-2 mb-6">
                   <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -372,7 +370,7 @@ export default function TenantSettingsPage() {
               </div>
 
               {/* Available Organization Users */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+              <div className="card-hover">
                 <AvailableUsersList
                   tenantId={parseInt(id!, 10)}
                   onUserAdded={loadUsersData}

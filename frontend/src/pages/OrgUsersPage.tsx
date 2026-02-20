@@ -150,30 +150,26 @@ export default function OrgUsersPage() {
 
   const getRoleBadge = (role: string | null) => {
     if (role === 'superadmin') {
-      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Superadmin</span>;
+      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-accent-danger/10 text-accent-danger dark:bg-accent-danger/10 dark:text-accent-danger">Superadmin</span>;
     }
     if (role === 'org_admin') {
-      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">Org Admin</span>;
+      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">Org Admin</span>;
     }
     return null;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Users
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage users in your organization
-          </p>
+          <h1 className="text-heading-2">Users</h1>
+          <p className="text-body-secondary mt-2">Manage users in your organization</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={fetchUsers}
             disabled={loading}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
+            className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
             title="Refresh"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -183,7 +179,7 @@ export default function OrgUsersPage() {
               setFormData({ email: '', name: '', password: '', is_active: true });
               setShowCreateModal(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-medium"
+            className="button-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Create User
@@ -193,28 +189,28 @@ export default function OrgUsersPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <input
           type="text"
           placeholder="Search by name or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+          className="input-base w-full pl-9"
         />
       </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
+          <div className="flex items-center justify-center py-16">
+            <RefreshCw className="w-10 h-10 animate-spin text-primary-500" />
           </div>
         ) : sortedAndFilteredUsers.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12">
+          <div className="surface rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-12">
             <div className="text-center">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <Users className="w-16 h-16 text-neutral-400 dark:text-neutral-600 mx-auto mb-3" />
+              <h3 className="text-heading-4 mb-2">
                 {searchTerm ? 'No users found' : 'No users yet'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-neutral-600 dark:text-neutral-400 mb-6">
                 {searchTerm ? 'Try adjusting your search terms' : 'Create your first user to get started'}
               </p>
               {!searchTerm && (
@@ -223,9 +219,9 @@ export default function OrgUsersPage() {
                     setFormData({ email: '', name: '', password: '', is_active: true });
                     setShowCreateModal(true);
                   }}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all"
+                  className="button-primary inline-flex items-center gap-2"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4" />
                   <span className="font-semibold">Create User</span>
                 </button>
               )}
@@ -239,7 +235,7 @@ export default function OrgUsersPage() {
               return (
                 <div
                   key={targetUser.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 transition-all"
+                  className="card-hover"
                 >
                   <div className="flex items-center gap-4">
                     {getGravatarUrl(targetUser.email) ? (

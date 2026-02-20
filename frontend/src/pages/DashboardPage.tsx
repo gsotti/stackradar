@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Server, AlertTriangle, Activity, RefreshCw, TrendingUp, TrendingDown, Zap, Clock, Eye, Radio } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
+import { FileText, Server, AlertTriangle, Activity, RefreshCw, TrendingUp, TrendingDown, Eye, Radio } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../utils/api';
 import { useApp } from '../contexts/AppContext';
 import { Site, System, UptimeMonitor, UptimeCheck, UptimeStatus } from '../types';
@@ -70,7 +70,7 @@ export default function DashboardPage() {
       setMonitors(mon || []);
 
       // If uptime-only tenant, fetch detailed check history for each monitor
-      const isUptimeOnly = st.length > 0 && st.every(s => s.has_metrics === false);
+      const isUptimeOnly = st.length > 0 && st.every(s => !s.has_metrics);
       if (isUptimeOnly && mon && mon.length > 0) {
         const checksPromises = mon.map(async (m) => {
           try {
@@ -93,20 +93,46 @@ export default function DashboardPage() {
   }, [selectedTenant, selectedEnvironment, selectedSite]);
 
   // Determine if this is an uptime-only tenant (all sites have has_metrics=false)
-  const isUptimeOnly = sites.length > 0 && sites.every(s => s.has_metrics === false);
+  const isUptimeOnly = sites.length > 0 && sites.every(s => !s.has_metrics);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
         <div className="text-center">
-          <RefreshCw className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+          <RefreshCw className="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4" />
+          <p className="text-neutral-600 dark:text-neutral-400">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  // Custom tooltip component for pie chart
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const total = levelData.reduce((sum: number, item: any) => sum + item.value, 0);
+      const value = payload[0].value;
+      const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+      return (
+        <div
+          style={{
+            backgroundColor: 'rgba(31, 41, 55, 0.95)',
+            border: '1px solid rgba(107, 114, 128, 0.3)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+          }}
+        >
+          <p style={{ color: '#fff', margin: 0, fontSize: '13px', fontWeight: '500' }}>
+            {payload[0].name}
+          </p>
+          <p style={{ color: '#e5e7eb', margin: '4px 0 0 0', fontSize: '12px' }}>
+            {value} logs ({percent}%)
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
   const levelData = stats?.logs_by_level ? Object.entries(stats.logs_by_level).map(([name, value]) => ({ name, value })) : [];
   const totalErrors = (stats?.logs_by_level?.ERROR || 0) + (stats?.logs_by_level?.CRITICAL || 0);
   const errorRate = stats?.total_logs ? ((totalErrors / stats.total_logs) * 100).toFixed(1) : '0';
@@ -114,10 +140,6 @@ export default function DashboardPage() {
   // Calculate trends (mock for now - would need historical data)
   const logTrend = 12.5;
   const errorTrend = -3.2;
-
-  const uptimeRate = uptimeStats && uptimeStats.total > 0
-    ? ((uptimeStats.up / uptimeStats.total) * 100).toFixed(1)
-    : '100';
 
   // Visibility flags — hide sections that have no data
   const hasLogs = (stats?.total_logs ?? 0) > 0;
@@ -143,14 +165,12 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Dashboard Overview
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Real-time monitoring and analytics</p>
+            <h1 className="text-heading-2">Dashboard Overview</h1>
+            <p className="text-body-secondary mt-2">Real-time monitoring and analytics</p>
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl"
+            className="button-primary flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -158,9 +178,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Activity className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No data yet</h2>
-          <p className="text-gray-500 dark:text-gray-400 max-w-sm">
+          <Activity className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mb-4" />
+          <h2 className="text-lg font-semibold text-neutral-700 dark:text-neutral-300 mb-2">No data yet</h2>
+          <p className="text-neutral-500 dark:text-neutral-400 max-w-sm">
             Start ingesting logs or configure uptime monitors to see data here.
             {selectedTenant && ' Try switching to a different tenant.'}
           </p>
@@ -209,14 +229,12 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Dashboard Overview
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Real-time monitoring and analytics</p>
+            <h1 className="text-heading-2">Dashboard Overview</h1>
+            <p className="text-body-secondary mt-2">Real-time monitoring and analytics</p>
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl"
+            className="button-primary flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -225,33 +243,33 @@ export default function DashboardPage() {
 
         {/* Summary stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium mb-2">Endpoints</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{monitors.length}</p>
-            <div className="flex items-center gap-2.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="card-compact border-l-4 border-l-accent-success">
+            <p className="text-label mb-2">Endpoints</p>
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{monitors.length}</p>
+            <div className="flex flex-wrap gap-2 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
               <span>{upCount} up</span>
-              {downCount > 0 && <span className="font-medium text-gray-700 dark:text-gray-300">{downCount} down</span>}
+              {downCount > 0 && <span className="font-medium text-neutral-700 dark:text-neutral-300">{downCount} down</span>}
               {degradedCount > 0 && <span>{degradedCount} degraded</span>}
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium mb-2">Uptime</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="card-compact">
+            <p className="text-label mb-2">Uptime</p>
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">
               {uptimeOnlyPct !== null ? `${uptimeOnlyPct.toFixed(1)}%` : '—'}
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Last 30 checks</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">Last 30 checks</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium mb-2">Avg Response</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              {avgResponseTime !== null ? <>{avgResponseTime}<span className="text-sm font-normal text-gray-400 ml-0.5">ms</span></> : '—'}
+          <div className="card-compact">
+            <p className="text-label mb-2">Avg Response</p>
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+              {avgResponseTime !== null ? <>{avgResponseTime}<span className="text-sm font-normal text-neutral-400 ml-0.5">ms</span></> : '—'}
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Across all monitors</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">Across all monitors</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium mb-2">Sites</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{sites.length}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Being monitored</p>
+          <div className="card-compact">
+            <p className="text-label mb-2">Sites</p>
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{sites.length}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">Being monitored</p>
           </div>
         </div>
 
@@ -270,24 +288,24 @@ export default function DashboardPage() {
               : null;
 
             return (
-              <div key={monitor.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div key={monitor.id} className="card-compact border-l-4" style={{ borderLeftColor: statusDot[mStatus].split(' ')[0].replace('bg-', '#').substring(0, 7) || '#6B7280' }}>
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${statusDot[mStatus]}`} />
-                      <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{monitor.name}</span>
+                      <div className={`flex-shrink-0 w-2.5 h-2.5 rounded-full mt-1 status-indicator ${statusDot[mStatus].split('dark:')[0]}`} />
+                      <span className="font-medium text-sm text-neutral-900 dark:text-white truncate">{monitor.name}</span>
                     </div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5 pl-4">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-1 pl-5">
                       {monitor.url.replace(/^https?:\/\//, '')}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {monitor.is_main && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 uppercase">Main</span>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 uppercase">Main</span>
                     )}
                     {!monitor.enabled && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Paused</span>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">Paused</span>
                     )}
                   </div>
                 </div>
@@ -298,10 +316,10 @@ export default function DashboardPage() {
                     {bars.map((check, i) => {
                       const height = check.status === 'up' ? 'h-full' : check.status === 'degraded' ? 'h-3/4' : 'h-1/2';
                       const barColor = check.status === 'up'
-                        ? 'bg-emerald-300/60 dark:bg-emerald-600/40'
+                        ? 'bg-accent-success/60 dark:bg-accent-success/40'
                         : check.status === 'degraded'
-                        ? 'bg-amber-300/60 dark:bg-amber-600/40'
-                        : 'bg-rose-300/60 dark:bg-rose-600/40';
+                        ? 'bg-accent-warning/60 dark:bg-accent-warning/40'
+                        : 'bg-accent-danger/60 dark:bg-accent-danger/40';
                       return (
                         <div key={i}
                           className={`flex-1 rounded-sm ${barColor} ${height}`}
@@ -310,22 +328,22 @@ export default function DashboardPage() {
                       );
                     })}
                     {Array.from({ length: Math.max(0, 30 - bars.length) }).map((_, i) => (
-                      <div key={`e-${i}`} className="flex-1 h-full rounded-sm bg-gray-100 dark:bg-gray-700/50" />
+                      <div key={`e-${i}`} className="flex-1 h-full rounded-sm bg-neutral-200 dark:bg-neutral-700/50" />
                     ))}
                   </div>
                 </div>
 
                 {/* Stats row */}
                 <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-3 text-neutral-500 dark:text-neutral-400">
                     <span>
-                      {uptimePct !== null ? <><span className="font-medium text-gray-700 dark:text-gray-300">{uptimePct.toFixed(1)}%</span> uptime</> : '—'}
+                      {uptimePct !== null ? <><span className="font-medium text-neutral-700 dark:text-neutral-300">{uptimePct.toFixed(1)}%</span> uptime</> : '—'}
                     </span>
                     <span>
-                      {avgMs !== null ? <><span className="font-medium text-gray-700 dark:text-gray-300">{avgMs}</span>ms avg</> : ''}
+                      {avgMs !== null ? <><span className="font-medium text-neutral-700 dark:text-neutral-300">{avgMs}</span>ms avg</> : ''}
                     </span>
                   </div>
-                  <span className="text-gray-400 dark:text-gray-500">
+                  <span className="text-neutral-500 dark:text-neutral-400">
                     {formatTimeAgo(monitor.last_checked_at)}
                   </span>
                 </div>
@@ -342,14 +360,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Dashboard Overview
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Real-time monitoring and analytics</p>
+          <h1 className="text-heading-2">Dashboard Overview</h1>
+          <p className="text-body-secondary mt-2">Real-time monitoring and analytics</p>
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl"
+          className="button-primary flex items-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -358,99 +374,75 @@ export default function DashboardPage() {
 
       {/* Main Stats Cards — only render cards that have meaningful data */}
       {hasAnyStatCards && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Logs Card */}
           {showLogsCard && (
-            <div className="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FileText className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="flex items-center gap-1 text-white/90 text-sm">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="font-medium">{logTrend}%</span>
-                  </div>
+            <div className="card border-t-4 border-t-accent-info">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-accent-info/10">
+                  <FileText className="w-5 h-5 text-accent-info" />
                 </div>
-                <p className="text-blue-100 text-sm font-medium mb-1">Total Logs (24h)</p>
-                <p className="text-4xl font-bold text-white mb-2">{stats?.total_logs?.toLocaleString() || 0}</p>
-                <div className="flex items-center gap-2 text-blue-100 text-xs">
-                  <Clock className="w-3 h-3" />
-                  <span>Last 24 hours</span>
+                <div className="flex items-center gap-1 text-accent-info text-sm font-medium">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>{logTrend}%</span>
                 </div>
               </div>
+              <p className="text-label mb-1">Total Logs (24h)</p>
+              <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{stats?.total_logs?.toLocaleString() || 0}</p>
+              <p className="text-body-secondary text-xs">Last 24 hours</p>
             </div>
           )}
 
           {/* Active Systems Card */}
           {showSystemsCard && (
-            <div className="group relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Server className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full">
-                    <div className="w-2 h-2 bg-green-200 rounded-full animate-pulse"></div>
-                    <span className="text-white text-xs font-medium">Online</span>
-                  </div>
+            <div className="card border-t-4 border-t-accent-success">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-accent-success/10">
+                  <Server className="w-5 h-5 text-accent-success" />
                 </div>
-                <p className="text-green-100 text-sm font-medium mb-1">Active Systems</p>
-                <p className="text-4xl font-bold text-white mb-2">{systems.length}</p>
-                <div className="flex items-center gap-2 text-green-100 text-xs">
-                  <Activity className="w-3 h-3" />
-                  <span>All systems operational</span>
+                <div className="flex items-center gap-1 px-2 py-1 bg-accent-success/10 rounded-full">
+                  <div className="w-2 h-2 bg-accent-success rounded-full status-pulse"></div>
+                  <span className="text-accent-success text-xs font-medium">Online</span>
                 </div>
               </div>
+              <p className="text-label mb-1">Active Systems</p>
+              <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{systems.length}</p>
+              <p className="text-body-secondary text-xs">All systems operational</p>
             </div>
           )}
 
           {/* Errors Card */}
           {showErrorsCard && (
-            <div className="group relative bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <AlertTriangle className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="flex items-center gap-1 text-white/90 text-sm">
-                    <TrendingDown className="w-4 h-4" />
-                    <span className="font-medium">{Math.abs(errorTrend)}%</span>
-                  </div>
+            <div className="card border-t-4 border-t-accent-danger">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-accent-danger/10">
+                  <AlertTriangle className="w-5 h-5 text-accent-danger" />
                 </div>
-                <p className="text-red-100 text-sm font-medium mb-1">Errors (24h)</p>
-                <p className="text-4xl font-bold text-white mb-2">{totalErrors.toLocaleString()}</p>
-                <div className="flex items-center gap-2 text-red-100 text-xs">
-                  <Zap className="w-3 h-3" />
-                  <span>{errorRate}% error rate</span>
+                <div className="flex items-center gap-1 text-accent-danger text-sm font-medium">
+                  <TrendingDown className="w-4 h-4" />
+                  <span>{Math.abs(errorTrend)}%</span>
                 </div>
               </div>
+              <p className="text-label mb-1">Errors (24h)</p>
+              <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{totalErrors.toLocaleString()}</p>
+              <p className="text-body-secondary text-xs">{errorRate}% error rate</p>
             </div>
           )}
 
           {/* Sources Card */}
           {showSourcesCard && (
-            <div className="group relative bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Eye className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full">
-                    <span className="text-white text-xs font-medium">Tracked</span>
-                  </div>
+            <div className="card border-t-4 border-t-primary-500">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30">
+                  <Eye className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 </div>
-                <p className="text-purple-100 text-sm font-medium mb-1">Log Sources</p>
-                <p className="text-4xl font-bold text-white mb-2">{stats?.top_sources?.length || 0}</p>
-                <div className="flex items-center gap-2 text-purple-100 text-xs">
-                  <Activity className="w-3 h-3" />
-                  <span>Unique sources</span>
+                <div className="flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full">
+                  <span className="text-xs font-medium text-primary-700 dark:text-primary-300">Tracked</span>
                 </div>
               </div>
+              <p className="text-label mb-1">Log Sources</p>
+              <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{stats?.top_sources?.length || 0}</p>
+              <p className="text-body-secondary text-xs">Unique sources</p>
             </div>
           )}
         </div>
@@ -460,8 +452,8 @@ export default function DashboardPage() {
       {hasMonitors && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Radio className="w-5 h-5 text-blue-500" />
+            <h2 className="text-heading-4 flex items-center gap-2">
+              <Radio className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               Uptime Monitors
             </h2>
             <div className="flex items-center gap-4 text-sm">
@@ -484,32 +476,31 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {monitors.map((monitor) => {
               const statusColors: Record<UptimeStatus, string> = {
-                up: 'bg-emerald-400 dark:bg-emerald-500',
-                down: 'bg-rose-400 dark:bg-rose-500',
-                degraded: 'bg-amber-400 dark:bg-amber-500',
-                unknown: 'bg-gray-300 dark:bg-gray-500'
+                up: 'bg-accent-success dark:bg-accent-success',
+                down: 'bg-accent-danger dark:bg-accent-danger',
+                degraded: 'bg-accent-warning dark:bg-accent-warning',
+                unknown: 'bg-neutral-400 dark:bg-neutral-500'
               };
 
               return (
-                <div key={monitor.id} className="bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-700 flex items-center gap-3 group transition-colors hover:border-blue-400 dark:hover:border-blue-500">
-                  <div className={`flex-shrink-0 w-3 h-3 rounded-full ${statusColors[monitor.current_status || 'unknown']} ${monitor.current_status === 'down' ? 'animate-pulse' : ''}`}></div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                <div key={monitor.id} className="card-compact">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className={`flex-shrink-0 w-3 h-3 rounded-full ${statusColors[monitor.current_status || 'unknown'].split(' ')[0]} ${monitor.current_status === 'down' ? 'animate-pulse' : ''}`}></div>
+                      <h3 className="font-semibold text-sm text-neutral-900 dark:text-white truncate">
                         {monitor.name}
                       </h3>
-                      <span className="font-mono text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {monitor.last_response_time ? `${monitor.last_response_time}ms` : '-'}
-                      </span>
                     </div>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate opacity-70">
-                      {monitor.site_name}
-                    </p>
+                    <span className="font-mono text-[10px] text-neutral-500 dark:text-neutral-400 whitespace-nowrap flex-shrink-0">
+                      {monitor.last_response_time ? `${monitor.last_response_time}ms` : '-'}
+                    </span>
                   </div>
+                  <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate opacity-70">
+                    {monitor.site_name}
+                  </p>
                 </div>
               );
             })}
@@ -522,13 +513,13 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Logs per Hour - Area Chart */}
           {hasActivityTimeline && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+            <div className="card">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Activity Timeline</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Logs per hour (last 24h)</p>
+                  <h2 className="text-heading-4">Activity Timeline</h2>
+                  <p className="text-body-secondary mt-1">Logs per hour (last 24h)</p>
                 </div>
-                <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium">
+                <div className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-sm font-medium border border-primary-200 dark:border-primary-800">
                   Real-time
                 </div>
               </div>
@@ -574,47 +565,106 @@ export default function DashboardPage() {
 
           {/* Logs by Level - Donut */}
           {hasLogDistribution && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+            <div className="card">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Log Distribution</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">By severity level</p>
+                  <h2 className="text-heading-4">Log Distribution</h2>
+                  <p className="text-body-secondary mt-1">By severity level</p>
                 </div>
-                <div className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium">
+                <div className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-sm font-medium border border-primary-200 dark:border-primary-800">
                   Breakdown
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
+                  <defs>
+                    <linearGradient id="pieGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#60A5FA"/>
+                      <stop offset="100%" stopColor="#3B82F6"/>
+                    </linearGradient>
+                    <linearGradient id="pieGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FBBF24"/>
+                      <stop offset="100%" stopColor="#F59E0B"/>
+                    </linearGradient>
+                    <linearGradient id="pieGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#EF5350"/>
+                      <stop offset="100%" stopColor="#E53935"/>
+                    </linearGradient>
+                    <linearGradient id="pieGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#C62828"/>
+                      <stop offset="100%" stopColor="#B71C1C"/>
+                    </linearGradient>
+                  </defs>
                   <Pie
                     data={levelData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={3}
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={false}
                     labelLine={false}
                   >
-                    {levelData.map((_entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                        className="hover:opacity-80 transition-opacity cursor-pointer"
-                      />
-                    ))}
+                    {levelData.map((_entry: any, index: number) => {
+                      const levelName = levelData[index].name.toUpperCase();
+                      let gradient = "url(#pieGradient1)"; // Default: Blue (DEBUG/INFO)
+
+                      if (levelName === "DEBUG" || levelName === "INFO") {
+                        gradient = "url(#pieGradient1)"; // Blue
+                      } else if (levelName === "WARNING") {
+                        gradient = "url(#pieGradient2)"; // Orange
+                      } else if (levelName === "ERROR") {
+                        gradient = "url(#pieGradient3)"; // Red
+                      } else if (levelName === "CRITICAL") {
+                        gradient = "url(#pieGradient4)"; // Dark Red
+                      }
+
+                      return (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={gradient}
+                          className="hover:opacity-80 transition-opacity cursor-pointer drop-shadow-md group"
+                          style={{
+                            filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.1))",
+                            transition: "all 0.3s ease"
+                          }}
+                        />
+                      );
+                    })}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
+                    content={<CustomTooltip />}
+                    cursor={{ fill: 'transparent' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                {levelData.map((item: any, idx: number) => {
+                  const levelName = item.name.toUpperCase();
+                  let gradient = "linear-gradient(135deg, #60A5FA, #3B82F6)"; // Default: Blue
+
+                  if (levelName === "DEBUG" || levelName === "INFO") {
+                    gradient = "linear-gradient(135deg, #60A5FA, #3B82F6)"; // Blue
+                  } else if (levelName === "WARNING") {
+                    gradient = "linear-gradient(135deg, #FBBF24, #F59E0B)"; // Orange
+                  } else if (levelName === "ERROR") {
+                    gradient = "linear-gradient(135deg, #EF5350, #E53935)"; // Red
+                  } else if (levelName === "CRITICAL") {
+                    gradient = "linear-gradient(135deg, #C62828, #B71C1C)"; // Dark Red
+                  }
+
+                  return (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ background: gradient }}></div>
+                      <div className="text-xs">
+                        <p className="font-medium text-gray-900 dark:text-white">{item.name}</p>
+                        <p className="text-gray-500 dark:text-gray-400">{item.value}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -622,13 +672,13 @@ export default function DashboardPage() {
 
       {/* Top Sources - Bar Chart — only shown when there are sources */}
       {hasTopSources && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+        <div className="card">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Top Log Sources</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Most active sources in the last 24 hours</p>
+              <h2 className="text-heading-4">Top Log Sources</h2>
+              <p className="text-body-secondary mt-1">Most active sources in the last 24 hours</p>
             </div>
-            <div className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm font-medium">
+            <div className="px-3 py-1 bg-accent-success/10 text-accent-success rounded-lg text-sm font-medium border border-accent-success/20">
               Top 10
             </div>
           </div>
@@ -677,11 +727,11 @@ export default function DashboardPage() {
       {hasSystems && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Server className="w-5 h-5 text-blue-500" />
+            <h2 className="text-heading-4 flex items-center gap-2">
+              <Server className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               Connected Systems
             </h2>
-            <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium">
+            <div className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-sm font-medium border border-primary-200 dark:border-primary-800">
               {systems.length} Total
             </div>
           </div>
@@ -689,23 +739,23 @@ export default function DashboardPage() {
             {systems.map((system: any) => (
               <div
                 key={system.id}
-                className="bg-white dark:bg-gray-800 rounded-lg px-4 py-3 border border-gray-200 dark:border-gray-700 flex items-center gap-4 group transition-colors hover:border-blue-400 dark:hover:border-blue-500"
+                className="card-compact flex items-center gap-3 group"
               >
-                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <Server className="w-5 h-5 text-white" />
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-bold text-base text-gray-900 dark:text-white truncate">
+                    <h3 className="font-bold text-base text-neutral-900 dark:text-white truncate">
                       {system.name}
                     </h3>
                     <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-pulse"></div>
-                      <span className="text-[10px] font-medium text-emerald-500 dark:text-emerald-400">Active</span>
+                      <div className="w-1.5 h-1.5 bg-accent-success dark:bg-accent-success rounded-full animate-pulse"></div>
+                      <span className="text-[10px] font-medium text-accent-success">Active</span>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate opacity-70">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate opacity-70">
                     {system.site_name}
                   </p>
                 </div>

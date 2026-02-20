@@ -231,43 +231,49 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
           )}
         </div>
       ) : (
-        /* Monitor list */
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-            {monitors.map((monitor) => {
-              const mStatus = monitor.current_status || 'unknown';
-              const checks = checksMap[monitor.id] || [];
-              const bars = checks.slice(0, 30).reverse();
-              const uptimePct = checks.length > 0
-                ? (checks.filter(c => c.status === 'up').length / checks.length) * 100
-                : null;
+        /* Monitor grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {monitors.map((monitor) => {
+            const mStatus = monitor.current_status || 'unknown';
+            const checks = checksMap[monitor.id] || [];
+            const bars = checks.slice(0, 30).reverse();
+            const uptimePct = checks.length > 0
+              ? (checks.filter(c => c.status === 'up').length / checks.length) * 100
+              : null;
 
-              return (
-                <div key={monitor.id} className="px-5 py-3.5 flex items-center gap-4 transition-colors">
-                  {/* Status dot */}
-                  <div className={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${statusDot[mStatus]} ${mStatus === 'down' ? 'animate-pulse' : ''}`} />
+            const statusColors: Record<UptimeStatus, string> = {
+              up: 'border-l-accent-success',
+              down: 'border-l-accent-danger',
+              degraded: 'border-l-accent-warning',
+              unknown: 'border-l-neutral-400'
+            };
 
-                  {/* Name + URL + badges */}
+            return (
+              <div key={monitor.id} className={`card-compact border-l-4 ${statusColors[mStatus]}`}>
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{monitor.name}</span>
+                      <h3 className="font-semibold text-sm text-neutral-900 dark:text-white truncate">{monitor.name}</h3>
                       {monitor.is_main && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 uppercase">Main</span>
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 uppercase">Main</span>
                       )}
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-400">
-                        {intervalLabels[monitor.interval_seconds] || `${monitor.interval_seconds}s`}
-                      </span>
                       {!monitor.enabled && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-500">Paused</span>
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">Paused</span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 truncate block">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-1">
                       {monitor.url.replace(/^https?:\/\//, '')}
-                    </span>
+                    </p>
                   </div>
+                  <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 flex-shrink-0">
+                    {intervalLabels[monitor.interval_seconds] || `${monitor.interval_seconds}s`}
+                  </span>
+                </div>
 
-                  {/* Sparkline */}
-                  <div className="hidden md:flex gap-px h-5 items-end w-32 flex-shrink-0">
+                {/* Sparkline */}
+                <div className="mb-3">
+                  <div className="flex gap-px h-5 items-end">
                     {bars.map((check, i) => {
                       const height = check.status === 'up' ? 'h-full' : check.status === 'degraded' ? 'h-3/4' : 'h-1/2';
                       return (
@@ -278,66 +284,53 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                       );
                     })}
                     {Array.from({ length: Math.max(0, 30 - bars.length) }).map((_, i) => (
-                      <div key={`e-${i}`} className="flex-1 h-full rounded-sm bg-gray-200 dark:bg-gray-700 opacity-20" />
+                      <div key={`e-${i}`} className="flex-1 h-full rounded-sm bg-neutral-200 dark:bg-neutral-700/50" />
                     ))}
                   </div>
-
-                  {/* Uptime % */}
-                  <div className="hidden sm:block text-right w-16 flex-shrink-0">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {uptimePct !== null ? `${uptimePct.toFixed(1)}%` : '—'}
-                    </span>
-                  </div>
-
-                  {/* Response time */}
-                  <div className="text-right w-16 flex-shrink-0">
-                    <span className="text-sm font-mono text-gray-500 dark:text-gray-400">
-                      {monitor.last_response_time != null ? `${monitor.last_response_time}ms` : '—'}
-                    </span>
-                  </div>
-
-                  {/* Last checked */}
-                  <div className="hidden lg:block text-right w-20 flex-shrink-0">
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {formatTimeAgo(monitor.last_checked_at)}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  {!isViewer() && (
-                    <div className="flex items-center gap-0.5 flex-shrink-0">
-                      <button
-                        onClick={() => handleManualCheck(monitor)}
-                        disabled={checkingId === monitor.id}
-                        className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-all disabled:opacity-50"
-                        title="Run check now"
-                      >
-                        {checkingId === monitor.id ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Zap className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setEditingMonitor(monitor)}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
-                        title="Edit monitor"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(monitor)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                        title="Delete monitor"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-between text-xs mb-3">
+                  <div className="text-neutral-600 dark:text-neutral-400">
+                    {uptimePct !== null ? (
+                      <span><span className="font-semibold text-neutral-900 dark:text-white">{uptimePct.toFixed(1)}%</span> uptime</span>
+                    ) : (
+                      <span>—</span>
+                    )}
+                  </div>
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    {formatTimeAgo(monitor.last_checked_at)}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                {!isViewer() && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCheckingId(monitor.id)}
+                      disabled={checkingId === monitor.id}
+                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-md transition-colors disabled:opacity-50"
+                    >
+                      <Radio className="w-3 h-3" />
+                      {checkingId === monitor.id ? 'Checking...' : 'Check Now'}
+                    </button>
+                    <button
+                      onClick={() => setEditingMonitor(monitor)}
+                      className="px-2 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(monitor.id)}
+                      className="px-2 py-1.5 text-xs font-medium text-accent-danger bg-accent-danger/10 hover:bg-accent-danger/20 rounded-md transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

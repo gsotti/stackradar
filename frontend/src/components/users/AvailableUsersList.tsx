@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Users, RefreshCw } from 'lucide-react';
+
+import { UserPlus, Users, RefreshCw, X, Mail, User as UserIcon } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
 import { TenantRoleName } from '../../types';
+import { getGravatarUrl } from '../../utils/md5';
+import RoleSelect from './RoleSelect';
 
 interface AvailableUser {
   id: number;
@@ -24,7 +27,8 @@ export default function AvailableUsersList({ tenantId, onUserAdded }: AvailableU
   const [users, setUsers] = useState<AvailableUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingUserId, setAddingUserId] = useState<number | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<Record<number, TenantRoleName>>({});
+  const [selectedUser, setSelectedUser] = useState<AvailableUser | null>(null);
+  const [selectedRole, setSelectedRole] = useState<TenantRoleName>('viewer');
 
   useEffect(() => {
     loadAvailableUsers();
@@ -53,27 +57,18 @@ export default function AvailableUsersList({ tenantId, onUserAdded }: AvailableU
     }
   };
 
-  const handleAddUser = async (userId: number) => {
-    const role = selectedRoles[userId] || 'viewer';
+  const handleAddUser = async (userId: number, role: TenantRoleName) => {
     setAddingUserId(userId);
     try {
       await api.post(`/tenants/${tenantId}/users/${userId}/add`, { role });
       showSuccess('User added to tenant successfully');
       onUserAdded();
       loadAvailableUsers();
+      setSelectedUser(null);
     } catch (error: any) {
       showError(error.message || 'Failed to add user');
     } finally {
       setAddingUserId(null);
-    }
-  };
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'tenant_admin': return 'Admin';
-      case 'editor': return 'Editor';
-      case 'viewer': return 'Viewer';
-      default: return role;
     }
   };
 
@@ -92,66 +87,147 @@ export default function AvailableUsersList({ tenantId, onUserAdded }: AvailableU
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Users className="w-5 h-5 text-green-500" />
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+        <Users className="w-5 h-5 text-primary-500" />
+        <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
           Organization Members
         </h3>
-        <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold rounded-full">
+        <span className="px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs font-bold rounded-full">
           {users.length}
         </span>
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400">
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">
         These users are in your organization but not yet added to this tenant.
       </p>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {users.map((user) => (
-          <div
-            key={user.id}
-            className="group bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 flex items-center justify-between gap-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-white">
-                  {(user.name?.[0] || user.email[0]).toUpperCase()}
-                </span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-gray-900 dark:text-white truncate">
-                  {user.name || 'Unnamed User'}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                  {user.email}
-                </p>
-              </div>
-            </div>
+          <div key={user.id} className="card-compact group">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                {/* Avatar */}
+                <div className="relative flex-shrink-0">
+                  {user.email && getGravatarUrl(user.email) ? (
+                    <img
+                      src={getGravatarUrl(user.email, 48)!}
+                      alt={user.name || user.email}
+                      className="w-12 h-12 rounded-xl shadow-md ring-2 ring-neutral-200 dark:ring-neutral-700"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
+                      <span className="text-sm font-bold text-white uppercase">
+                        {(user.name?.[0] || user.email[0])}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <select
-                value={selectedRoles[user.id] || 'viewer'}
-                onChange={(e) => setSelectedRoles(prev => ({ ...prev, [user.id]: e.target.value as TenantRoleName }))}
-                className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
-              >
-                <option value="viewer">{getRoleLabel('viewer')}</option>
-                <option value="editor">{getRoleLabel('editor')}</option>
-                <option value="tenant_admin">{getRoleLabel('tenant_admin')}</option>
-              </select>
-              <button
-                onClick={() => handleAddUser(user.id)}
-                disabled={addingUserId === user.id}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {addingUserId === user.id ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <UserPlus className="w-4 h-4" />
-                )}
-                Add
-              </button>
+                {/* User Info */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-neutral-900 dark:text-white truncate mb-1">
+                    {user.name || 'Unnamed User'}
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Add button */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setSelectedRole('viewer');
+                  }}
+                  disabled={addingUserId === user.id}
+                  className="button-primary !px-2.5 !py-1 text-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addingUserId === user.id ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="w-4 h-4" />
+                  )}
+                  Add
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Add User Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fadeIn">
+          <div
+            className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
+            onClick={() => setSelectedUser(null)}
+          />
+          <div className="card relative w-full max-w-md">
+            <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+              <h2 className="text-heading-3">Add Member</h2>
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-neutral-500" />
+              </button>
+            </div>
+
+            <div className="pt-4 space-y-4">
+              <div className="flex items-center gap-4">
+                {selectedUser.email && getGravatarUrl(selectedUser.email) ? (
+                  <img
+                    src={getGravatarUrl(selectedUser.email, 64)!}
+                    alt={selectedUser.name || selectedUser.email}
+                    className="w-16 h-16 rounded-xl shadow-md ring-2 ring-neutral-200 dark:ring-neutral-700"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
+                    <span className="text-lg font-bold text-white uppercase">
+                      {(selectedUser.name?.[0] || selectedUser.email[0])}
+                    </span>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+                    <UserIcon className="w-4 h-4" />
+                    <span className="truncate">{selectedUser.name || 'Unnamed User'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                    <Mail className="w-4 h-4" />
+                    <span className="truncate">{selectedUser.email}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Role</label>
+                <RoleSelect
+                  value={selectedRole}
+                  onChange={(role) => setSelectedRole(role)}
+                  allowedRoles={['tenant_admin', 'editor', 'viewer']}
+                />
+              </div>
+            </div>
+
+            <div className="pt-6 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="button-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAddUser(selectedUser.id, selectedRole)}
+                disabled={addingUserId === selectedUser.id}
+                className="button-primary"
+              >
+                {addingUserId === selectedUser.id ? 'Adding...' : 'Add to Tenant'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

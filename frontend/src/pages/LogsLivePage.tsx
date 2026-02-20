@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Activity, Search, X, RefreshCw, ChevronDown, Clock, Calendar, Plus, Minus } from 'lucide-react';
+import { Activity, Search, X, RefreshCw, ChevronDown, Clock, Calendar, Plus, Minus, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatInLocalTime } from '../utils/dateUtils';
 import { useApp } from '../contexts/AppContext';

@@ -111,64 +111,62 @@ export default function AdminSettingsPage() {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
         <div className="text-center">
-          <Mail className="w-12 h-12 text-blue-500 animate-pulse mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
+          <Mail className="w-12 h-12 text-primary-500 animate-pulse mx-auto mb-4" />
+          <p className="text-neutral-600 dark:text-neutral-400">Loading settings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Admin Settings
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Configure platform-wide settings — these apply to all organizations</p>
+        <h1 className="text-heading-2">Admin Settings</h1>
+        <p className="text-body-secondary mt-2">Configure platform-wide settings — these apply to all organizations</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Main Settings Form */}
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div className="space-y-4">
+          <div className="card overflow-hidden">
+            <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-2">
+              <div className="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                <Mail className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Email Configuration (SMTP)</h2>
+              <h2 className="text-heading-4">Email Configuration (SMTP)</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">SMTP Host *</label>
+                  <label className="block text-label mb-2">SMTP Host *</label>
                   <input
                     type="text"
                     name="host"
                     value={smtpConfig.host}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                    className="input-base w-full"
                     placeholder="smtp.example.com"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">SMTP Port *</label>
+                  <label className="block text-label mb-2">SMTP Port *</label>
                   <input
                     type="number"
                     name="port"
                     value={smtpConfig.port}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                    className="input-base w-full"
                     placeholder="587"
                     required
                   />
                 </div>
 
                 <div className="flex items-end pb-2">
-                  <label className="flex items-center gap-3 cursor-pointer group">
+                  <label className="flex items-center gap-2 cursor-pointer group">
                     <div className="relative">
                       <input
                         type="checkbox"
@@ -177,72 +175,72 @@ export default function AdminSettingsPage() {
                         onChange={handleChange}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      <div className="w-10 h-6 bg-neutral-300 dark:bg-neutral-700 rounded-full peer-checked:bg-primary-500 peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 transition-colors">Use SSL/TLS (Secure)</span>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-primary-600 transition-colors">Use SSL/TLS (Secure)</span>
                   </label>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                  <label className="block text-label mb-2">Username</label>
                   <input
                     type="text"
                     name="auth_user"
                     value={smtpConfig.auth_user}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                    className="input-base w-full"
                     placeholder="user@example.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                  <label className="block text-label mb-2">Password</label>
                   <input
                     type="password"
                     name="auth_password"
                     value={smtpConfig.auth_password}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                    className="input-base w-full"
                     placeholder={configExists ? '•••••••• (unchanged)' : 'Enter password'}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">From Email *</label>
+                  <label className="block text-label mb-2">From Email *</label>
                   <input
                     type="email"
                     name="from_email"
                     value={smtpConfig.from_email}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                    className="input-base w-full"
                     placeholder="alerts@stackradar.io"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">From Name</label>
+                  <label className="block text-label mb-2">From Name</label>
                   <input
                     type="text"
                     name="from_name"
                     value={smtpConfig.from_name}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                    className="input-base w-full"
                     placeholder="StackRadar Alerts"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-bold disabled:opacity-50"
+                  className="button-primary flex items-center gap-2 disabled:opacity-50"
                 >
                   {saving ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   ) : (
-                    <Save className="w-5 h-5" />
+                    <Save className="w-4 h-4" />
                   )}
                   {configExists ? 'Save Configuration' : 'Create Configuration'}
                 </button>
@@ -252,45 +250,45 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* Sidebar Actions */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Test SMTP */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
-                <TestTube className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <div className="card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 bg-accent-warning/10 dark:bg-accent-warning/10 rounded-lg">
+                <TestTube className="w-4 h-4 text-accent-warning" />
               </div>
-              <h3 className="font-bold text-gray-900 dark:text-white">Test Connection</h3>
+              <h3 className="font-semibold text-neutral-900 dark:text-white">Test Connection</h3>
             </div>
             
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-body-secondary text-xs mb-4">
               Verify your SMTP settings by sending a test email to yourself.
             </p>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Test Recipient</label>
+                <label className="block text-label mb-2">Test Recipient</label>
                 <input
                   type="email"
                   value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="input-base w-full text-sm"
                   placeholder="your-email@example.com"
                 />
               </div>
               <button
                 onClick={handleTest}
                 disabled={testing || !configExists}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-all font-bold text-sm disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-accent-warning/30 dark:border-accent-warning/30 text-accent-warning hover:bg-accent-warning/10 dark:hover:bg-accent-warning/10 rounded-lg transition-all font-semibold text-sm disabled:opacity-50"
               >
                 {testing ? (
-                  <div className="w-4 h-4 border-2 border-amber-600/30 border-t-amber-600 rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-accent-warning/30 border-t-accent-warning rounded-full animate-spin"></div>
                 ) : (
                   <Mail className="w-4 h-4" />
                 )}
                 Send Test Email
               </button>
               {!configExists && (
-                <p className="text-[10px] text-center text-amber-600 dark:text-amber-400">
+                <p className="text-[10px] text-center text-accent-warning">
                   Save configuration before testing
                 </p>
               )}

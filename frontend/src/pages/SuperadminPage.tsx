@@ -221,30 +221,28 @@ export default function SuperadminPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Superadmin Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage organizations, administrators and system settings</p>
+          <h1 className="text-heading-2">Superadmin Dashboard</h1>
+          <p className="text-body-secondary mt-2">Manage organizations, administrators and system settings</p>
         </div>
 
         {activeTab === 'organizations' && (
           <div className="flex gap-2">
             <button
               onClick={loadOrganizations}
-              className="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+              className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold"
+              className="button-primary flex items-center gap-2"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
               Create Organization
             </button>
           </div>
@@ -253,13 +251,13 @@ export default function SuperadminPage() {
 
       {/* Tabs */}
       {!viewingOrg && (
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-2xl w-fit border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800/50 p-1 rounded-lg w-fit border border-neutral-200 dark:border-neutral-700">
           <button
             onClick={() => setActiveTab('organizations')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all ${
               activeTab === 'organizations'
-                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-gray-600'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm border border-neutral-200 dark:border-neutral-600'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-300'
             }`}
           >
             <Building2 className="w-4 h-4" />
@@ -267,10 +265,10 @@ export default function SuperadminPage() {
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all ${
               activeTab === 'settings'
-                ? 'bg-white dark:bg-gray-700 text-green-600 dark:text-green-400 shadow-sm border border-gray-200 dark:border-gray-600'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-white dark:bg-neutral-700 text-accent-success dark:text-accent-success shadow-sm border border-neutral-200 dark:border-neutral-600'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-300'
             }`}
           >
             <Settings className="w-4 h-4" />
@@ -280,24 +278,24 @@ export default function SuperadminPage() {
       )}
 
       {/* Tab Content */}
-      <div className="mt-6">
+      <div className="mt-4">
         {/* Organization Detail View */}
         {viewingOrg ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Back button */}
             <button
               onClick={() => {
                 setViewingOrg(null);
                 setOrgUsers([]);
               }}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Organizations
             </button>
 
             {/* Organization Header */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="card">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">

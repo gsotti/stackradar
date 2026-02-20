@@ -12,12 +12,12 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 transition-colors duration-200">
       <Sidebar />
 
       {/* Main content */}
-      <div className={`transition-all ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
-        <main className={location.pathname.startsWith('/logs/') ? '' : 'p-4 lg:p-6'}>
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'} min-h-screen bg-neutral-50 dark:bg-neutral-900`}>
+        <main className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 ${location.pathname.startsWith('/logs/') ? '' : 'p-4 sm:p-5 md:p-6 lg:p-8'}`}>
           {children}
         </main>
       </div>

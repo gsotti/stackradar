@@ -90,7 +90,7 @@ export default function EnvironmentsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -98,14 +98,17 @@ export default function EnvironmentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Environments</h1>
+        <div>
+          <h1 className="text-heading-2">Environments</h1>
+          <p className="text-body-secondary mt-2">Manage environment configurations for your sites</p>
+        </div>
         <button
           onClick={() => {
             setEditingEnv(null);
             setForm({ site_id: '', name: '', display_name: '' });
             setShowForm(true);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-sm"
+          className="button-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Create Environment
@@ -113,19 +116,19 @@ export default function EnvironmentsPage() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700 transform transition-all">
-            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="card w-full max-w-md">
+            <h2 className="text-heading-3 mb-6">
               {editingEnv ? 'Edit Environment' : 'Create Environment'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {!editingEnv && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site</label>
+                  <label className="block text-label mb-2">Site</label>
                   <select
                     value={form.site_id}
                     onChange={(e) => setForm({ ...form, site_id: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="input-base w-full"
                     required
                   >
                     <option value="">Select a site</option>
@@ -136,30 +139,30 @@ export default function EnvironmentsPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Identifier (Name)</label>
+                <label className="block text-label mb-2">Identifier (Name)</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="input-base w-full"
                   placeholder="prod, staging, dev"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name (Optional)</label>
+                <label className="block text-label mb-2">Display Name (Optional)</label>
                 <input
                   type="text"
                   value={form.display_name}
                   onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="input-base w-full"
                   placeholder="Production, Staging Cluster"
                 />
               </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95"
+                  className="button-primary flex-1"
                 >
                   {editingEnv ? 'Save Changes' : 'Create Environment'}
                 </button>
@@ -169,7 +172,7 @@ export default function EnvironmentsPage() {
                     setShowForm(false);
                     setEditingEnv(null);
                   }}
-                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600"
+                  className="button-secondary flex-1"
                 >
                   Cancel
                 </button>
@@ -181,39 +184,39 @@ export default function EnvironmentsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {environments.map((env) => (
-          <div key={env.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 hover:shadow-md transition-shadow">
+          <div key={env.id} className="card-hover group">
             <div className="flex justify-between items-start mb-3">
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg group-hover:scale-110 transition-transform">
+                <Globe className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               </div>
               <div className="flex gap-1">
                 <button
                   onClick={() => handleEdit(env)}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors"
+                  className="p-1.5 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => handleDelete(env.id)}
-                  className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                  className="p-1.5 text-neutral-400 hover:text-accent-danger transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+              <h3 className="text-heading-4 truncate text-neutral-900 dark:text-white">
                 {env.display_name || env.name}
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">ID: {env.name}</p>
-              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-1">
+              <p className="text-body-secondary text-xs">ID: {env.name}</p>
+              <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700/50 flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase">Site:</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{env.site_name}</span>
+                  <span className="text-label text-xs">Site:</span>
+                  <span className="text-body text-sm truncate">{env.site_name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-400 uppercase">Tenant:</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{env.tenant_name}</span>
+                  <span className="text-label text-xs">Tenant:</span>
+                  <span className="text-body text-sm truncate">{env.tenant_name}</span>
                 </div>
               </div>
             </div>
@@ -222,9 +225,9 @@ export default function EnvironmentsPage() {
       </div>
 
       {environments.length === 0 && (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-          <Globe className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">No environments found. Create one to get started.</p>
+        <div className="text-center py-12 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
+          <Globe className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+          <p className="text-neutral-500 dark:text-neutral-400">No environments found. Create one to get started.</p>
         </div>
       )}
     </div>

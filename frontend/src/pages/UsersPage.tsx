@@ -129,7 +129,7 @@ export default function UsersPage() {
   if (loading && users.length === 0) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
-        <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
+        <RefreshCw className="w-10 h-10 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -141,22 +141,20 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            User Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage platform users, roles, and approvals</p>
+          <h1 className="text-heading-2">User Management</h1>
+          <p className="text-body-secondary mt-2">Manage platform users, roles, and approvals</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={loadUsers}
-            className="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+            className="p-2.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
             title="Refresh"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold"
+            className="button-primary flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Add User
@@ -165,33 +163,33 @@ export default function UsersPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-2xl w-fit border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800/50 p-1 rounded-xl w-fit border border-neutral-200 dark:border-neutral-700">
         <button
           onClick={() => setActiveTab('all')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'all'
-              ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-gray-600'
-              : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              ? 'bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm border border-neutral-200 dark:border-neutral-600'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-300'
           }`}
         >
           <UsersIcon className="w-4 h-4" />
           All Users
-          <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'all' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-200 dark:bg-gray-800'}`}>
+          <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${activeTab === 'all' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'}`}>
             {users.length}
           </span>
         </button>
         <button
           onClick={() => setActiveTab('pending')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'pending'
-              ? 'bg-white dark:bg-gray-700 text-amber-600 dark:text-amber-400 shadow-sm border border-gray-200 dark:border-gray-600'
-              : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              ? 'bg-white dark:bg-neutral-700 text-accent-warning dark:text-accent-warning shadow-sm border border-neutral-200 dark:border-neutral-600'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-300'
           }`}
         >
           <Clock className="w-4 h-4" />
           Pending Approval
           {pendingUsers.length > 0 && (
-            <span className="ml-1 px-2 py-0.5 bg-amber-500 text-white rounded-full text-[10px] animate-pulse">
+            <span className="ml-1 px-2 py-0.5 bg-accent-warning text-white rounded-full text-[10px] font-medium animate-pulse">
               {pendingUsers.length}
             </span>
           )}
@@ -200,55 +198,55 @@ export default function UsersPage() {
 
       {/* User Cards Grid */}
       {displayedUsers.length === 0 ? (
-        <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-          <UsersIcon className="w-16 h-16 text-gray-300 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">No users found</h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+        <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
+          <UsersIcon className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
+          <h3 className="text-heading-4">No users found</h3>
+          <p className="text-neutral-600 dark:text-neutral-400 max-w-sm mx-auto mt-2">
             {activeTab === 'pending' ? 'All user accounts have been approved.' : 'Start adding team members to your platform.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-4">
           {displayedUsers.map((user) => (
             <div
               key={user.id}
-              className={`group bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-xl hover:border-blue-500/50 relative overflow-hidden ${!user.is_active ? 'opacity-60 grayscale' : ''}`}
+              className={`group card-hover relative overflow-hidden ${!user.is_active ? 'opacity-60 grayscale' : ''}`}
             >
               {/* Background accent */}
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-150" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/5 to-primary-500/5 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:scale-150" />
 
               <div className="relative z-10">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
                     <div className="relative">
                       {user.email && getGravatarUrl(user.email) ? (
                         <img
                           src={getGravatarUrl(user.email, 56)!}
                           alt={user.name || user.email}
-                          className="w-14 h-14 rounded-2xl shadow-md ring-2 ring-gray-100 dark:ring-gray-700"
+                          className="w-12 h-12 rounded-lg shadow-md ring-2 ring-neutral-200 dark:ring-neutral-700"
                         />
                       ) : (
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                          <span className="text-lg font-bold text-white uppercase">{user.name?.[0] || user.email[0]}</span>
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-md">
+                          <span className="text-base font-bold text-white uppercase">{user.name?.[0] || user.email[0]}</span>
                         </div>
                       )}
                       {user.is_active && (
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-accent-success border-2 border-white dark:border-neutral-800 rounded-full" />
                       )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 dark:text-white truncate">{user.name || 'Anonymous'}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                      <h3 className="font-semibold text-neutral-900 dark:text-white truncate">{user.name || 'Anonymous'}</h3>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap justify-end">
                     {user.global_role === 'superadmin' && (
-                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-purple-200 dark:border-purple-800">
+                      <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-[10px] font-bold uppercase tracking-wider rounded-md border border-primary-200 dark:border-primary-800">
                         Superadmin
                       </span>
                     )}
                     {user.global_role === 'org_admin' && (
-                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-blue-200 dark:border-blue-800">
+                      <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-[10px] font-bold uppercase tracking-wider rounded-md border border-primary-200 dark:border-primary-800">
                         Org Admin
                       </span>
                     )}
@@ -256,45 +254,45 @@ export default function UsersPage() {
                 </div>
 
                 {!user.is_approved ? (
-                  <div className="flex flex-col gap-3 mt-4">
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800/50 flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-amber-500" />
-                      <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Waiting for approval</span>
+                  <div className="flex flex-col gap-2 mt-3">
+                    <div className="p-2 bg-accent-warning/10 dark:bg-accent-warning/10 rounded-lg border border-accent-warning/20 dark:border-accent-warning/20 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-accent-warning flex-shrink-0" />
+                      <span className="text-xs font-medium text-accent-warning">Waiting for approval</span>
                     </div>
                     <button
                       onClick={() => approveUser(user.id)}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl shadow-lg transition-all font-bold hover:scale-[1.02] active:scale-95"
+                      className="w-full flex items-center justify-center gap-2 py-2 bg-accent-success hover:bg-accent-success/90 text-white rounded-lg font-semibold text-sm transition-all"
                     >
-                      <UserCheck className="w-5 h-5" />
+                      <UserCheck className="w-4 h-4" />
                       Approve User
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-center gap-3 mt-4">
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
                     <button
                       onClick={() => openEditModal(user)}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all font-bold text-sm"
+                      className="flex items-center justify-center gap-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-all font-semibold text-xs"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3 h-3" />
                       Edit
                     </button>
                     <button
                       onClick={() => toggleUserActive(user.id, user.is_active)}
-                      className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition-all font-bold text-sm ${
+                      className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg transition-all font-semibold text-xs ${
                         user.is_active
-                          ? 'bg-gray-100 dark:bg-gray-700 hover:bg-amber-50 dark:hover:bg-amber-900/30 text-gray-700 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400'
-                          : 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
+                          ? 'bg-neutral-100 dark:bg-neutral-800 hover:bg-accent-warning/10 dark:hover:bg-accent-warning/10 text-neutral-700 dark:text-neutral-300 hover:text-accent-warning dark:hover:text-accent-warning'
+                          : 'bg-accent-success/10 dark:bg-accent-success/10 text-accent-success hover:bg-accent-success hover:text-white'
                       }`}
                     >
-                      {user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      {user.is_active ? <UserX className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
                       {user.is_active ? 'Disable' : 'Enable'}
                     </button>
                     <button
                       onClick={() => deleteUser(user.id)}
                       disabled={currentUser?.id === user.id}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all font-bold text-sm disabled:hidden"
+                      className="flex items-center justify-center gap-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-accent-danger/10 dark:hover:bg-accent-danger/10 text-neutral-700 dark:text-neutral-300 hover:text-accent-danger dark:hover:text-accent-danger rounded-lg transition-all font-semibold text-xs disabled:hidden"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3" />
                       Delete
                     </button>
                   </div>
@@ -308,61 +306,61 @@ export default function UsersPage() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fadeIn">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Create New User</h2>
-              <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">
-                <X className="w-6 h-6 text-gray-400" />
+          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
+          <div className="card relative w-full max-w-md">
+            <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+              <h2 className="text-heading-3">Create New User</h2>
+              <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
-            <form onSubmit={createUser} className="p-6 space-y-5">
+            <form onSubmit={createUser} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                <label className="block text-label mb-2">Full Name</label>
                 <input
                   type="text"
                   value={newUser.name}
                   onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="John Doe"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Email Address *</label>
+                <label className="block text-label mb-2">Email Address *</label>
                 <input
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="john@example.com"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Password *</label>
+                <label className="block text-label mb-2">Password *</label>
                 <input
                   type="password"
                   value={newUser.password}
                   onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="••••••••"
                   required
                 />
               </div>
-              <div className="flex flex-col gap-4 py-2">
+              <div className="flex flex-col gap-3">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Global Role</label>
+                  <label className="block text-label mb-2">Global Role</label>
                   <select
                     value={newUser.global_role || ''}
                     onChange={(e) => setNewUser({ ...newUser, global_role: e.target.value || null })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                    className="input-base w-full"
                   >
                     <option value="">No global role</option>
                     <option value="superadmin">Superadmin</option>
                     <option value="org_admin">Organization Admin</option>
                   </select>
                 </div>
-                <label className="flex items-center gap-3 cursor-pointer group">
+                <label className="flex items-center gap-2 cursor-pointer group">
                   <div className="relative">
                     <input
                       type="checkbox"
@@ -370,22 +368,22 @@ export default function UsersPage() {
                       onChange={(e) => setNewUser({ ...newUser, auto_approve: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                    <div className="w-10 h-6 bg-neutral-300 dark:bg-neutral-700 rounded-full peer-checked:bg-accent-success peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                   </div>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-green-600 transition-colors">Auto-approve account</span>
+                  <span className="text-body-secondary text-sm group-hover:text-accent-success transition-colors">Auto-approve account</span>
                 </label>
               </div>
-              <div className="pt-4 flex gap-3">
+              <div className="pt-4 flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 rounded-2xl transition-all shadow-xl hover:shadow-2xl active:scale-[0.98]"
+                  className="button-primary flex-1"
                 >
                   Create Account
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600"
+                  className="button-secondary flex-1"
                 >
                   Cancel
                 </button>
@@ -398,71 +396,69 @@ export default function UsersPage() {
       {/* Edit Modal */}
       {showEditModal && editingUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fadeIn">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Edit User</h2>
-              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">
-                <X className="w-6 h-6 text-gray-400" />
+          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
+          <div className="card relative w-full max-w-md">
+            <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+              <h2 className="text-heading-3">Edit User</h2>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleEditSubmit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                <label className="block text-label mb-2">Full Name</label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                <label className="block text-label mb-2">Email Address</label>
                 <input
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-label mb-2">
                   New Password
-                  <span className="ml-2 font-normal text-xs text-gray-400">(leave blank to keep current)</span>
+                  <span className="ml-2 font-normal text-body-secondary text-xs">(leave blank to keep current)</span>
                 </label>
                 <input
                   type="password"
                   value={editForm.password}
                   onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                  className="input-base w-full"
                   placeholder="••••••••"
                 />
               </div>
-              <div className="flex flex-col gap-4 py-2">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Global Role</label>
-                  <select
-                    value={editForm.global_role || ''}
-                    onChange={(e) => setEditForm({ ...editForm, global_role: e.target.value || null })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
-                  >
-                    <option value="">No global role</option>
-                    <option value="superadmin">Superadmin</option>
-                    <option value="org_admin">Organization Admin</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-label mb-2">Global Role</label>
+                <select
+                  value={editForm.global_role || ''}
+                  onChange={(e) => setEditForm({ ...editForm, global_role: e.target.value || null })}
+                  className="input-base w-full"
+                >
+                  <option value="">No global role</option>
+                  <option value="superadmin">Superadmin</option>
+                  <option value="org_admin">Organization Admin</option>
+                </select>
               </div>
-              <div className="pt-4 flex gap-3">
+              <div className="pt-4 flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 rounded-2xl transition-all shadow-xl hover:shadow-2xl active:scale-[0.98]"
+                  className="button-primary flex-1"
                 >
                   Update Details
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600"
+                  className="button-secondary flex-1"
                 >
                   Cancel
                 </button>

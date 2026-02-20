@@ -90,10 +90,7 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
         const isCurrentUser = currentUser?.id === user.id;
 
         return (
-          <div
-            key={user.id}
-            className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 transition-all duration-300 hover:shadow-lg hover:border-blue-500/50"
-          >
+          <div key={user.id} className="card-compact group">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 {/* Avatar */}
@@ -102,41 +99,38 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
                     <img
                       src={getGravatarUrl(user.email, 48)!}
                       alt={user.name || user.email}
-                      className="w-12 h-12 rounded-xl shadow-md ring-2 ring-gray-100 dark:ring-gray-700"
+                      className="w-12 h-12 rounded-xl shadow-md ring-2 ring-neutral-200 dark:ring-neutral-700"
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
                       <span className="text-sm font-bold text-white uppercase">
-                        {user.name?.[0] || user.email[0]}
+                        {(user.name?.[0] || user.email[0])}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* User Info */}
+                {/* User info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-gray-900 dark:text-white truncate">
-                      {user.name || 'Anonymous'}
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-neutral-900 dark:text-white truncate">
+                      {user.name || 'Unnamed User'}
                     </h3>
                     {isCurrentUser && (
-                      <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                      <span className="px-2 py-0.5 bg-accent-success/10 text-accent-success text-[10px] font-bold uppercase tracking-wider rounded-full">
                         You
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                     {user.email}
                   </p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-                    Joined {new Date(user.created_at).toLocaleDateString()}
-                  </p>
                 </div>
+              </div>
 
-                {/* Role Badge - always show badge, never inline select */}
-                <div className="flex-shrink-0">
-                  {getRoleBadge(user.role)}
-                </div>
+              {/* Role Badge */}
+              <div className="flex-shrink-0">
+                {getRoleBadge(user.role)}
               </div>
 
               {/* Actions */}
@@ -144,7 +138,7 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
                 <button
                   onClick={() => setEditingUser(user)}
                   disabled={isCurrentUser}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   title={isCurrentUser ? 'Cannot edit yourself' : 'Edit user'}
                 >
                   <Edit2 className="w-4 h-4" />
@@ -152,7 +146,7 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
                 <button
                   onClick={() => handleRemoveUser(user.id, user.name || user.email)}
                   disabled={isCurrentUser}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-accent-danger/10 dark:hover:bg-accent-danger/20 hover:text-accent-danger rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   title={isCurrentUser ? 'Cannot remove yourself' : 'Remove from tenant'}
                 >
                   <Trash2 className="w-4 h-4" />

@@ -44,37 +44,37 @@ export default function TenantForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Tenant Name <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+          Tenant Name <span className="text-accent-danger">*</span>
         </label>
         <input
           type="text"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+          className="input-base w-full"
           placeholder="e.g., Acme Corporation"
           required
           maxLength={255}
         />
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          A unique name for this organization or tenant
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          This name appears across dashboards and settings.
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
           Description
         </label>
         <textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm resize-none"
+          className="input-base w-full resize-none"
           placeholder="Brief description of this tenant"
           rows={4}
           maxLength={1000}
         />
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Optional description to help identify this tenant
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          Optional description to help identify this tenant.
         </p>
       </div>
 
@@ -82,7 +82,7 @@ export default function TenantForm({
         <button
           type="submit"
           disabled={submitting}
-          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="button-primary flex-1 disabled:opacity-50"
         >
           {submitting ? 'Saving...' : submitLabel || (mode === 'create' ? 'Create Tenant' : 'Save Changes')}
         </button>
@@ -91,7 +91,7 @@ export default function TenantForm({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="button-secondary flex-1 disabled:opacity-50"
           >
             Cancel
           </button>
