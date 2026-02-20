@@ -21,6 +21,20 @@ const statusLabel: Record<UptimeStatus, string> = {
   unknown: 'Pending',
 };
 
+const statusHelp: Record<UptimeStatus, string> = {
+  up: 'Expected status code returned.',
+  down: 'Request failed or timed out.',
+  degraded: 'Response received but status code did not match expected.',
+  unknown: 'No recent check data yet.',
+};
+
+const statusBadge: Record<UptimeStatus, string> = {
+  up: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  down: 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  degraded: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  unknown: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300',
+};
+
 const intervalLabels: Record<number, string> = {
   60: '1m',
   300: '5m',
@@ -255,6 +269,12 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-sm text-neutral-900 dark:text-white truncate">{monitor.name}</h3>
+                      <span
+                        className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${statusBadge[mStatus]}`}
+                        title={statusHelp[mStatus]}
+                      >
+                        {statusLabel[mStatus]}
+                      </span>
                       {monitor.is_main && (
                         <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 uppercase">Main</span>
                       )}
@@ -307,7 +327,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                 {!isViewer() && (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setCheckingId(monitor.id)}
+                      onClick={() => handleManualCheck(monitor)}
                       disabled={checkingId === monitor.id}
                       className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-md transition-colors disabled:opacity-50"
                     >
@@ -321,7 +341,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                       <Edit2 className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={() => handleDelete(monitor.id)}
+                      onClick={() => handleDelete(monitor)}
                       className="px-2 py-1.5 text-xs font-medium text-accent-danger bg-accent-danger/10 hover:bg-accent-danger/20 rounded-md transition-colors"
                     >
                       <Trash2 className="w-3 h-3" />

@@ -52,22 +52,36 @@ router.post('/:tenantId/users/:userId/add', authMiddleware, tenantAdminMiddlewar
   try {
     const { tenantId, userId } = req.params;
     const { role } = req.body;
-    const userTenantIds = req.userTenantIds || [];
+    const orgId = req.organizationId;
+
+    const tenantResult = await db.query<{ organization_id: number | null }>(
+      'SELECT organization_id FROM tenants WHERE id = $1',
+      [tenantId]
+    );
+
+    if (tenantResult.rows.length === 0) {
+      res.status(404).json({ detail: 'Tenant not found' });
+      return;
+    }
+
+    const tenantOrgId = tenantResult.rows[0].organization_id;
+    if (!tenantOrgId || (req.globalRole !== 'superadmin' && orgId !== tenantOrgId)) {
+      res.status(403).json({ detail: 'Access denied' });
+      return;
+    }
 
     // Validate role
     const validRoles: TenantRole[] = ['tenant_admin', 'editor', 'viewer'];
     const userRole: TenantRole = validRoles.includes(role) ? role : 'viewer';
 
-    // Check user exists and is in the organization (shares a tenant with requesting user)
+    // Check user exists and belongs to the same organization as the tenant
     const userCheck = await db.query(
-      `SELECT u.id FROM users u
-       INNER JOIN user_tenants ut ON u.id = ut.user_id
-       WHERE u.id = $1 AND ut.tenant_id = ANY($2)`,
-      [userId, userTenantIds]
+      'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
+      [userId, tenantOrgId]
     );
 
     if (userCheck.rows.length === 0) {
-      res.status(404).json({ detail: 'User not found in your organization' });
+      res.status(404).json({ detail: 'User not found in this organization' });
       return;
     }
 

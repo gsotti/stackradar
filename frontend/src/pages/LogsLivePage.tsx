@@ -331,11 +331,11 @@ export default function LogsLivePage() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-gray-100 overflow-hidden font-mono selection:bg-blue-500/30">
+    <div className="flex flex-col h-screen bg-neutral-50 text-neutral-900 dark:bg-gray-950 dark:text-gray-100 overflow-hidden font-mono selection:bg-blue-500/30">
       {/* Terminal View */}
       <div 
         ref={liveLogsContainerRef}
-        className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-700"
+        className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-neutral-300 hover:scrollbar-thumb-neutral-400 dark:scrollbar-thumb-gray-800 dark:hover:scrollbar-thumb-gray-700"
       >
         {isLoadingOlder && (
           <div className="flex items-center justify-center py-4 text-blue-400 gap-2">
@@ -355,22 +355,22 @@ export default function LogsLivePage() {
           return (
             <div 
               key={log.id} 
-              className={`flex gap-3 items-start py-1 px-2 rounded hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-blue-500/50 ${index === filteredLogs.length - 1 ? 'animate-fadeIn' : ''}`}
+              className={`flex gap-3 items-start py-1 px-2 rounded hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-blue-500/50 ${index === filteredLogs.length - 1 ? 'animate-fadeIn' : ''}`}
               style={{ fontSize: `${logFontSize}px` }}
             >
-              <span className="text-gray-600 shrink-0 select-none mt-0.5 whitespace-nowrap" style={{ width: `${logFontSize * 10.5}px` }}>
+              <span className="text-neutral-500 dark:text-gray-600 shrink-0 select-none mt-0.5 whitespace-nowrap mr-3" style={{ width: `${logFontSize * 10.5}px` }}>
                 {formatInLocalTime(log.timestamp, 'dd.MM.yyyy HH:mm:ss')}
               </span>
               <span 
-                className={`shrink-0 font-black uppercase text-[0.75em] px-1 rounded flex items-center justify-center mt-0.5 ${config.color} bg-white/5 border border-white/5`}
+                className={`shrink-0 font-black uppercase text-[0.75em] px-1 rounded flex items-center justify-center mt-0.5 ${config.color} bg-neutral-100 border border-neutral-200 dark:bg-white/5 dark:border-white/5`}
                 style={{ width: `${logFontSize * 5.5}px`, height: `${logFontSize * 1.4}px` }}
               >
                 {log.level}
               </span>
-              <span className="text-blue-400/80 shrink-0 font-bold mt-0.5" style={{ minWidth: `${logFontSize * 7.5}px` }}>
+              <span className="text-blue-600 dark:text-blue-400/80 shrink-0 font-bold mt-0.5" style={{ minWidth: `${logFontSize * 7.5}px` }}>
                 [{log.system}]
               </span>
-              <div className="text-gray-300 break-all whitespace-pre-wrap group-hover:text-white transition-colors">
+              <div className="text-neutral-700 dark:text-gray-300 break-all whitespace-pre-wrap group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
                 {log.message}
               </div>
             </div>
@@ -378,7 +378,7 @@ export default function LogsLivePage() {
         })}
 
         {filteredLogs.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-600 space-y-4 opacity-50">
+          <div className="flex flex-col items-center justify-center h-full text-neutral-500 dark:text-gray-600 space-y-4 opacity-50">
             <Activity className="w-12 h-12" />
             <div className="text-center">
               <p className="text-sm">Listening for incoming logs...</p>
@@ -391,9 +391,9 @@ export default function LogsLivePage() {
       </div>
 
       {/* Status Bar */}
-      <div className="bg-gray-900 border-t border-gray-800 px-4 py-2 flex items-center gap-4 shadow-lg z-10 shrink-0">
+      <div className="bg-white dark:bg-gray-900 border-t border-neutral-200 dark:border-gray-800 px-4 py-2 flex items-center gap-4 shadow-lg z-10 shrink-0">
         <div className="flex items-center gap-2">
-          <SystemFilter className="h-10 text-sm bg-gray-800 border-none focus:ring-1 focus:ring-blue-500" />
+          <SystemFilter className="h-10 text-sm bg-neutral-100 dark:bg-gray-800 text-neutral-900 dark:text-gray-100 border-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
         <div className="flex items-center gap-2 flex-1 h-10">
@@ -404,14 +404,14 @@ export default function LogsLivePage() {
               placeholder="Grep logs..."
               value={liveSearchTerm}
               onChange={(e) => setLiveSearchTerm(e.target.value)}
-              className="bg-gray-800 border-none rounded-md pl-10 pr-4 py-2 text-sm w-full h-full focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-600"
+              className="bg-neutral-100 dark:bg-gray-800 border-none rounded-md pl-10 pr-4 py-2 text-sm w-full h-full focus:ring-1 focus:ring-blue-500 outline-none transition-all text-neutral-900 dark:text-gray-100 placeholder:text-neutral-400 dark:placeholder:text-gray-600"
             />
             {liveSearchTerm && (
               <button 
                 onClick={() => setLiveSearchTerm('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
               >
-                <X className="w-4 h-4 text-gray-500 hover:text-white" />
+                <X className="w-4 h-4 text-neutral-500 dark:text-gray-500 hover:text-neutral-700 dark:hover:text-white" />
               </button>
             )}
           </div>
@@ -420,9 +420,9 @@ export default function LogsLivePage() {
         <div className="flex items-center gap-4 justify-end">
           <div className="relative flex items-center gap-2 h-10" ref={popoverRef}>
             {showTimePopover && (
-              <div className="absolute bottom-full right-0 mb-2 w-96 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6 animate-fadeIn z-50">
-                <h3 className="text-sm font-bold text-white mb-4">Seek to date or time</h3>
-                
+              <div className="absolute bottom-full right-0 mb-2 w-96 bg-white dark:bg-gray-900 border border-neutral-200 dark:border-gray-800 rounded-xl shadow-2xl p-6 animate-fadeIn z-50">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-4">Seek to date or time</h3>
+
                 <div className="flex flex-col gap-4 mb-4">
                   <div className="relative">
                     <input
@@ -430,13 +430,13 @@ export default function LogsLivePage() {
                       type="datetime-local"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-200 focus:ring-1 focus:ring-blue-500 outline-none"
+                      className="w-full bg-neutral-100 dark:bg-gray-800 border border-neutral-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-neutral-900 dark:text-gray-200 focus:ring-1 focus:ring-blue-500 outline-none"
                     />
                     <button 
                       onClick={() => dateInputRef.current?.showPicker()}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-700 rounded transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-neutral-200 dark:hover:bg-gray-700 rounded transition-colors"
                     >
-                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <Calendar className="w-4 h-4 text-neutral-500 dark:text-gray-400" />
                     </button>
                   </div>
                   
@@ -452,26 +452,26 @@ export default function LogsLivePage() {
                 </div>
 
                 {firstLogTimestamp && (
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
+                  <p className="text-[10px] text-neutral-500 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
                     Searchable logs begin on {formatInLocalTime(firstLogTimestamp, 'dd.MM.yyyy')} at {formatInLocalTime(firstLogTimestamp, 'HH:mm')}
                   </p>
                 )}
 
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
+                <div className="flex justify-between items-center mt-4 pt-4 border-t border-neutral-200 dark:border-gray-800">
                   <button
                     onClick={() => {
                       setStartTime('');
                       setShowTimePopover(false);
                     }}
-                    className="text-[10px] text-gray-400 hover:text-white uppercase tracking-widest font-bold"
+                    className="text-[10px] text-neutral-500 dark:text-gray-400 hover:text-neutral-700 dark:hover:text-white uppercase tracking-widest font-bold"
                   >
                     Reset to Live
                   </button>
                   <button
                     onClick={() => setShowTimePopover(false)}
-                    className="p-1 hover:bg-gray-800 rounded transition-colors"
+                    className="p-1 hover:bg-neutral-200 dark:hover:bg-gray-800 rounded transition-colors"
                   >
-                    <X className="w-4 h-4 text-gray-500" />
+                    <X className="w-4 h-4 text-neutral-500 dark:text-gray-500" />
                   </button>
                 </div>
               </div>
@@ -480,24 +480,24 @@ export default function LogsLivePage() {
               onClick={() => {
                 setShowTimePopover(!showTimePopover);
               }}
-              className={`h-full px-4 rounded-md transition-all ${showTimePopover || startTime ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+              className={`h-full px-4 rounded-md transition-all ${showTimePopover || startTime ? 'bg-blue-600 text-white' : 'bg-neutral-100 text-neutral-500 hover:text-neutral-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-white'}`}
               title="Seek back in time"
             >
               <Clock className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="flex items-center bg-gray-800 rounded-md p-1 gap-1 h-10">
+          <div className="flex items-center bg-neutral-100 dark:bg-gray-800 rounded-md p-1 gap-1 h-10">
             <button
               onClick={() => updateLogFontSize(logFontSize - 1)}
-              className="p-2 hover:bg-gray-700 rounded transition-colors text-gray-400 hover:text-white"
+              className="p-2 hover:bg-neutral-200 dark:hover:bg-gray-700 rounded transition-colors text-neutral-500 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white"
               title="Decrease text size"
             >
               <Minus className="w-4 h-4" />
             </button>
             <button
               onClick={() => updateLogFontSize(logFontSize + 1)}
-              className="p-2 hover:bg-gray-700 rounded transition-colors text-gray-400 hover:text-white"
+              className="p-2 hover:bg-neutral-200 dark:hover:bg-gray-700 rounded transition-colors text-neutral-500 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white"
               title="Increase text size"
             >
               <Plus className="w-4 h-4" />
