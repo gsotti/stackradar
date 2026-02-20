@@ -100,7 +100,7 @@ export default function TenantSettingsPage() {
     }
 
     try {
-      await api.delete(`/tenants/${id}`);
+      await api.delete(`/tenants/${id}`, { confirm: true });
       showSuccess('Tenant deleted successfully');
       navigate('/tenants');
     } catch (error: any) {

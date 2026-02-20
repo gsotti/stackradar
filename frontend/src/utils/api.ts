@@ -65,9 +65,10 @@ class ApiClient {
     });
   }
 
-  delete<T>(endpoint: string): Promise<T> {
+  delete<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'DELETE',
+      ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
     });
   }
 }
