@@ -11,6 +11,7 @@ import UserInviteForm from '../components/users/UserInviteForm';
 import UserCreateModal from '../components/users/UserCreateModal';
 import AvailableUsersList from '../components/users/AvailableUsersList';
 import { Tenant, TenantUser, Invitation, TenantRoleName } from '../types';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 type TabType = 'settings' | 'users';
 
@@ -33,6 +34,8 @@ export default function TenantSettingsPage() {
   const [usersLoading, setUsersLoading] = useState(false);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [showDeleteTenantModal, setShowDeleteTenantModal] = useState(false);
 
   useEffect(() => {
     fetchTenant();
@@ -95,18 +98,14 @@ export default function TenantSettingsPage() {
   };
 
   const handleDeleteTenant = async () => {
-    if (!confirm(`Are you sure you want to delete tenant "${tenant?.name}"? This action cannot be undone and will affect all associated users and sites.`)) {
-      return;
-    }
-
-    try {
-      await api.delete(`/tenants/${id}`, { confirm: true });
-      showSuccess('Tenant deleted successfully');
-      navigate('/tenants');
-    } catch (error: any) {
-      showError(error.message || 'Failed to delete tenant');
-    }
-  };
+     try {
+       await api.delete(`/tenants/${id}`, { confirm: true });
+       showSuccess('Tenant deleted successfully');
+       navigate('/tenants');
+     } catch (error: any) {
+       showError(error.message || 'Failed to delete tenant');
+     }
+   };
 
   const handleInviteClose = (updated?: boolean) => {
     setShowInviteForm(false);
@@ -263,8 +262,8 @@ export default function TenantSettingsPage() {
                   Deleting this tenant will permanently remove all associated users, sites, environments, systems, and logs. This action cannot be undone.
                 </p>
                 <button
-                  onClick={handleDeleteTenant}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium"
+                  onClick={() => setShowDeleteTenantModal(true)}
+                  className="button-danger w-full justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete Tenant
@@ -366,14 +365,20 @@ export default function TenantSettingsPage() {
                   tenantId={parseInt(id!, 10)}
                   users={users}
                   onUpdate={loadUsersData}
+                  isModalBlocked={userModalOpen}
+                  onModalOpen={() => setUserModalOpen(true)}
+                  onModalClose={() => setUserModalOpen(false)}
                 />
               </div>
 
               {/* Available Organization Users */}
-              <div className="card-hover">
+              <div className="card">
                 <AvailableUsersList
                   tenantId={parseInt(id!, 10)}
                   onUserAdded={loadUsersData}
+                  isModalBlocked={userModalOpen}
+                  onModalOpen={() => setUserModalOpen(true)}
+                  onModalClose={() => setUserModalOpen(false)}
                 />
               </div>
             </>
@@ -397,6 +402,19 @@ export default function TenantSettingsPage() {
           onClose={() => setShowCreateForm(false)}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={showDeleteTenantModal}
+        title="Delete tenant?"
+        description={`Deleting "${tenant?.name}" will remove all associated users, sites, environments, systems, and logs. This action cannot be undone.`}
+        confirmLabel="Delete Tenant"
+        variant="danger"
+        onCancel={() => setShowDeleteTenantModal(false)}
+        onConfirm={() => {
+          setShowDeleteTenantModal(false);
+          handleDeleteTenant();
+        }}
+      />
     </div>
   );
 }

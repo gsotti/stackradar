@@ -301,7 +301,7 @@ export default function OrgUsersPage() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                   Create User
                 </h2>
                 <button
@@ -354,17 +354,17 @@ export default function OrgUsersPage() {
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="modal-actions">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-semibold"
+                    className="button-secondary button-center"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all font-semibold"
+                    className="button-primary button-center"
                   >
                     Create User
                   </button>
@@ -379,7 +379,7 @@ export default function OrgUsersPage() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                   Edit User
                 </h2>
                 <button
@@ -446,7 +446,7 @@ export default function OrgUsersPage() {
                   </button>
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="modal-actions border-t border-gray-200 dark:border-gray-700">
                   <button
                     type="button"
                     onClick={() => {
@@ -462,15 +462,15 @@ export default function OrgUsersPage() {
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-semibold"
+                    className="button-secondary button-center"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all font-semibold"
+                    className="button-primary button-center"
                   >
-                    Save
+                    Save Changes
                   </button>
                 </div>
               </form>
@@ -495,16 +495,16 @@ export default function OrgUsersPage() {
                   Are you sure you want to delete <span className="font-semibold">{selectedUser.name || selectedUser.email}</span>? This action cannot be undone.
                 </p>
 
-                <div className="flex gap-3">
+                <div className="modal-actions">
                   <button
                     onClick={() => setShowDeleteModal(false)}
-                    className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-semibold"
+                    className="button-secondary button-center"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleDeleteUser}
-                    className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg transition-all font-semibold"
+                    className="button-danger button-center"
                   >
                     Delete User
                   </button>

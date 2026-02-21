@@ -147,7 +147,7 @@ export default function AcceptInvitationPage() {
             </p>
             <button
               onClick={() => navigate('/login')}
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all"
+              className="button-primary"
             >
               Go to Login
             </button>
@@ -165,8 +165,8 @@ export default function AcceptInvitationPage() {
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
             <Mail className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Join {invitation?.tenant_name}
+          <h1 className="text-3xl font-bold text-primary-600 dark:text-primary-400 mb-2">
+            Join {invitationData.organization_name || 'Organization'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Complete your registration to get started
@@ -216,7 +216,7 @@ export default function AcceptInvitationPage() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                className="input-base w-full pl-10 pr-4 py-3"
                 placeholder="John Doe"
                 required
                 disabled={submitting}
@@ -234,7 +234,7 @@ export default function AcceptInvitationPage() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                className="input-base w-full pl-10 pr-4 py-3"
                 placeholder="Minimum 6 characters"
                 required
                 disabled={submitting}
@@ -253,7 +253,7 @@ export default function AcceptInvitationPage() {
                 type="password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                className="input-base w-full pl-10 pr-4 py-3"
                 placeholder="Re-enter password"
                 required
                 disabled={submitting}
@@ -264,7 +264,7 @@ export default function AcceptInvitationPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="button-primary w-full"
           >
             {submitting ? 'Creating Account...' : 'Create Account'}
           </button>

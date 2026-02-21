@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Settings, Building2, Users, RefreshCw, Plus, Pencil, Trash2, X, ArrowLeft, UserCog, Edit } from 'lucide-react';
+import { Shield, Settings, Building2, Users, RefreshCw, Plus, Pencil, Trash2, X, ArrowLeft, UserCog } from 'lucide-react';
 import { api } from '../utils/api';
 import { useNotification } from '../contexts/NotificationContext';
 import { Organization, User } from '../types';
 import { getGravatarUrl } from '../utils/md5';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 type TabType = 'organizations' | 'settings';
 
@@ -29,6 +30,7 @@ export default function SuperadminPage() {
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [formData, setFormData] = useState<OrganizationFormData>({ name: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [deleteOrgTarget, setDeleteOrgTarget] = useState<Organization | null>(null);
   const { showSuccess, showError } = useNotification();
 
   // System settings state
@@ -125,18 +127,14 @@ export default function SuperadminPage() {
   };
 
   const handleDeleteOrganization = async (org: Organization) => {
-    if (!confirm(`Are you sure you want to delete "${org.name}"? This will affect ${org.user_count || 0} users and ${org.tenant_count || 0} tenants.`)) {
-      return;
-    }
-
-    try {
-      await api.delete(`/organizations/${org.id}`);
-      showSuccess('Organization deleted successfully');
-      loadOrganizations();
-    } catch (error: any) {
-      showError(error.message || 'Failed to delete organization');
-    }
-  };
+     try {
+       await api.delete(`/organizations/${org.id}`);
+       showSuccess('Organization deleted successfully');
+       loadOrganizations();
+     } catch (error: any) {
+       showError(error.message || 'Failed to delete organization');
+     }
+   };
 
   const openEditModal = (org: Organization) => {
     setEditingOrg(org);
@@ -170,20 +168,15 @@ export default function SuperadminPage() {
   };
 
   const handlePromoteToAdmin = async (user: OrgUser) => {
-    if (!viewingOrg) return;
-
-    if (!confirm(`Promote ${user.name || user.email} to Organization Admin?`)) {
-      return;
-    }
-
-    try {
-      await api.post(`/organizations/${viewingOrg.id}/users/${user.id}/set-org-admin`);
-      showSuccess('User promoted to Organization Admin');
-      await loadOrgUsers(viewingOrg.id);
-    } catch (error: any) {
-      showError(error.message || 'Failed to promote user');
-    }
-  };
+     if (!viewingOrg) return;
+     try {
+       await api.post(`/organizations/${viewingOrg.id}/users/${user.id}/set-org-admin`, {});
+       showSuccess('User promoted to Organization Admin');
+       await loadOrgUsers(viewingOrg.id);
+     } catch (error: any) {
+       showError(error.message || 'Failed to promote user');
+     }
+   };
 
   const handleCreateOrgUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,20 +198,15 @@ export default function SuperadminPage() {
   };
 
   const handleDemoteFromAdmin = async (user: OrgUser) => {
-    if (!viewingOrg) return;
-
-    if (!confirm(`Remove Organization Admin role from ${user.name || user.email}?`)) {
-      return;
-    }
-
-    try {
-      await api.post(`/organizations/${viewingOrg.id}/users/${user.id}/remove-org-admin`);
-      showSuccess('Organization Admin role removed');
-      await loadOrgUsers(viewingOrg.id);
-    } catch (error: any) {
-      showError(error.message || 'Failed to remove admin role');
-    }
-  };
+     if (!viewingOrg) return;
+     try {
+       await api.post(`/organizations/${viewingOrg.id}/users/${user.id}/remove-org-admin`, {});
+       showSuccess('Organization Admin role removed');
+       await loadOrgUsers(viewingOrg.id);
+     } catch (error: any) {
+       showError(error.message || 'Failed to remove admin role');
+     }
+   };
 
   return (
     <div className="space-y-4">
@@ -302,16 +290,16 @@ export default function SuperadminPage() {
                     <Building2 className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{viewingOrg.name}</h2>
+                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">{viewingOrg.name}</h2>
                     {viewingOrg.description && (
-                      <p className="text-gray-600 dark:text-gray-400 mt-1">{viewingOrg.description}</p>
+                      <p className="text-neutral-600 dark:text-neutral-400 mt-1">{viewingOrg.description}</p>
                     )}
                     <div className="flex items-center gap-4 mt-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-2 text-sm text-neutral-500">
                         <Users className="w-4 h-4" />
                         {viewingOrg.user_count || 0} users
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-2 text-sm text-neutral-500">
                         <Building2 className="w-4 h-4" />
                         {viewingOrg.tenant_count || 0} tenants
                       </div>
@@ -329,14 +317,14 @@ export default function SuperadminPage() {
             </div>
 
             {/* Users List */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="card">
+              <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Organization Users</h3>
+                  <h3 className="text-xl font-bold text-neutral-900 dark:text-white">Organization Users</h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => loadOrgUsers(viewingOrg.id)}
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
+                      className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-xl transition-all"
                     >
                       <RefreshCw className={`w-5 h-5 ${loadingUsers ? 'animate-spin' : ''}`} />
                     </button>
@@ -345,7 +333,7 @@ export default function SuperadminPage() {
                         setUserFormData({ email: '', name: '', password: '' });
                         setShowCreateUserModal(true);
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all font-medium text-sm"
+                      className="button-primary flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
                       Create User
@@ -361,8 +349,8 @@ export default function SuperadminPage() {
                   </div>
                 ) : orgUsers.length === 0 ? (
                   <div className="text-center py-12">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">No users in this organization</p>
+                    <Users className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
+                    <p className="text-neutral-500 dark:text-neutral-400">No users in this organization</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -381,13 +369,13 @@ export default function SuperadminPage() {
                       .map((user) => (
                       <div
                         key={user.id}
-                        className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600"
+                        className="flex items-center gap-4 p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700"
                       >
                         {getGravatarUrl(user.email) ? (
                           <img
                             src={getGravatarUrl(user.email, 48)!}
                             alt={user.name || user.email}
-                            className="w-12 h-12 rounded-full ring-2 ring-gray-200 dark:ring-gray-600"
+                            className="w-12 h-12 rounded-full ring-2 ring-neutral-200 dark:ring-neutral-700"
                           />
                         ) : (
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
@@ -399,7 +387,7 @@ export default function SuperadminPage() {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                            <h4 className="font-semibold text-neutral-900 dark:text-white">
                               {user.name || 'Unnamed'}
                             </h4>
                             {user.global_role === 'org_admin' && (
@@ -423,7 +411,7 @@ export default function SuperadminPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">{user.email}</p>
                         </div>
 
                         {user.global_role !== 'superadmin' && (
@@ -457,9 +445,9 @@ export default function SuperadminPage() {
             {/* Create User Modal */}
             {showCreateUserModal && (
               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full">
-                  <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <div className="card max-w-md w-full">
+                  <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
+                    <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                       Create User
                     </h2>
                     <button
@@ -472,7 +460,7 @@ export default function SuperadminPage() {
 
                   <form onSubmit={handleCreateOrgUser} className="p-6 space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="text-label mb-2">
                         Email *
                       </label>
                       <input
@@ -480,26 +468,26 @@ export default function SuperadminPage() {
                         required
                         value={userFormData.email}
                         onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="input-base w-full"
                         placeholder="user@example.com"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="text-label mb-2">
                         Name
                       </label>
                       <input
                         type="text"
                         value={userFormData.name}
                         onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="input-base w-full"
                         placeholder="John Doe"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="text-label mb-2">
                         Password *
                       </label>
                       <input
@@ -507,22 +495,22 @@ export default function SuperadminPage() {
                         required
                         value={userFormData.password}
                         onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="input-base w-full"
                         placeholder="Enter password"
                       />
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="modal-actions">
                       <button
                         type="button"
                         onClick={() => setShowCreateUserModal(false)}
-                        className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-semibold"
+                        className="button-secondary button-center"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all font-semibold"
+                        className="button-primary button-center"
                       >
                         Create User
                       </button>
@@ -539,15 +527,15 @@ export default function SuperadminPage() {
                 <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
               </div>
             ) : organizations.length === 0 ? (
-              <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4 opacity-50" />
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">No Organizations</h3>
-                <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-6">
+              <div className="card text-center py-20 border-2 border-dashed">
+                <Building2 className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white">No Organizations</h3>
+                <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-6">
                   Get started by creating your first organization.
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold"
+                  className="button-primary inline-flex items-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
                   Create Organization
@@ -558,7 +546,7 @@ export default function SuperadminPage() {
                 {organizations.map((org) => (
                   <div
                     key={org.id}
-                    className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all"
+                    className="card-hover"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -566,7 +554,7 @@ export default function SuperadminPage() {
                           <Building2 className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
                             {org.name}
                           </h3>
                         </div>
@@ -574,34 +562,34 @@ export default function SuperadminPage() {
                     </div>
 
                     {org.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-2">
                         {org.description}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-4 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-4 mb-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        <span className="text-gray-600 dark:text-gray-400">
+                        <span className="text-neutral-600 dark:text-neutral-400">
                           {org.user_count || 0} users
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                        <span className="text-gray-600 dark:text-gray-400">
+                        <span className="text-neutral-600 dark:text-neutral-400">
                           {org.tenant_count || 0} tenants
                         </span>
                       </div>
                     </div>
 
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
                       Created {new Date(org.created_at).toLocaleDateString()}
                     </div>
 
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => handleViewOrganization(org)}
-                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all font-medium text-sm shadow-lg"
+                        className="button-primary flex items-center justify-center gap-2 text-sm"
                       >
                         <Users className="w-4 h-4" />
                         Manage Users
@@ -615,7 +603,7 @@ export default function SuperadminPage() {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDeleteOrganization(org)}
+                          onClick={() => setDeleteOrgTarget(org)}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-all font-medium text-sm"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -637,10 +625,10 @@ export default function SuperadminPage() {
                 <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">System Settings</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <div className="card">
+                <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+                  <h2 className="text-xl font-bold text-neutral-900 dark:text-white">System Settings</h2>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                     Configure global system settings for your StackRadar instance.
                   </p>
                 </div>
@@ -648,23 +636,23 @@ export default function SuperadminPage() {
                 <form onSubmit={handleSaveSettings} className="p-6 space-y-6">
                   {/* Container Registry Section */}
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+                    <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-4">
                       Container Registry
                     </h3>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="text-label mb-2">
                         Container Registry Owner
                       </label>
                       <input
                         type="text"
                         value={registryOwner}
                         onChange={(e) => setRegistryOwner(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-900 dark:text-white transition-all"
+                        className="input-base w-full"
                         placeholder="gsotti"
                         required
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
                         Images will be pulled from{' '}
                         <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-blue-600 dark:text-blue-400 font-mono">
                           ghcr.io/{registryOwner || '<owner>'}/stackradar
@@ -675,22 +663,22 @@ export default function SuperadminPage() {
 
                   {/* Application Section */}
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+                    <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-4">
                       Application
                     </h3>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="text-label mb-2">
                         App URL
                       </label>
                       <input
                         type="url"
                         value={appUrl}
                         onChange={(e) => setAppUrl(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-900 dark:text-white transition-all"
+                        className="input-base w-full"
                         placeholder="https://stackradar.example.com"
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
                         Used in invitation emails to generate the correct link. Falls back to the <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-mono">APP_URL</code> environment variable if left empty.
                       </p>
                     </div>
@@ -700,7 +688,7 @@ export default function SuperadminPage() {
                     <button
                       type="submit"
                       disabled={settingsSaving}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="button-primary flex items-center gap-2"
                     >
                       {settingsSaving ? (
                         <>
@@ -725,14 +713,14 @@ export default function SuperadminPage() {
       {/* Create/Edit Modal */}
       {(showCreateModal || editingOrg) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="card max-w-lg w-full">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
                 {editingOrg ? 'Edit Organization' : 'Create Organization'}
               </h2>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -740,44 +728,44 @@ export default function SuperadminPage() {
 
             <form onSubmit={editingOrg ? handleUpdateOrganization : handleCreateOrganization} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="text-label mb-2">
                   Organization Name
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-900 dark:text-white transition-all"
+                  className="input-base w-full"
                   placeholder="Enter organization name"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="text-label mb-2">
                   Description
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-900 dark:text-white transition-all resize-none"
+                  className="input-base w-full resize-none"
                   placeholder="Enter description (optional)"
                   rows={3}
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-medium"
+                  className="button-secondary button-center"
                   disabled={submitting}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="button-primary button-center"
                   disabled={submitting}
                 >
                   {submitting ? 'Saving...' : editingOrg ? 'Save Changes' : 'Create'}
@@ -787,6 +775,20 @@ export default function SuperadminPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteOrgTarget}
+        title="Delete organization?"
+        description={deleteOrgTarget ? `Delete "${deleteOrgTarget.name}" and ${deleteOrgTarget.user_count || 0} users, ${deleteOrgTarget.tenant_count || 0} tenants.` : undefined}
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteOrgTarget(null)}
+        onConfirm={() => {
+          if (!deleteOrgTarget) return;
+          handleDeleteOrganization(deleteOrgTarget);
+          setDeleteOrgTarget(null);
+        }}
+      />
     </div>
   );
 }

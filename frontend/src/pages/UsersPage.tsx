@@ -1,12 +1,15 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Plus, Trash2, Edit2, RefreshCw, Users as UsersIcon, UserCheck, UserX, Clock, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { api } from '../utils/api';
 import { getGravatarUrl } from '../utils/md5';
 import { User } from '../types';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
+  const { showError } = useNotification();
   const [users, setUsers] = useState<User[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +19,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', global_role: null as string | null, auto_approve: true });
   const [editForm, setEditForm] = useState({ name: '', email: '', password: '', global_role: null as string | null });
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -42,27 +46,25 @@ export default function UsersPage() {
       await api.post(`/admin/users/${userId}/approve`, {});
       await loadUsers();
     } catch (error: any) {
-      alert('Failed to approve user: ' + error.message);
+      showError('Failed to approve user: ' + error.message);
     }
   };
 
   const deleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-
-    try {
-      await api.delete(`/admin/users/${userId}`);
-      await loadUsers();
-    } catch (error: any) {
-      alert('Failed to delete user: ' + error.message);
-    }
-  };
+     try {
+       await api.delete(`/admin/users/${userId}`);
+       await loadUsers();
+     } catch (error: any) {
+       showError('Failed to delete user: ' + error.message);
+     }
+   };
 
   const toggleUserActive = async (userId: number, isActive: boolean) => {
     try {
       await api.post(`/admin/users/${userId}/${isActive ? 'deactivate' : 'activate'}`, {});
       await loadUsers();
     } catch (error: any) {
-      alert(`Failed to ${isActive ? 'deactivate' : 'activate'} user: ` + error.message);
+      showError(`Failed to ${isActive ? 'deactivate' : 'activate'} user: ` + error.message);
     }
   };
 
@@ -70,7 +72,7 @@ export default function UsersPage() {
     e.preventDefault();
 
     if (!newUser.email || !newUser.password) {
-      alert('Email and password are required');
+      showError('Email and password are required');
       return;
     }
 
@@ -88,7 +90,7 @@ export default function UsersPage() {
       setShowCreateModal(false);
       await loadUsers();
     } catch (error: any) {
-      alert('Failed to create user: ' + error.message);
+      showError('Failed to create user: ' + error.message);
     }
   };
 
@@ -122,7 +124,7 @@ export default function UsersPage() {
       setShowEditModal(false);
       await loadUsers();
     } catch (error: any) {
-      alert('Failed to update user: ' + error.message);
+      showError('Failed to update user: ' + error.message);
     }
   };
 
@@ -288,7 +290,7 @@ export default function UsersPage() {
                       {user.is_active ? 'Disable' : 'Enable'}
                     </button>
                     <button
-                      onClick={() => deleteUser(user.id)}
+                      onClick={() => setDeleteTarget(user)}
                       disabled={currentUser?.id === user.id}
                       className="flex items-center justify-center gap-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-accent-danger/10 dark:hover:bg-accent-danger/10 text-neutral-700 dark:text-neutral-300 hover:text-accent-danger dark:hover:text-accent-danger rounded-lg transition-all font-semibold text-xs disabled:hidden"
                     >
@@ -373,19 +375,19 @@ export default function UsersPage() {
                   <span className="text-body-secondary text-sm group-hover:text-accent-success transition-colors">Auto-approve account</span>
                 </label>
               </div>
-              <div className="pt-4 flex gap-2">
-                <button
-                  type="submit"
-                  className="button-primary flex-1"
-                >
-                  Create Account
-                </button>
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="button-secondary flex-1"
+                  className="button-secondary button-center"
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="button-primary button-center"
+                >
+                  Create User
                 </button>
               </div>
             </form>
@@ -448,25 +450,39 @@ export default function UsersPage() {
                   <option value="org_admin">Organization Admin</option>
                 </select>
               </div>
-              <div className="pt-4 flex gap-2">
-                <button
-                  type="submit"
-                  className="button-primary flex-1"
-                >
-                  Update Details
-                </button>
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="button-secondary flex-1"
+                  className="button-secondary button-center"
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="button-primary button-center"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Delete user?"
+        description={deleteTarget ? `Delete ${deleteTarget.name || deleteTarget.email}. This action cannot be undone.` : undefined}
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          deleteUser(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

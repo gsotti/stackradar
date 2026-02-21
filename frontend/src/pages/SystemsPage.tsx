@@ -3,6 +3,7 @@ import { Plus, Trash2, Settings, Package } from 'lucide-react';
 import { api } from '../utils/api';
 import { useApp } from '../contexts/AppContext';
 import { System, Environment } from '../types';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 interface SystemWithDetails extends System {
   environment_name?: string;
@@ -18,6 +19,7 @@ export default function SystemsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingSystem, setEditingSystem] = useState<SystemWithDetails | null>(null);
   const [form, setForm] = useState({ environment_id: '', name: '', description: '' });
+  const [deleteTarget, setDeleteTarget] = useState<SystemWithDetails | null>(null);
 
   useEffect(() => {
     fetchSystems();
@@ -77,13 +79,11 @@ export default function SystemsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this system?')) {
-      try {
-        await api.delete(`/systems/${id}`);
-        fetchSystems();
-      } catch (error) {
-        console.error('Failed to delete system', error);
-      }
+    try {
+      await api.delete(`/systems/${id}`);
+      fetchSystems();
+    } catch (error) {
+      console.error('Failed to delete system', error);
     }
   };
 
@@ -148,17 +148,17 @@ export default function SystemsPage() {
                   rows={3}
                 />
               </div>
-              <div className="flex gap-3 pt-4">
+              <div className="modal-actions">
                 <button
                   type="submit"
-                  className="button-primary flex-1"
+                  className="button-primary button-center"
                 >
                   {editingSystem ? 'Save Changes' : 'Create System'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="button-secondary flex-1"
+                  className="button-secondary button-center"
                 >
                   Cancel
                 </button>
@@ -188,7 +188,7 @@ export default function SystemsPage() {
                     <Settings className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDelete(system.id)}
+                    onClick={() => setDeleteTarget(system)}
                     className="p-1.5 text-neutral-400 hover:text-accent-danger transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -232,6 +232,20 @@ export default function SystemsPage() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Delete system?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          handleDelete(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

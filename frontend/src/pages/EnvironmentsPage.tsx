@@ -4,6 +4,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
 import { Environment, Site } from '../types';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 interface EnvironmentWithDetails extends Environment {
   site_name?: string;
@@ -17,6 +18,7 @@ export default function EnvironmentsPage() {
   const [editingEnv, setEditingEnv] = useState<EnvironmentWithDetails | null>(null);
   const [form, setForm] = useState({ site_id: '', name: '', display_name: '' });
   const [sites, setSites] = useState<Site[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<EnvironmentWithDetails | null>(null);
   const { showError, showSuccess } = useNotification();
   const { selectedTenant } = useApp();
 
@@ -77,15 +79,14 @@ export default function EnvironmentsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this environment?')) return;
-    try {
-      await api.delete(`/environments/${id}`);
-      showSuccess('Environment deleted successfully');
-      loadEnvironments();
-    } catch (error: any) {
-      showError(error.message || 'Failed to delete environment');
-    }
-  };
+     try {
+       await api.delete(`/environments/${id}`);
+       showSuccess('Environment deleted successfully');
+       loadEnvironments();
+     } catch (error: any) {
+       showError(error.message || 'Failed to delete environment');
+     }
+   };
 
   if (loading) {
     return (
@@ -159,10 +160,10 @@ export default function EnvironmentsPage() {
                   placeholder="Production, Staging Cluster"
                 />
               </div>
-              <div className="flex gap-3 pt-4">
+              <div className="modal-actions">
                 <button
                   type="submit"
-                  className="button-primary flex-1"
+                  className="button-primary button-center"
                 >
                   {editingEnv ? 'Save Changes' : 'Create Environment'}
                 </button>
@@ -172,7 +173,7 @@ export default function EnvironmentsPage() {
                     setShowForm(false);
                     setEditingEnv(null);
                   }}
-                  className="button-secondary flex-1"
+                  className="button-secondary button-center"
                 >
                   Cancel
                 </button>
@@ -197,7 +198,7 @@ export default function EnvironmentsPage() {
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => handleDelete(env.id)}
+                  onClick={() => setDeleteTarget(env)}
                   className="p-1.5 text-neutral-400 hover:text-accent-danger transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -230,6 +231,20 @@ export default function EnvironmentsPage() {
           <p className="text-neutral-500 dark:text-neutral-400">No environments found. Create one to get started.</p>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Delete environment?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          handleDelete(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

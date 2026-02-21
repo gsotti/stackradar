@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
-import { UserPlus, Users, RefreshCw, X, Mail, User as UserIcon } from 'lucide-react';
+import {UserPlus, Users, RefreshCw, X, Mail, User as UserIcon, UserPlus2} from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
@@ -19,9 +20,12 @@ interface AvailableUser {
 interface AvailableUsersListProps {
   tenantId: number;
   onUserAdded: () => void;
+  isModalBlocked?: boolean;
+  onModalOpen?: () => void;
+  onModalClose?: () => void;
 }
 
-export default function AvailableUsersList({ tenantId, onUserAdded }: AvailableUsersListProps) {
+export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlocked = false, onModalOpen, onModalClose }: AvailableUsersListProps) {
   const { showError, showSuccess } = useNotification();
   const { user } = useAuth();
   const [users, setUsers] = useState<AvailableUser[]>([]);
@@ -136,18 +140,20 @@ export default function AvailableUsersList({ tenantId, onUserAdded }: AvailableU
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => {
+                    if (isModalBlocked) return;
                     setSelectedUser(user);
                     setSelectedRole('viewer');
+                    onModalOpen?.();
                   }}
                   disabled={addingUserId === user.id}
-                  className="button-primary !px-2.5 !py-1 text-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="button-primary button-center !px-2.5 !py-1 text-sm gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {addingUserId === user.id ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
-                    <UserPlus className="w-4 h-4" />
+                    <UserPlus2 className="w-4 h-4" />
                   )}
-                  Add
+                  Add to Tenant
                 </button>
               </div>
             </div>
@@ -156,17 +162,23 @@ export default function AvailableUsersList({ tenantId, onUserAdded }: AvailableU
       </div>
 
       {/* Add User Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fadeIn">
+      {selectedUser && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-fadeIn">
           <div
             className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
-            onClick={() => setSelectedUser(null)}
+            onClick={() => {
+              setSelectedUser(null);
+              onModalClose?.();
+            }}
           />
           <div className="card relative w-full max-w-md">
             <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
               <h2 className="text-heading-3">Add Member</h2>
               <button
-                onClick={() => setSelectedUser(null)}
+                onClick={() => {
+                  setSelectedUser(null);
+                  onModalClose?.();
+                }}
                 className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-neutral-500" />
@@ -210,23 +222,27 @@ export default function AvailableUsersList({ tenantId, onUserAdded }: AvailableU
               </div>
             </div>
 
-            <div className="pt-6 flex items-center justify-end gap-3">
+            <div className="modal-actions">
               <button
-                onClick={() => setSelectedUser(null)}
-                className="button-secondary"
+                onClick={() => {
+                  setSelectedUser(null);
+                  onModalClose?.();
+                }}
+                className="button-secondary button-center"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleAddUser(selectedUser.id, selectedRole)}
                 disabled={addingUserId === selectedUser.id}
-                className="button-primary"
+                className="button-primary button-center"
               >
                 {addingUserId === selectedUser.id ? 'Adding...' : 'Add to Tenant'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

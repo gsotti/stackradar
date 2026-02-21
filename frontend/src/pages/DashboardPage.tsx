@@ -555,7 +555,6 @@ export default function DashboardPage() {
                     stroke="#3b82f6"
                     strokeWidth={3}
                     fill="url(#colorLogs)"
-                    dot={{ fill: '#3b82f6', r: 4 }}
                     activeDot={{ r: 6 }}
                   />
                 </AreaChart>

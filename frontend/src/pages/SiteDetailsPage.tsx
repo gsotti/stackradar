@@ -11,6 +11,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import AlertsView from '../components/alerts/AlertsView';
 import SiteSetupInstructions from '../components/SiteSetupInstructions';
 import UptimeMonitorsView from '../components/uptime/UptimeMonitorsView';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 import { Site, K8sMetrics } from '../types';
 
@@ -46,6 +47,8 @@ export default function SiteDetailsPage() {
   const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' as const, has_metrics: true });
   const [tokenVisible, setTokenVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showRegenerateTokenModal, setShowRegenerateTokenModal] = useState(false);
+  const [showDeleteSiteModal, setShowDeleteSiteModal] = useState(false);
 
   const fetchAll = async () => {
     try {
@@ -90,14 +93,12 @@ export default function SiteDetailsPage() {
   };
 
   const handleRegenerateToken = async () => {
-    if (confirm('Are you sure? This will invalidate the current token.')) {
-      try {
-        const updated = await api.post<Site>(`/sites/${id}/regenerate-token`, {});
-        setSite(updated);
-        showSuccess('API token regenerated');
-      } catch (error: any) {
-        showError(error.message || 'Failed to regenerate token');
-      }
+    try {
+      const updated = await api.post<Site>(`/sites/${id}/regenerate-token`, {});
+      setSite(updated);
+      showSuccess('API token regenerated');
+    } catch (error: any) {
+      showError(error.message || 'Failed to regenerate token');
     }
   };
 
@@ -109,14 +110,12 @@ export default function SiteDetailsPage() {
   };
 
   const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this site? This action cannot be undone.')) {
-      try {
-        await api.delete(`/sites/${id}`);
-        showSuccess('Site deleted');
-        navigate('/sites');
-      } catch (error: any) {
-        showError(error.message || 'Failed to delete site');
-      }
+    try {
+      await api.delete(`/sites/${id}`);
+      showSuccess('Site deleted');
+      navigate('/sites');
+    } catch (error: any) {
+      showError(error.message || 'Failed to delete site');
     }
   };
 
@@ -525,7 +524,7 @@ export default function SiteDetailsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="button-primary w-full disabled:opacity-50"
+                className="button-primary w-full justify-center disabled:opacity-50"
               >
                 {saving ? 'Saving...' : 'Save Settings'}
               </button>
@@ -560,10 +559,9 @@ export default function SiteDetailsPage() {
                 </button>
               </div>
               <button
-                onClick={handleRegenerateToken}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-xl transition-all font-medium"
+                onClick={() => setShowRegenerateTokenModal(true)}
+                className="button-secondary button-center"
               >
-                <RefreshCw className="w-4 h-4" />
                 Regenerate Token
               </button>
             </div>
@@ -575,16 +573,40 @@ export default function SiteDetailsPage() {
                 Deleting this site will permanently remove all associated environments, systems, logs, and metrics. This action cannot be undone.
               </p>
               <button
-                onClick={handleDelete}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent-danger hover:bg-red-700 text-white rounded-xl transition-all font-medium"
+                onClick={() => setShowDeleteSiteModal(true)}
+                className="button-danger button-center"
               >
-                <Trash2 className="w-4 h-4" />
                 Delete Site
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showRegenerateTokenModal}
+        title="Regenerate API token?"
+        description="This will invalidate the current token and generate a new one."
+        confirmLabel="Regenerate"
+        onCancel={() => setShowRegenerateTokenModal(false)}
+        onConfirm={() => {
+          setShowRegenerateTokenModal(false);
+          handleRegenerateToken();
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={showDeleteSiteModal}
+        title="Delete site?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setShowDeleteSiteModal(false)}
+        onConfirm={() => {
+          setShowDeleteSiteModal(false);
+          handleDelete();
+        }}
+      />
     </div>
   );
 }

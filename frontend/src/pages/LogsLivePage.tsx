@@ -404,7 +404,7 @@ export default function LogsLivePage() {
               placeholder="Grep logs..."
               value={liveSearchTerm}
               onChange={(e) => setLiveSearchTerm(e.target.value)}
-              className="bg-neutral-100 dark:bg-gray-800 border-none rounded-md pl-10 pr-4 py-2 text-sm w-full h-full focus:ring-1 focus:ring-blue-500 outline-none transition-all text-neutral-900 dark:text-gray-100 placeholder:text-neutral-400 dark:placeholder:text-gray-600"
+              className="input-base w-full h-full pl-10 pr-4 text-sm"
             />
             {liveSearchTerm && (
               <button 
@@ -430,7 +430,7 @@ export default function LogsLivePage() {
                       type="datetime-local"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full bg-neutral-100 dark:bg-gray-800 border border-neutral-200 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-neutral-900 dark:text-gray-200 focus:ring-1 focus:ring-blue-500 outline-none"
+                      className="input-base w-full pr-10 text-sm"
                     />
                     <button 
                       onClick={() => dateInputRef.current?.showPicker()}
