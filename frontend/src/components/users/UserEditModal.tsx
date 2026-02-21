@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { TenantUser, TenantRoleName } from '../../types';
 import { getGravatarUrl } from '../../utils/md5';
 import RoleSelect from './RoleSelect';
+import { createPortal } from 'react-dom';
 
 interface UserEditModalProps {
   user: TenantUser;
@@ -25,8 +26,8 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  const modal = (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       <div className="card relative w-full max-w-md">
@@ -86,18 +87,18 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
           </div>
         </div>
 
-        <div className="pt-6 flex items-center justify-end gap-3">
+        <div className="modal-actions">
           <button
+            type="button"
             onClick={onClose}
-            disabled={saving}
-            className="button-secondary"
+            className="button-secondary button-center"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || (role === user.role && name === (user.name || ''))}
-            className="button-primary"
+            className="button-primary button-center"
+            disabled={saving}
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
@@ -105,4 +106,6 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
       </div>
     </div>
   );
+
+  return typeof document === 'undefined' ? null : createPortal(modal, document.body);
 }

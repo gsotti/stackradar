@@ -5,12 +5,14 @@ import { api } from '../../utils/api';
 import { getGravatarUrl } from '../../utils/md5';
 import { User } from '../../types';
 import OrgAdminForm from './OrgAdminForm';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 export default function OrgAdminList() {
   const [orgAdmins, setOrgAdmins] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<User | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const { showError, showSuccess } = useNotification();
 
   const loadOrgAdmins = async () => {
@@ -42,18 +44,14 @@ export default function OrgAdminList() {
   };
 
   const handleDelete = async (admin: User) => {
-    if (!confirm(`Are you sure you want to delete organization admin "${admin.name || admin.email}"? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await api.delete(`/superadmin/org-admins/${admin.id}`);
-      showSuccess('Organization admin deleted successfully');
-      loadOrgAdmins();
-    } catch (error: any) {
-      showError('Failed to delete admin: ' + error.message);
-    }
-  };
+     try {
+       await api.delete(`/superadmin/org-admins/${admin.id}`);
+       showSuccess('Organization admin deleted successfully');
+       loadOrgAdmins();
+     } catch (error: any) {
+       showError('Failed to delete admin: ' + error.message);
+     }
+   };
 
   const handleFormClose = (updated?: boolean) => {
     setShowCreateModal(false);
@@ -182,11 +180,10 @@ export default function OrgAdminList() {
                     {admin.is_active ? 'Deactivate' : 'Activate'}
                   </button>
                   <button
-                    onClick={() => handleDelete(admin)}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all font-bold text-sm"
+                    onClick={() => setDeleteTarget(admin)}
+                    className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
                   </button>
                 </div>
               </div>
@@ -202,6 +199,20 @@ export default function OrgAdminList() {
           onClose={handleFormClose}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Delete organization admin?"
+        description={deleteTarget ? `Delete ${deleteTarget.name || deleteTarget.email}. This action cannot be undone.` : undefined}
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          handleDelete(deleteTarget);
+          setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

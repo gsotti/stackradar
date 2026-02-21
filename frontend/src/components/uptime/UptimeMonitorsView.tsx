@@ -4,8 +4,9 @@ import { formatInLocalTime, parseAsUTC } from '../../utils/dateUtils';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
 import { usePermissions } from '../../hooks/usePermissions';
-import UptimeMonitorForm from './UptimeMonitorForm';
 import { UptimeMonitor, UptimeCheck, UptimeStatus, CreateUptimeMonitorRequest } from '../../types';
+import UptimeMonitorForm from './UptimeMonitorForm';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 const statusDot: Record<UptimeStatus, string> = {
   up: 'bg-emerald-400 dark:bg-emerald-500',
@@ -69,6 +70,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
   const [editingMonitor, setEditingMonitor] = useState<UptimeMonitor | null>(null);
   const [saving, setSaving] = useState(false);
   const [checkingId, setCheckingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UptimeMonitor | null>(null);
 
   const fetchData = async () => {
     try {
@@ -131,9 +133,6 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
   };
 
   const handleDelete = async (monitor: UptimeMonitor) => {
-    if (!confirm(`Delete monitor "${monitor.name}"? This will also delete all check history.`)) {
-      return;
-    }
     try {
       await api.delete(`/uptime/monitors/${monitor.id}`);
       showSuccess('Monitor deleted');
@@ -341,10 +340,10 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                       <Edit2 className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={() => handleDelete(monitor)}
-                      className="px-2 py-1.5 text-xs font-medium text-accent-danger bg-accent-danger/10 hover:bg-accent-danger/20 rounded-md transition-colors"
+                      onClick={() => setDeleteTarget(monitor)}
+                      className="button-danger button-sm"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      Delete
                     </button>
                   </div>
                 )}
@@ -371,6 +370,20 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
           loading={saving}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Delete monitor?"
+        description={deleteTarget ? `Delete "${deleteTarget.name}" and all check history.` : undefined}
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          handleDelete(deleteTarget);
+          setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

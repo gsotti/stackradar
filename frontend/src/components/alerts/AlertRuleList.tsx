@@ -5,6 +5,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { api } from '../../utils/api';
 import AlertRuleForm from './AlertRuleForm';
 import { AlertRule, AlertSeverity, AlertType, MetricType } from '../../types';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 interface AlertRuleListProps {
   siteId: string | number;
@@ -19,6 +20,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingRule, setEditingRule] = useState<AlertRuleWithChannels | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AlertRuleWithChannels | null>(null);
   const { showError, showSuccess } = useNotification();
   const { isViewer } = usePermissions();
 
@@ -49,18 +51,14 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
   };
 
   const handleDelete = async (ruleId: number) => {
-    if (!confirm('Are you sure you want to delete this alert rule?')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/alerts/rules/${ruleId}`);
-      showSuccess('Alert rule deleted successfully');
-      loadRules();
-    } catch (error: any) {
-      showError(error.message || 'Failed to delete alert rule');
-    }
-  };
+     try {
+       await api.delete(`/alerts/rules/${ruleId}`);
+       showSuccess('Alert rule deleted successfully');
+       loadRules();
+     } catch (error: any) {
+       showError(error.message || 'Failed to delete alert rule');
+     }
+   };
 
   const handleToggle = async (rule: AlertRuleWithChannels) => {
     try {
@@ -210,11 +208,10 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(rule.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="Delete"
+                        onClick={() => setDeleteTarget(rule)}
+                        className="button-danger button-sm"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        Delete
                       </button>
                     </div>
                   )}
@@ -266,6 +263,20 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
           onClose={handleFormClose}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Delete alert rule?"
+        description={deleteTarget ? `Delete "${deleteTarget.name}".` : undefined}
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          handleDelete(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+      />
     </>
   );
 }

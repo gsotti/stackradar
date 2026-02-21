@@ -1,4 +1,3 @@
-import { ChevronDown } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
@@ -73,7 +72,7 @@ export default function SystemFilter({ className = '' }: SystemFilterProps) {
         value={selectedSystem}
         onChange={(e) => setSelectedSystem(e.target.value)}
         disabled={loading}
-        className={`appearance-none pl-4 pr-12 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all w-full ${className}`}
+        className={`input-base w-full ${className}`}
       >
         <option value="">All Systems</option>
         {options.map((system) => (
@@ -82,9 +81,6 @@ export default function SystemFilter({ className = '' }: SystemFilterProps) {
           </option>
         ))}
       </select>
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-        <ChevronDown className="w-4 h-4" />
-      </div>
     </div>
   );
 }

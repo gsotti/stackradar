@@ -68,7 +68,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="input-base w-full pl-10 pr-4"
                 placeholder="John Doe"
               />
             </div>
@@ -82,7 +82,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="input-base w-full pl-10 pr-4"
                 placeholder="user@example.com"
                 required
               />
@@ -97,7 +97,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="input-base w-full pl-10 pr-4"
                 placeholder="Minimum 8 characters"
                 required
               />
@@ -114,8 +114,8 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl">
-          <button onClick={onClose} disabled={saving} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-all">
+        <div className="modal-actions border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl p-6">
+          <button onClick={onClose} disabled={saving} className="button-secondary button-center">
             Cancel
           </button>
           <button

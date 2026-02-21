@@ -151,7 +151,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
               <BarChart2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                 {rule ? 'Edit Alert Rule' : 'Create Alert Rule'}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">Define conditions for your alerts</p>
@@ -176,7 +176,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                className="input-base w-full shadow-sm"
                 placeholder="CPU high usage alert"
                 required
               />
@@ -190,7 +190,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
+                className="input-base w-full shadow-sm"
                 placeholder="Alert when service is down or resource usage is high"
                 rows={2}
               />
@@ -266,7 +266,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       name="metric_type"
                       value={formData.metric_type}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                      className="input-base w-full text-sm shadow-sm"
                     >
                       <option value="cpu_percent">CPU Usage (%)</option>
                       <option value="memory_percent">Memory Usage (%)</option>
@@ -288,7 +288,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                         name="threshold_operator"
                         value={formData.threshold_operator}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-mono shadow-sm"
+                        className="input-base w-full text-sm font-mono shadow-sm"
                       >
                         <option value=">">{'>'}</option>
                         <option value=">=">{'>='}</option>
@@ -307,7 +307,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                         value={formData.threshold_value}
                         onChange={handleChange}
                         step="0.1"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-mono shadow-sm"
+                        className="input-base w-full text-sm font-mono shadow-sm"
                         placeholder="80"
                         required
                       />
@@ -325,7 +325,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       onChange={handleChange}
                       min="1"
                       max="24"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                      className="input-base w-full text-sm shadow-sm"
                       required
                     />
                     <p className="mt-1 text-[10px] text-gray-500">Resend alert every X hours if the issue persists (1-24)</p>
@@ -342,7 +342,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                         value={formData.time_window_minutes}
                         onChange={handleChange}
                         min="1"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                        className="input-base w-full text-sm shadow-sm"
                         required
                       />
                     </div>
@@ -356,7 +356,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                         value={formData.cooldown_minutes}
                         onChange={handleChange}
                         min="1"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                        className="input-base w-full text-sm shadow-sm"
                         required
                       />
                     </div>
@@ -372,7 +372,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       name="monitor_id"
                       value={formData.monitor_id}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                      className="input-base w-full text-sm shadow-sm"
                       required
                     >
                       <option value="">Choose a monitor...</option>
@@ -394,7 +394,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       value={formData.failure_threshold}
                       onChange={handleChange}
                       min="1"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                      className="input-base w-full text-sm shadow-sm"
                       placeholder="e.g. 3"
                       required
                     />
@@ -412,7 +412,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       onChange={handleChange}
                       min="1"
                       max="24"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm"
+                      className="input-base w-full text-sm shadow-sm"
                       required
                     />
                     <p className="mt-1 text-[10px] text-gray-500">Resend alert every X hours if the issue persists (1-24)</p>
@@ -455,18 +455,18 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="modal-actions border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={() => onClose(false)}
-              className="px-6 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
+              className="button-secondary button-center"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-10 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-bold disabled:opacity-50"
+              className="button-primary button-center"
             >
               {loading ? 'Saving...' : rule ? 'Update Rule' : 'Create Rule'}
             </button>

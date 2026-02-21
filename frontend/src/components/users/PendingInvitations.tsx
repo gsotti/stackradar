@@ -3,6 +3,7 @@ import { Mail, Clock, X, Copy, Check, RefreshCw, AlertTriangle } from 'lucide-re
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { Invitation, SmtpConfig } from '../../types';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 interface PendingInvitationsProps {
   tenantId: number;
@@ -14,6 +15,7 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
   const { showError, showSuccess } = useNotification();
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Invitation | null>(null);
 
   useEffect(() => {
     checkSmtpConfig();
@@ -29,10 +31,6 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
   };
 
   const handleCancelInvitation = async (invitationId: number, email: string) => {
-    if (!confirm(`Are you sure you want to cancel the invitation to ${email}?`)) {
-      return;
-    }
-
     try {
       await api.delete(`/invitations/${invitationId}`);
       showSuccess('Invitation cancelled successfully');
@@ -194,9 +192,9 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                     </>
                   )}
                   <button
-                    onClick={() => handleCancelInvitation(invitation.id, invitation.email)}
-                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-all"
-                    title={expired ? 'Delete expired invitation' : 'Cancel invitation'}
+                    onClick={() => setCancelTarget(invitation)}
+                    className="p-2 text-neutral-400 hover:text-accent-danger hover:bg-accent-danger/10 rounded-lg transition-colors"
+                    title="Cancel invitation"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -206,6 +204,20 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
           );
         })}
       </div>
+
+      <ConfirmDialog
+        isOpen={!!cancelTarget}
+        title="Cancel invitation?"
+        description={cancelTarget ? `Cancel the invitation to ${cancelTarget.email}.` : undefined}
+        confirmLabel="Cancel Invitation"
+        variant="danger"
+        onCancel={() => setCancelTarget(null)}
+        onConfirm={() => {
+          if (!cancelTarget) return;
+          handleCancelInvitation(cancelTarget.id, cancelTarget.email);
+          setCancelTarget(null);
+        }}
+      />
     </div>
   );
 }

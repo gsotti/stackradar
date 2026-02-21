@@ -6,17 +6,22 @@ import { api } from '../../utils/api';
 import { TenantUser, TenantRoleName } from '../../types';
 import { getGravatarUrl } from '../../utils/md5';
 import UserEditModal from './UserEditModal';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 interface TenantUserListProps {
   tenantId: number;
   users: TenantUser[];
   onUpdate: () => void;
+  isModalBlocked?: boolean;
+  onModalOpen?: () => void;
+  onModalClose?: () => void;
 }
 
-export default function TenantUserList({ tenantId, users, onUpdate }: TenantUserListProps) {
+export default function TenantUserList({ tenantId, users, onUpdate, isModalBlocked = false, onModalOpen, onModalClose }: TenantUserListProps) {
   const { user: currentUser } = useAuth();
   const { showError, showSuccess } = useNotification();
   const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<TenantUser | null>(null);
 
   // Debug: Log users with their roles
   console.log('Users with roles:', users.map(u => ({ id: u.id, email: u.email, role: u.role })));
@@ -33,18 +38,14 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
   };
 
   const handleRemoveUser = async (userId: number, userName: string) => {
-    if (!confirm(`Are you sure you want to remove ${userName || 'this user'} from the tenant?`)) {
-      return;
-    }
-
-    try {
-      await api.delete(`/tenants/${tenantId}/users/${userId}`);
-      showSuccess('User removed from tenant successfully');
-      onUpdate();
-    } catch (error: any) {
-      showError(error.message || 'Failed to remove user');
-    }
-  };
+     try {
+       await api.delete(`/tenants/${tenantId}/users/${userId}`);
+       showSuccess('User removed from tenant successfully');
+       onUpdate();
+     } catch (error: any) {
+       showError(error.message || 'Failed to remove user');
+     }
+   };
 
   const getRoleBadge = (role: TenantRoleName) => {
     switch (role) {
@@ -136,7 +137,11 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
               {/* Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
-                  onClick={() => setEditingUser(user)}
+                  onClick={() => {
+                    if (isModalBlocked) return;
+                    setEditingUser(user);
+                    onModalOpen?.();
+                  }}
                   disabled={isCurrentUser}
                   className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   title={isCurrentUser ? 'Cannot edit yourself' : 'Edit user'}
@@ -144,12 +149,10 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleRemoveUser(user.id, user.name || user.email)}
-                  disabled={isCurrentUser}
-                  className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-accent-danger/10 dark:hover:bg-accent-danger/20 hover:text-accent-danger rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  title={isCurrentUser ? 'Cannot remove yourself' : 'Remove from tenant'}
+                  onClick={() => setRemoveTarget(user)}
+                  className="px-3 py-1.5 text-xs font-semibold text-accent-danger bg-accent-danger/10 dark:bg-accent-danger/20 hover:bg-accent-danger/20 dark:hover:bg-accent-danger/30 rounded-lg transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  Remove
                 </button>
               </div>
             </div>
@@ -162,9 +165,26 @@ export default function TenantUserList({ tenantId, users, onUpdate }: TenantUser
         <UserEditModal
           user={editingUser}
           onSave={handleRoleChange}
-          onClose={() => setEditingUser(null)}
+          onClose={() => {
+            setEditingUser(null);
+            onModalClose?.();
+          }}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!removeTarget}
+        title="Remove user?"
+        description={removeTarget ? `Remove ${removeTarget.name || removeTarget.email} from this tenant.` : undefined}
+        confirmLabel="Remove"
+        variant="danger"
+        onCancel={() => setRemoveTarget(null)}
+        onConfirm={() => {
+          if (!removeTarget) return;
+          handleRemoveUser(removeTarget.id, removeTarget.name || removeTarget.email);
+          setRemoveTarget(null);
+        }}
+      />
     </div>
   );
 }

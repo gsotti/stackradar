@@ -16,7 +16,10 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
   const [selectedSystem, setSelectedSystem] = useState<string>('');
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [registryOwner, setRegistryOwner] = useState('gsotti');
+  const [appUrl, setAppUrl] = useState('');
   const [k8sMethod, setK8sMethod] = useState<'kubectl' | 'helm' | 'helmfile'>('kubectl');
+
+  const resolveAppUrl = () => (appUrl || window.location.origin).replace(/\/$/, '');
 
   useEffect(() => {
     fetchEnvironments();
@@ -56,6 +59,9 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
       if (data && data.registry_owner) {
         setRegistryOwner(data.registry_owner);
       }
+      if (data && data.app_url) {
+        setAppUrl(data.app_url.trim());
+      }
     } catch (error) {
       // Keep default registryOwner value on failure
     }
@@ -74,7 +80,7 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
 
   const renderDockerInstructions = () => {
     const apiToken = site.api_token;
-    const stackradarUrl = window.location.origin;
+    const stackradarUrl = resolveAppUrl();
     const tenantName = site.tenant_name || 'default';
     const siteName = site.name;
     const envName = getEnvName();
@@ -152,7 +158,7 @@ services:
             <select
               value={selectedEnv}
               onChange={(e) => setSelectedEnv(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
             >
               <option value="">Select Environment</option>
               {environments.map((env) => (
@@ -167,7 +173,7 @@ services:
             <select
               value={selectedSystem}
               onChange={(e) => setSelectedSystem(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
             >
               <option value="">Select System</option>
               {systems.map((sys) => (
@@ -303,7 +309,7 @@ services:
 
   const renderKubernetesInstructions = () => {
     const apiToken = site.api_token;
-    const stackradarUrl = window.location.origin;
+    const stackradarUrl = resolveAppUrl();
     const tenantName = site.tenant_name || 'default';
     const siteName = site.name;
     const envName = getEnvName();
@@ -418,7 +424,7 @@ releases:
             <select
               value={selectedEnv}
               onChange={(e) => setSelectedEnv(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
             >
               <option value="">Select Environment</option>
               {environments.map((env) => (
@@ -433,7 +439,7 @@ releases:
             <select
               value={selectedSystem}
               onChange={(e) => setSelectedSystem(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
             >
               <option value="">Select System</option>
               {systems.map((sys) => (
@@ -669,7 +675,7 @@ releases:
   };
 
   const renderGenericInstructions = () => {
-    const apiEndpoint = `${window.location.origin}/api/ingest/${site.api_token}/single`;
+    const apiEndpoint = `${resolveAppUrl()}/api/ingest/${site.api_token}/single`;
     const envName = getEnvName();
 
     const curlSnippet = `curl -X POST "${apiEndpoint}" \\
@@ -743,7 +749,7 @@ sendLog(log).catch(console.error);`;
             <select
               value={selectedEnv}
               onChange={(e) => setSelectedEnv(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
             >
               <option value="">Select Environment</option>
               {environments.map((env) => (
@@ -758,7 +764,7 @@ sendLog(log).catch(console.error);`;
             <select
               value={selectedSystem}
               onChange={(e) => setSelectedSystem(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
             >
               <option value="">Select System</option>
               {systems.map((sys) => (

@@ -109,8 +109,8 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {channel ? 'Edit Notification Channel' : 'Create Notification Channel'}
+          <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+            {channel ? 'Edit' : 'Create'} Notification Channel
           </h2>
           <button
             onClick={() => onClose(false)}
@@ -131,7 +131,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                className="input-base w-full"
                 placeholder="Internal Support Email"
                 required
               />
@@ -145,7 +145,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                 name="channel_type"
                 value={formData.channel_type}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                className="input-base w-full"
               >
                 <option value="email" disabled={!smtpConfigured}>
                   Email{!smtpConfigured ? ' (SMTP not configured)' : ''}
@@ -164,7 +164,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                 name="email_recipients"
                 value={formData.email_recipients}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                className="input-base w-full"
                 placeholder="user1@example.com, user2@example.com"
                 rows={3}
                 required
@@ -184,7 +184,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                   name="webhook_url"
                   value={formData.webhook_url}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                  className="input-base w-full"
                   placeholder="https://hooks.slack.com/services/..."
                   required
                 />
@@ -198,7 +198,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                   name="webhook_method"
                   value={formData.webhook_method}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                  className="input-base w-full"
                 >
                   <option value="POST">POST</option>
                   <option value="PUT">PUT</option>
@@ -214,7 +214,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                   name="webhook_headers"
                   value={formData.webhook_headers}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm transition-all"
+                  className="input-base w-full font-mono text-sm"
                   placeholder='{ "Authorization": "Bearer token" }'
                   rows={4}
                 />
@@ -222,18 +222,18 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
             </div>
           )}
 
-          <div className="flex justify-end gap-4 pt-4">
+          <div className="modal-actions">
             <button
               type="button"
               onClick={() => onClose(false)}
-              className="px-6 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
+              className="button-secondary button-center"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold disabled:opacity-50"
+              className="button-primary button-center"
             >
               {loading ? 'Saving...' : channel ? 'Update Channel' : 'Create Channel'}
             </button>

@@ -74,7 +74,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="API Health Check"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
               required
             />
           </div>
@@ -88,7 +88,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
               value={form.url}
               onChange={(e) => setForm({ ...form, url: e.target.value })}
               placeholder="https://api.example.com/health"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="input-base w-full"
               required
             />
           </div>
@@ -101,7 +101,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
               <select
                 value={form.method}
                 onChange={(e) => setForm({ ...form, method: e.target.value as HttpMethod })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="input-base w-full"
               >
                 {methodOptions.map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -116,7 +116,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
               <select
                 value={form.interval_seconds}
                 onChange={(e) => setForm({ ...form, interval_seconds: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="input-base w-full"
               >
                 {intervalOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -134,7 +134,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
                 type="number"
                 value={form.expected_status}
                 onChange={(e) => setForm({ ...form, expected_status: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="input-base w-full"
                 min={100}
                 max={599}
               />
@@ -148,7 +148,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
                 type="number"
                 value={form.timeout_ms / 1000}
                 onChange={(e) => setForm({ ...form, timeout_ms: parseInt(e.target.value) * 1000 })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="input-base w-full"
                 min={1}
                 max={30}
               />
@@ -168,18 +168,18 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
             </label>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="modal-actions">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all font-medium"
+              className="button-secondary button-center"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl font-medium disabled:opacity-50"
+              className="button-primary button-center"
             >
               {loading ? 'Saving...' : monitor ? 'Update' : 'Create'}
             </button>

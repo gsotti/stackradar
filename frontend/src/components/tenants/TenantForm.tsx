@@ -35,16 +35,16 @@ export default function TenantForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+        <div className="p-3 bg-primary-500 rounded-xl shadow-lg">
           <Building2 className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h2 className="text-xl font-bold text-primary-600 dark:text-primary-400">
           {mode === 'create' ? 'Create New Tenant' : 'Edit Tenant'}
         </h2>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+        <label className="text-label mb-2">
           Tenant Name <span className="text-accent-danger">*</span>
         </label>
         <input
@@ -62,7 +62,7 @@ export default function TenantForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+        <label className="text-label mb-2">
           Description
         </label>
         <textarea
@@ -82,7 +82,7 @@ export default function TenantForm({
         <button
           type="submit"
           disabled={submitting}
-          className="button-primary flex-1 disabled:opacity-50"
+          className="button-primary flex-1 disabled:opacity-50 justify-center"
         >
           {submitting ? 'Saving...' : submitLabel || (mode === 'create' ? 'Create Tenant' : 'Save Changes')}
         </button>
@@ -91,7 +91,7 @@ export default function TenantForm({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="button-secondary flex-1 disabled:opacity-50"
+            className="button-secondary flex-1 disabled:opacity-50 justify-center"
           >
             Cancel
           </button>

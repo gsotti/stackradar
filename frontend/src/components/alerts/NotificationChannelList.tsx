@@ -5,6 +5,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { api } from '../../utils/api';
 import NotificationChannelForm from './NotificationChannelForm';
 import { NotificationChannel } from '../../types';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 interface NotificationChannelListProps {
   siteId: string | number;
@@ -16,7 +17,9 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   const [showForm, setShowForm] = useState(false);
   const [editingChannel, setEditingChannel] = useState<NotificationChannel | null>(null);
   const [testingChannelId, setTestingChannelId] = useState<number | null>(null);
-  const [smtpConfigured, setSmtpConfigured] = useState(false);
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<NotificationChannel | null>(null);
+  const smtpLoaded = smtpConfigured !== null;
   const { showError, showSuccess, showInfo } = useNotification();
   const { isViewer } = usePermissions();
 
@@ -57,18 +60,14 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   };
 
   const handleDelete = async (channelId: number) => {
-    if (!confirm('Are you sure you want to delete this notification channel?')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/alerts/channels/${channelId}`);
-      showSuccess('Notification channel deleted successfully');
-      loadChannels();
-    } catch (error: any) {
-      showError(error.message || 'Failed to delete notification channel');
-    }
-  };
+     try {
+       await api.delete(`/alerts/channels/${channelId}`);
+       showSuccess('Notification channel deleted successfully');
+       loadChannels();
+     } catch (error: any) {
+       showError(error.message || 'Failed to delete notification channel');
+     }
+   };
 
   const handleToggle = async (channel: NotificationChannel) => {
     try {
@@ -118,7 +117,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
     <>
       <div className="space-y-4">
         {/* SMTP not configured banner */}
-        {!smtpConfigured && (
+        {smtpLoaded && smtpConfigured === false && (
           <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
@@ -209,11 +208,10 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(channel.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="Delete"
+                        onClick={() => setDeleteTarget(channel)}
+                        className="button-danger button-sm"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        Delete
                       </button>
                     </div>
                   )}
@@ -240,6 +238,20 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
           onClose={handleFormClose}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Delete notification channel?"
+        description={deleteTarget ? `Delete "${deleteTarget.name}".` : undefined}
+        confirmLabel="Delete"
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          handleDelete(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+      />
     </>
   );
 }

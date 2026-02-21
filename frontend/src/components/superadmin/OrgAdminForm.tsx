@@ -70,8 +70,8 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
               <Shield className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {admin ? 'Edit Organization Admin' : 'Create Organization Admin'}
+            <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+              Set Organization Admin
             </h2>
           </div>
           <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">
@@ -131,14 +131,14 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 rounded-2xl transition-all shadow-xl hover:shadow-2xl active:scale-[0.98] disabled:opacity-50"
+              className="button-primary flex-1"
             >
               {loading ? 'Saving...' : admin ? 'Update Admin' : 'Create Admin'}
             </button>
             <button
               type="button"
               onClick={() => onClose(false)}
-              className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600"
+              className="button-secondary flex-1"
             >
               Cancel
             </button>
