@@ -1,10 +1,12 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
 
 export default function LoginPage() {
+  const { t } = useTranslation('auth');
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -48,31 +50,31 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center mb-4 hover:scale-110 transition-transform duration-300">
             <Logo size={80} />
           </div>
-          <h1 className="text-3xl font-bold text-primary-600 dark:text-primary-400">StackRadar</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Full Stack Observability</p>
+          <h1 className="text-3xl font-bold text-primary-600 dark:text-primary-400">{t('page.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">{t('page.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('form.email_label')}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20"
-              placeholder="you@example.com"
+              placeholder={t('form.email_placeholder')}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('form.password_label')}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20"
-              placeholder="••••••••"
+              placeholder={t('form.password_placeholder')}
               required
             />
           </div>
@@ -91,10 +93,10 @@ export default function LoginPage() {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Loading...
+                {t('actions.signing_in')}
               </span>
             ) : (
-              'Sign In'
+              t('actions.sign_in')
             )}
           </button>
         </form>

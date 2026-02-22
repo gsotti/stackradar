@@ -1,0 +1,159 @@
+{
+  "page": {
+    "title": "User Management",
+    "subtitle": "Manage platform users, roles, and approvals",
+    "org_title": "Users",
+    "org_subtitle": "Manage users in your organization"
+  },
+  "tabs": {
+    "all_users": "All Users",
+    "pending_approval": "Pending Approval"
+  },
+  "list": {
+    "empty_title": "No users found",
+    "empty_approved": "All user accounts have been approved.",
+    "empty_start": "Start adding team members to your platform.",
+    "empty_no_users": "No users yet",
+    "empty_create_first": "Create your first user to get started",
+    "empty_search_hint": "Try adjusting your search terms",
+    "search_placeholder": "Search by name or email...",
+    "waiting_approval": "Waiting for approval",
+    "approve_button": "Approve User",
+    "you_badge": "You",
+    "status_active": "Active",
+    "status_inactive": "Inactive"
+  },
+  "actions": {
+    "add_user": "Add User",
+    "create_user": "Create User",
+    "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
+    "delete": "Delete"
+  },
+  "create_modal": {
+    "title": "Create New User",
+    "name_label": "Full Name",
+    "name_placeholder": "John Doe",
+    "email_label": "Email Address *",
+    "email_placeholder": "john@example.com",
+    "password_label": "Password *",
+    "global_role_label": "Global Role",
+    "auto_approve_label": "Auto-approve account",
+    "cancel": "Cancel",
+    "submit": "Create User",
+    "submit_creating": "Creating..."
+  },
+  "edit_modal": {
+    "title": "Edit User",
+    "name_label": "Full Name",
+    "name_placeholder": "John Doe",
+    "email_label": "Email",
+    "password_label": "New Password (leave blank to keep current)",
+    "global_role_label": "Global Role",
+    "active_label": "Active",
+    "cancel": "Cancel",
+    "submit": "Save Changes",
+    "submit_saving": "Saving..."
+  },
+  "delete_confirm": {
+    "title": "Delete user?",
+    "description": "Delete {{name}}.",
+    "label": "Delete"
+  },
+  "invite": {
+    "title": "Invite User",
+    "smtp_warning_title": "SMTP Not Configured",
+    "smtp_warning_text": "Email sending is currently disabled. You must configure SMTP in Admin Settings before you can send invitations.",
+    "email_label": "Email Address *",
+    "email_placeholder": "user@example.com",
+    "email_help": "An invitation link will be sent to this email address",
+    "role_label": "Role *",
+    "cancel": "Cancel",
+    "submit": "Send Invitation",
+    "submit_sending": "Sending..."
+  },
+  "available_list": {
+    "title": "Organization Members",
+    "description": "These users are in your organization but not yet added to this tenant.",
+    "unnamed_user": "Unnamed User",
+    "add_button": "Add to Tenant",
+    "modal_title": "Add Member",
+    "role_label": "Role",
+    "cancel": "Cancel",
+    "submit": "Add to Tenant",
+    "submit_adding": "Adding..."
+  },
+  "tenant_list": {
+    "empty_title": "No users found",
+    "empty_description": "Start by inviting users to this tenant",
+    "role_admin": "Admin",
+    "role_editor": "Editor",
+    "role_viewer": "Viewer",
+    "cannot_edit_self": "Cannot edit yourself",
+    "edit_user_title": "Edit user",
+    "remove_button": "Remove"
+  },
+  "pending_invitations": {
+    "title": "Pending Invitations",
+    "invited_by": "Invited by {{name}}",
+    "expires_label": "Expires",
+    "expired_label": "Expired",
+    "copy_link_title": "Copy invitation link",
+    "resend_title": "Resend invitation",
+    "smtp_disabled_title": "SMTP not configured",
+    "cancel_title": "Cancel invitation"
+  },
+  "role_select": {
+    "tenant_admin": "Tenant Admin",
+    "editor": "Editor",
+    "viewer": "Viewer",
+    "tenant_admin_description": "Full access and user management",
+    "editor_description": "Can create and edit resources",
+    "viewer_description": "Read-only access"
+  },
+  "messages": {
+    "approve_failed": "Failed to approve user:",
+    "delete_failed_prefix": "Failed to delete user:",
+    "email_password_required": "Email and password are required",
+    "create_failed_prefix": "Failed to create user:",
+    "update_failed_prefix": "Failed to update user:",
+    "email_required": "Email is required",
+    "password_min_length": "Password must be at least 8 characters",
+    "create_failed": "Failed to create user",
+    "invite_email_required": "Please enter an email address",
+    "invite_sent": "Invitation sent successfully! An email has been sent to the user.",
+    "invite_failed": "Failed to send invitation",
+    "add_to_tenant_success": "User added to tenant successfully",
+    "add_to_tenant_failed": "Failed to add user",
+    "user_updated": "User updated successfully",
+    "user_update_failed": "Failed to update user",
+    "user_removed": "User removed from tenant successfully",
+    "user_remove_failed": "Failed to remove user",
+    "invitation_cancelled": "Invitation cancelled successfully",
+    "invitation_cancel_failed": "Failed to cancel invitation",
+    "invitation_resent": "Invitation resent to {{email}}",
+    "invitation_resend_failed": "Failed to resend invitation",
+    "link_copied": "Invitation link copied to clipboard",
+    "link_copy_failed": "Failed to copy link",
+    "no_changes": "No changes to save",
+    "org_user_created": "User created successfully",
+    "org_user_updated": "User updated successfully",
+    "org_user_deleted": "User deleted successfully"
+  },
+  "remove_confirm": {
+    "title": "Remove user?",
+    "description": "Remove {{name}} from this tenant.",
+    "label": "Remove"
+  },
+  "cancel_invite_confirm": {
+    "title": "Cancel invitation?",
+    "description": "Cancel the invitation to {{email}}.",
+    "label": "Cancel Invitation"
+  },
+  "org_delete_confirm": {
+    "title": "Delete User",
+    "description": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+    "label": "Delete User"
+  }
+}

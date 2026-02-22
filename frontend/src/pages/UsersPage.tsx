@@ -1,5 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Plus, Trash2, Edit2, RefreshCw, Users as UsersIcon, UserCheck, UserX, Clock, CheckCircle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { api } from '../utils/api';
@@ -8,6 +9,8 @@ import { User } from '../types';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 export default function UsersPage() {
+  const { t } = useTranslation('users');
+  const { t: tc } = useTranslation('common');
   const { user: currentUser } = useAuth();
   const { showError } = useNotification();
   const [users, setUsers] = useState<User[]>([]);
@@ -46,7 +49,7 @@ export default function UsersPage() {
       await api.post(`/admin/users/${userId}/approve`, {});
       await loadUsers();
     } catch (error: any) {
-      showError('Failed to approve user: ' + error.message);
+      showError(t('messages.approve_failed') + ' ' + error.message);
     }
   };
 
@@ -55,7 +58,7 @@ export default function UsersPage() {
        await api.delete(`/admin/users/${userId}`);
        await loadUsers();
      } catch (error: any) {
-       showError('Failed to delete user: ' + error.message);
+       showError(t('messages.delete_failed_prefix') + ' ' + error.message);
      }
    };
 
@@ -72,7 +75,7 @@ export default function UsersPage() {
     e.preventDefault();
 
     if (!newUser.email || !newUser.password) {
-      showError('Email and password are required');
+      showError(t('messages.email_password_required'));
       return;
     }
 
@@ -90,7 +93,7 @@ export default function UsersPage() {
       setShowCreateModal(false);
       await loadUsers();
     } catch (error: any) {
-      showError('Failed to create user: ' + error.message);
+      showError(t('messages.create_failed_prefix') + ' ' + error.message);
     }
   };
 
@@ -124,7 +127,7 @@ export default function UsersPage() {
       setShowEditModal(false);
       await loadUsers();
     } catch (error: any) {
-      showError('Failed to update user: ' + error.message);
+      showError(t('messages.update_failed_prefix') + ' ' + error.message);
     }
   };
 
@@ -143,14 +146,14 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-heading-2">User Management</h1>
-          <p className="text-body-secondary mt-2">Manage platform users, roles, and approvals</p>
+          <h1 className="text-heading-2">{t('page.title')}</h1>
+          <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={loadUsers}
             className="p-2.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
-            title="Refresh"
+            title={tc('actions.refresh')}
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -159,7 +162,7 @@ export default function UsersPage() {
             className="button-primary flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
-            Add User
+            {t('actions.add_user')}
           </button>
         </div>
       </div>
@@ -175,7 +178,7 @@ export default function UsersPage() {
           }`}
         >
           <UsersIcon className="w-4 h-4" />
-          All Users
+          {t('tabs.all_users')}
           <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${activeTab === 'all' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'}`}>
             {users.length}
           </span>
@@ -189,7 +192,7 @@ export default function UsersPage() {
           }`}
         >
           <Clock className="w-4 h-4" />
-          Pending Approval
+          {t('tabs.pending_approval')}
           {pendingUsers.length > 0 && (
             <span className="ml-1 px-2 py-0.5 bg-accent-warning text-white rounded-full text-[10px] font-medium animate-pulse">
               {pendingUsers.length}
@@ -202,9 +205,9 @@ export default function UsersPage() {
       {displayedUsers.length === 0 ? (
         <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
           <UsersIcon className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
-          <h3 className="text-heading-4">No users found</h3>
+          <h3 className="text-heading-4">{t('list.empty_title')}</h3>
           <p className="text-neutral-600 dark:text-neutral-400 max-w-sm mx-auto mt-2">
-            {activeTab === 'pending' ? 'All user accounts have been approved.' : 'Start adding team members to your platform.'}
+            {activeTab === 'pending' ? t('list.empty_approved') : t('list.empty_start')}
           </p>
         </div>
       ) : (
@@ -237,19 +240,19 @@ export default function UsersPage() {
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-neutral-900 dark:text-white truncate">{user.name || 'Anonymous'}</h3>
+                      <h3 className="font-semibold text-neutral-900 dark:text-white truncate">{user.name || tc('meta.anonymous')}</h3>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-wrap justify-end">
                     {user.global_role === 'superadmin' && (
                       <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-[10px] font-bold uppercase tracking-wider rounded-md border border-primary-200 dark:border-primary-800">
-                        Superadmin
+                        {tc('roles.superadmin')}
                       </span>
                     )}
                     {user.global_role === 'org_admin' && (
                       <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-[10px] font-bold uppercase tracking-wider rounded-md border border-primary-200 dark:border-primary-800">
-                        Org Admin
+                        {tc('roles.org_admin')}
                       </span>
                     )}
                   </div>
@@ -259,14 +262,14 @@ export default function UsersPage() {
                   <div className="flex flex-col gap-2 mt-3">
                     <div className="p-2 bg-accent-warning/10 dark:bg-accent-warning/10 rounded-lg border border-accent-warning/20 dark:border-accent-warning/20 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-accent-warning flex-shrink-0" />
-                      <span className="text-xs font-medium text-accent-warning">Waiting for approval</span>
+                      <span className="text-xs font-medium text-accent-warning">{t('list.waiting_approval')}</span>
                     </div>
                     <button
                       onClick={() => approveUser(user.id)}
                       className="w-full flex items-center justify-center gap-2 py-2 bg-accent-success hover:bg-accent-success/90 text-white rounded-lg font-semibold text-sm transition-all"
                     >
                       <UserCheck className="w-4 h-4" />
-                      Approve User
+                      {t('list.approve_button')}
                     </button>
                   </div>
                 ) : (
@@ -276,7 +279,7 @@ export default function UsersPage() {
                       className="flex items-center justify-center gap-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-all font-semibold text-xs"
                     >
                       <Edit2 className="w-3 h-3" />
-                      Edit
+                      {t('actions.edit')}
                     </button>
                     <button
                       onClick={() => toggleUserActive(user.id, user.is_active)}
@@ -287,7 +290,7 @@ export default function UsersPage() {
                       }`}
                     >
                       {user.is_active ? <UserX className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
-                      {user.is_active ? 'Disable' : 'Enable'}
+                      {user.is_active ? t('actions.disable') : t('actions.enable')}
                     </button>
                     <button
                       onClick={() => setDeleteTarget(user)}
@@ -295,7 +298,7 @@ export default function UsersPage() {
                       className="flex items-center justify-center gap-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-accent-danger/10 dark:hover:bg-accent-danger/10 text-neutral-700 dark:text-neutral-300 hover:text-accent-danger dark:hover:text-accent-danger rounded-lg transition-all font-semibold text-xs disabled:hidden"
                     >
                       <Trash2 className="w-3 h-3" />
-                      Delete
+                      {t('actions.delete')}
                     </button>
                   </div>
                 )}
@@ -311,35 +314,35 @@ export default function UsersPage() {
           <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
           <div className="card relative w-full max-w-md">
             <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
-              <h2 className="text-heading-3">Create New User</h2>
+              <h2 className="text-heading-3">{t('create_modal.title')}</h2>
               <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
             <form onSubmit={createUser} className="mt-4 space-y-4">
               <div>
-                <label className="block text-label mb-2">Full Name</label>
+                <label className="block text-label mb-2">{t('create_modal.name_label')}</label>
                 <input
                   type="text"
                   value={newUser.name}
                   onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                   className="input-base w-full"
-                  placeholder="John Doe"
+                  placeholder={t('create_modal.name_placeholder')}
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">Email Address *</label>
+                <label className="block text-label mb-2">{t('create_modal.email_label')}</label>
                 <input
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                   className="input-base w-full"
-                  placeholder="john@example.com"
+                  placeholder={t('create_modal.email_placeholder')}
                   required
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">Password *</label>
+                <label className="block text-label mb-2">{t('create_modal.password_label')}</label>
                 <input
                   type="password"
                   value={newUser.password}
@@ -351,15 +354,15 @@ export default function UsersPage() {
               </div>
               <div className="flex flex-col gap-3">
                 <div>
-                  <label className="block text-label mb-2">Global Role</label>
+                  <label className="block text-label mb-2">{t('create_modal.global_role_label')}</label>
                   <select
                     value={newUser.global_role || ''}
                     onChange={(e) => setNewUser({ ...newUser, global_role: e.target.value || null })}
                     className="input-base w-full"
                   >
-                    <option value="">No global role</option>
-                    <option value="superadmin">Superadmin</option>
-                    <option value="org_admin">Organization Admin</option>
+                    <option value="">{tc('roles.no_global_role')}</option>
+                    <option value="superadmin">{tc('roles.superadmin')}</option>
+                    <option value="org_admin">{tc('roles.org_admin')}</option>
                   </select>
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer group">
@@ -372,7 +375,7 @@ export default function UsersPage() {
                     />
                     <div className="w-10 h-6 bg-neutral-300 dark:bg-neutral-700 rounded-full peer-checked:bg-accent-success peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                   </div>
-                  <span className="text-body-secondary text-sm group-hover:text-accent-success transition-colors">Auto-approve account</span>
+                  <span className="text-body-secondary text-sm group-hover:text-accent-success transition-colors">{t('create_modal.auto_approve_label')}</span>
                 </label>
               </div>
               <div className="modal-actions">
@@ -381,13 +384,13 @@ export default function UsersPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="button-secondary button-center"
                 >
-                  Cancel
+                  {t('create_modal.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="button-primary button-center"
                 >
-                  Create User
+                  {t('create_modal.submit')}
                 </button>
               </div>
             </form>
@@ -401,23 +404,24 @@ export default function UsersPage() {
           <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
           <div className="card relative w-full max-w-md">
             <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
-              <h2 className="text-heading-3">Edit User</h2>
+              <h2 className="text-heading-3">{t('edit_modal.title')}</h2>
               <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
             <form onSubmit={handleEditSubmit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-label mb-2">Full Name</label>
+                <label className="block text-label mb-2">{t('edit_modal.name_label')}</label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                   className="input-base w-full"
+                  placeholder={t('edit_modal.name_placeholder')}
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">Email Address</label>
+                <label className="block text-label mb-2">{t('edit_modal.email_label')}</label>
                 <input
                   type="email"
                   value={editForm.email}
@@ -426,10 +430,7 @@ export default function UsersPage() {
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">
-                  New Password
-                  <span className="ml-2 font-normal text-body-secondary text-xs">(leave blank to keep current)</span>
-                </label>
+                <label className="block text-label mb-2">{t('edit_modal.password_label')}</label>
                 <input
                   type="password"
                   value={editForm.password}
@@ -439,15 +440,15 @@ export default function UsersPage() {
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">Global Role</label>
+                <label className="block text-label mb-2">{t('edit_modal.global_role_label')}</label>
                 <select
                   value={editForm.global_role || ''}
                   onChange={(e) => setEditForm({ ...editForm, global_role: e.target.value || null })}
                   className="input-base w-full"
                 >
-                  <option value="">No global role</option>
-                  <option value="superadmin">Superadmin</option>
-                  <option value="org_admin">Organization Admin</option>
+                  <option value="">{tc('roles.no_global_role')}</option>
+                  <option value="superadmin">{tc('roles.superadmin')}</option>
+                  <option value="org_admin">{tc('roles.org_admin')}</option>
                 </select>
               </div>
               <div className="modal-actions">
@@ -456,13 +457,13 @@ export default function UsersPage() {
                   onClick={() => setShowEditModal(false)}
                   className="button-secondary button-center"
                 >
-                  Cancel
+                  {t('edit_modal.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="button-primary button-center"
                 >
-                  Save Changes
+                  {t('edit_modal.submit')}
                 </button>
               </div>
             </form>
@@ -472,9 +473,9 @@ export default function UsersPage() {
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete user?"
-        description={deleteTarget ? `Delete ${deleteTarget.name || deleteTarget.email}. This action cannot be undone.` : undefined}
-        confirmLabel="Delete"
+        title={t('delete_confirm.title')}
+        description={deleteTarget ? t('delete_confirm.description', { name: deleteTarget.name || deleteTarget.email }) : undefined}
+        confirmLabel={t('delete_confirm.label')}
         variant="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {

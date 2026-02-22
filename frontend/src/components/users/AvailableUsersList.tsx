@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import {UserPlus, Users, RefreshCw, X, Mail, User as UserIcon, UserPlus2} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
@@ -26,6 +27,8 @@ interface AvailableUsersListProps {
 }
 
 export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlocked = false, onModalOpen, onModalClose }: AvailableUsersListProps) {
+  const { t } = useTranslation('users');
+  const { t: tc } = useTranslation('common');
   const { showError, showSuccess } = useNotification();
   const { user } = useAuth();
   const [users, setUsers] = useState<AvailableUser[]>([]);
@@ -65,12 +68,12 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
     setAddingUserId(userId);
     try {
       await api.post(`/tenants/${tenantId}/users/${userId}/add`, { role });
-      showSuccess('User added to tenant successfully');
+      showSuccess(t('messages.add_to_tenant_success'));
       onUserAdded();
       loadAvailableUsers();
       setSelectedUser(null);
     } catch (error: any) {
-      showError(error.message || 'Failed to add user');
+      showError(error.message || t('messages.add_to_tenant_failed'));
     } finally {
       setAddingUserId(null);
     }
@@ -93,14 +96,14 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
       <div className="flex items-center gap-2">
         <Users className="w-5 h-5 text-primary-500" />
         <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
-          Organization Members
+          {t('available_list.title')}
         </h3>
         <span className="px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs font-bold rounded-full">
           {users.length}
         </span>
       </div>
       <p className="text-sm text-neutral-500 dark:text-neutral-400">
-        These users are in your organization but not yet added to this tenant.
+        {t('available_list.description')}
       </p>
 
       <div className="space-y-3">
@@ -128,7 +131,7 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
                 {/* User Info */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-neutral-900 dark:text-white truncate mb-1">
-                    {user.name || 'Unnamed User'}
+                    {user.name || t('available_list.unnamed_user')}
                   </h3>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                     {user.email}
@@ -153,7 +156,7 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
                   ) : (
                     <UserPlus2 className="w-4 h-4" />
                   )}
-                  Add to Tenant
+                  {t('available_list.add_button')}
                 </button>
               </div>
             </div>
@@ -173,7 +176,7 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
           />
           <div className="card relative w-full max-w-md">
             <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
-              <h2 className="text-heading-3">Add Member</h2>
+              <h2 className="text-heading-3">{t('available_list.modal_title')}</h2>
               <button
                 onClick={() => {
                   setSelectedUser(null);
@@ -203,7 +206,7 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
                     <UserIcon className="w-4 h-4" />
-                    <span className="truncate">{selectedUser.name || 'Unnamed User'}</span>
+                    <span className="truncate">{selectedUser.name || t('available_list.unnamed_user')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                     <Mail className="w-4 h-4" />
@@ -213,7 +216,7 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Role</label>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t('available_list.role_label')}</label>
                 <RoleSelect
                   value={selectedRole}
                   onChange={(role) => setSelectedRole(role)}
@@ -230,14 +233,14 @@ export default function AvailableUsersList({ tenantId, onUserAdded, isModalBlock
                 }}
                 className="button-secondary button-center"
               >
-                Cancel
+                {t('available_list.cancel')}
               </button>
               <button
                 onClick={() => handleAddUser(selectedUser.id, selectedRole)}
                 disabled={addingUserId === selectedUser.id}
                 className="button-primary button-center"
               >
-                {addingUserId === selectedUser.id ? 'Adding...' : 'Add to Tenant'}
+                {addingUserId === selectedUser.id ? t('available_list.submit_adding') : t('available_list.submit')}
               </button>
             </div>
           </div>

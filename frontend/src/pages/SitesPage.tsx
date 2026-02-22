@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, Server, Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -10,6 +11,8 @@ import { UptimeStatusDot } from '../components/uptime/UptimeStatusBadge';
 import { Site, K8sMetrics, UptimeStatus } from '../types';
 
 export default function SitesPage() {
+  const { t } = useTranslation('sites');
+  const { t: tc } = useTranslation('common');
   const { user } = useAuth();
   const { isViewer } = usePermissions();
   const { selectedTenant } = useApp();
@@ -75,7 +78,7 @@ export default function SitesPage() {
       const data = await api.get<Site[]>(`/sites?${params}`);
       setSites(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to fetch sites');
+      showError(error.message || t('messages.failed_fetch'));
     } finally {
       setLoading(false);
     }
@@ -85,7 +88,7 @@ export default function SitesPage() {
     e.preventDefault();
 
     if (!selectedTenant) {
-      showError('Please select a tenant from the sidebar before creating a site');
+      showError(t('messages.select_tenant_first'));
       return;
     }
 
@@ -96,7 +99,7 @@ export default function SitesPage() {
       setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes', has_metrics: true });
       fetchSites();
     } catch (error: any) {
-      showError(error.message || 'Failed to create site');
+      showError(error.message || t('messages.failed_create'));
     }
   };
 
@@ -121,8 +124,8 @@ export default function SitesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-heading-2">Sites</h1>
-          <p className="text-body-secondary mt-2">Manage your Docker hosts, Kubernetes clusters, and generic sites</p>
+          <h1 className="text-heading-2">{t('page.title')}</h1>
+          <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
         </div>
         {!isViewer() && (
           <button
@@ -130,7 +133,7 @@ export default function SitesPage() {
             className="button-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Add Site
+            {t('actions.add_site')}
           </button>
         )}
       </div>
@@ -139,32 +142,32 @@ export default function SitesPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="card w-full max-w-md">
-            <h2 className="text-heading-3 mb-6">Add New Site</h2>
+            <h2 className="text-heading-3 mb-6">{t('form.title')}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-label mb-2">Identifier (Name)</label>
+                <label className="block text-label mb-2">{t('form.name_label')}</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="input-base w-full"
-                  placeholder="Production Cluster"
+                  placeholder={t('form.name_placeholder')}
                   required
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">Description</label>
+                <label className="block text-label mb-2">{t('form.description_label')}</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="input-base w-full"
-                  placeholder="Brief description of the site"
+                  placeholder={t('form.description_placeholder')}
                   rows={3}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-label mb-2">Retention (days)</label>
+                  <label className="block text-label mb-2">{t('form.retention_label')}</label>
                   <input
                     type="number"
                     value={form.retention_days}
@@ -176,15 +179,15 @@ export default function SitesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-label mb-2">Site Type</label>
+                  <label className="block text-label mb-2">{t('form.site_type_label')}</label>
                   <select
                     value={form.site_type}
                     onChange={(e) => setForm({ ...form, site_type: e.target.value as any })}
                     className="input-base w-full"
                   >
-                    <option value="kubernetes">Kubernetes</option>
-                    <option value="docker">Docker</option>
-                    <option value="generic">Generic</option>
+                    <option value="kubernetes">{t('form.site_type_kubernetes')}</option>
+                    <option value="docker">{t('form.site_type_docker')}</option>
+                    <option value="generic">{t('form.site_type_generic')}</option>
                   </select>
                 </div>
               </div>
@@ -201,9 +204,9 @@ export default function SitesPage() {
                     <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.has_metrics ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Collect infrastructure metrics</span>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('form.has_metrics_label')}</span>
                     <p className="text-body-secondary text-xs mt-0.5">
-                      Disable for uptime-only sites (no metrics tab shown)
+                      {t('form.has_metrics_description')}
                     </p>
                   </div>
                 </label>
@@ -213,14 +216,14 @@ export default function SitesPage() {
                   type="submit"
                   className="button-primary flex-1"
                 >
-                  Create Site
+                  {t('actions.create_site')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
                   className="button-secondary flex-1"
                 >
-                  Cancel
+                  {tc('actions.cancel')}
                 </button>
               </div>
             </form>
@@ -231,9 +234,9 @@ export default function SitesPage() {
       {sites.length === 0 ? (
         <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
           <Server className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
-          <h3 className="text-heading-4 mb-2">No sites found</h3>
+          <h3 className="text-heading-4 mb-2">{t('empty.title')}</h3>
           <p className="text-body-secondary max-w-sm mx-auto mb-8">
-            Create your first site to start monitoring your infrastructure.
+            {t('empty.description')}
           </p>
           {!isViewer() && (
             <button
@@ -241,7 +244,7 @@ export default function SitesPage() {
               className="button-primary inline-flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              Add Your First Site
+              {t('actions.add_first_site')}
             </button>
           )}
         </div>
@@ -275,14 +278,14 @@ export default function SitesPage() {
                 </div>
                 
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-1 min-h-[1.25rem]">
-                  {site.description || 'No description provided.'}
+                  {site.description || t('card.no_description')}
                 </p>
 
                 <div className="mt-auto pt-4 border-t border-neutral-200 dark:border-neutral-700/50">
                   {metrics ? (
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <p className="text-label">CPU Usage</p>
+                        <p className="text-label">{t('card.cpu_usage')}</p>
                         <div className="flex items-end gap-1">
                           <span className="text-base font-bold text-neutral-900 dark:text-white leading-none">{safePercent(metrics.cpu_usage_percent)}%</span>
                         </div>
@@ -294,7 +297,7 @@ export default function SitesPage() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-label">Memory</p>
+                        <p className="text-label">{t('card.memory')}</p>
                         <div className="flex items-end gap-1">
                           <span className="text-base font-bold text-neutral-900 dark:text-white leading-none">{safePercent(metrics.memory_usage_percent)}%</span>
                         </div>
@@ -309,7 +312,7 @@ export default function SitesPage() {
                   ) : (
                     <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 italic text-sm py-2">
                       <Info className="w-4 h-4" />
-                      Waiting for metrics...
+                      {t('card.waiting_metrics')}
                     </div>
                   )}
                 </div>

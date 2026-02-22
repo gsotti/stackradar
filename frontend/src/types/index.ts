@@ -423,6 +423,8 @@ export interface AppContextType {
   setSelectedEnvironment: (id: string) => void;
   selectedSystem: string;
   setSelectedSystem: (id: string) => void;
+  language: string;
+  setLanguage: (lang: string) => void;
 }
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';

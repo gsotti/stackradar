@@ -1,5 +1,6 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { X, BarChart2, Radio } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { 
@@ -19,6 +20,8 @@ interface AlertRuleFormProps {
 }
 
 export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormProps) {
+  const { t } = useTranslation('alerts');
+  const { t: tc } = useTranslation('common');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -83,17 +86,17 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
     e.preventDefault();
 
     if (!formData.name) {
-      showError('Please enter a rule name');
+      showError(t('rules_messages.name_required'));
       return;
     }
 
     if (formData.alert_type === 'metric' && formData.threshold_value === '') {
-      showError('Please enter a threshold value');
+      showError(t('rules_messages.value_required'));
       return;
     }
 
     if (formData.alert_type === 'uptime' && !formData.monitor_id) {
-      showError('Please select a monitor');
+      showError(t('rules_messages.monitor_required'));
       return;
     }
 
@@ -109,15 +112,15 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
 
       if (rule) {
         await api.put(`/alerts/rules/${rule.id}`, payload);
-        showSuccess('Alert rule updated successfully');
+        showSuccess(t('rules_messages.updated'));
       } else {
         await api.post('/alerts/rules', payload);
-        showSuccess('Alert rule created successfully');
+        showSuccess(t('rules_messages.created'));
       }
 
       onClose(true);
     } catch (error: any) {
-      showError(error.message || 'Failed to save alert rule');
+      showError(error.message || t('rules_messages.save_failed'));
     } finally {
       setLoading(false);
     }
@@ -152,9 +155,9 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
             </div>
             <div>
               <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                {rule ? 'Edit Alert Rule' : 'Create Alert Rule'}
+                {rule ? t('rules_form.title_edit') : t('rules_form.title_create')}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Define conditions for your alerts</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('rules_form.subtitle')}</p>
             </div>
           </div>
           <button
@@ -169,7 +172,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                Rule Name *
+                {t('rules_form.name_label')}
               </label>
               <input
                 type="text"
@@ -177,21 +180,21 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                 value={formData.name}
                 onChange={handleChange}
                 className="input-base w-full shadow-sm"
-                placeholder="CPU high usage alert"
+                placeholder={t('rules_form.name_placeholder')}
                 required
               />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                Description
+                {t('rules_form.description_label')}
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 className="input-base w-full shadow-sm"
-                placeholder="Alert when service is down or resource usage is high"
+                placeholder={t('rules_form.description_placeholder')}
                 rows={2}
               />
             </div>
@@ -209,7 +212,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
               }`}
             >
               <BarChart2 className="w-5 h-5" />
-              <span className="font-bold">Metric-based</span>
+              <span className="font-bold">{t('rules_form.type_metric')}</span>
             </button>
             <button
               type="button"
@@ -221,14 +224,14 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
               }`}
             >
               <Radio className="w-5 h-5" />
-              <span className="font-bold">Uptime-based</span>
+              <span className="font-bold">{t('rules_form.type_uptime')}</span>
             </button>
           </div>
 
           <div className="space-y-6">
             <div className="w-full">
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                Severity
+                {t('rules_form.severity_label')}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {['info', 'warning', 'critical'].map((s) => (
@@ -244,7 +247,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                         : 'bg-gray-50 border-gray-200 text-gray-500 dark:bg-gray-900 dark:border-gray-700'
                     }`}
                   >
-                    {s}
+                    {t(`rules_form.severity_${s}`)}
                   </button>
                 ))}
               </div>
@@ -253,14 +256,14 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
 
             <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-4 w-full">
               <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                Conditions
+                {t('rules_form.conditions_section')}
               </h3>
 
               {formData.alert_type === 'metric' ? (
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                      Metric
+                      {t('rules_form.metric_label')}
                     </label>
                     <select
                       name="metric_type"
@@ -268,21 +271,21 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       onChange={handleChange}
                       className="input-base w-full text-sm shadow-sm"
                     >
-                      <option value="cpu_percent">CPU Usage (%)</option>
-                      <option value="memory_percent">Memory Usage (%)</option>
-                      <option value="error_logs">Error Log Rate</option>
-                      <option value="pod_failed">Failed Pod Count</option>
-                      <option value="pod_pending">Pending Pod Count</option>
-                      <option value="deployment_readiness">Deployment Ready %</option>
-                      <option value="pvc_bound">PVC Bound %</option>
-                      <option value="node_health">Healthy Node %</option>
+                      <option value="cpu_percent">{t('rules_form.metric_cpu')}</option>
+                      <option value="memory_percent">{t('rules_form.metric_memory')}</option>
+                      <option value="error_logs">{t('rules_form.metric_error_logs')}</option>
+                      <option value="pod_failed">{t('rules_form.metric_pod_failed')}</option>
+                      <option value="pod_pending">{t('rules_form.metric_pod_pending')}</option>
+                      <option value="deployment_readiness">{t('rules_form.metric_deployment_readiness')}</option>
+                      <option value="pvc_bound">{t('rules_form.metric_pvc_bound')}</option>
+                      <option value="node_health">{t('rules_form.metric_node_health')}</option>
                     </select>
                   </div>
 
                   <div className="flex gap-3">
                     <div className="w-1/3">
                       <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                        Op
+                        {t('rules_form.operator_label')}
                       </label>
                       <select
                         name="threshold_operator"
@@ -299,7 +302,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                     </div>
                     <div className="flex-1">
                       <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                        Value
+                        {t('rules_form.value_label')}
                       </label>
                       <input
                         type="number"
@@ -308,7 +311,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                         onChange={handleChange}
                         step="0.1"
                         className="input-base w-full text-sm font-mono shadow-sm"
-                        placeholder="80"
+                        placeholder={t('rules_form.value_placeholder')}
                         required
                       />
                     </div>
@@ -316,7 +319,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                      Repeat Notification Every (hours)
+                      {t('rules_form.repeat_label')}
                     </label>
                     <input
                       type="number"
@@ -328,13 +331,13 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       className="input-base w-full text-sm shadow-sm"
                       required
                     />
-                    <p className="mt-1 text-[10px] text-gray-500">Resend alert every X hours if the issue persists (1-24)</p>
+                    <p className="mt-1 text-[10px] text-gray-500">{t('rules_form.repeat_help')}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                        Window (m)
+                        {t('rules_form.window_label')}
                       </label>
                       <input
                         type="number"
@@ -348,7 +351,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                        Cooldown (m)
+                        {t('rules_form.cooldown_label')}
                       </label>
                       <input
                         type="number"
@@ -366,7 +369,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                      Select Monitor
+                      {t('rules_form.monitor_label')}
                     </label>
                     <select
                       name="monitor_id"
@@ -375,7 +378,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       className="input-base w-full text-sm shadow-sm"
                       required
                     >
-                      <option value="">Choose a monitor...</option>
+                      <option value="">{t('rules_form.monitor_placeholder')}</option>
                       {monitors.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name} ({m.url})
@@ -386,7 +389,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                      Failure Threshold
+                      {t('rules_form.failure_threshold_label')}
                     </label>
                     <input
                       type="number"
@@ -395,15 +398,15 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       onChange={handleChange}
                       min="1"
                       className="input-base w-full text-sm shadow-sm"
-                      placeholder="e.g. 3"
+                      placeholder={t('rules_form.failure_threshold_placeholder')}
                       required
                     />
-                    <p className="mt-1 text-[10px] text-gray-500">Alert after this many consecutive check failures</p>
+                    <p className="mt-1 text-[10px] text-gray-500">{t('rules_form.failure_threshold_help')}</p>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                      Repeat Notification Every (hours)
+                      {t('rules_form.repeat_label')}
                     </label>
                     <input
                       type="number"
@@ -415,7 +418,7 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
                       className="input-base w-full text-sm shadow-sm"
                       required
                     />
-                    <p className="mt-1 text-[10px] text-gray-500">Resend alert every X hours if the issue persists (1-24)</p>
+                    <p className="mt-1 text-[10px] text-gray-500">{t('rules_form.repeat_help')}</p>
                   </div>
                 </>
               )}
@@ -424,11 +427,11 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
             {/* Notification Channels */}
             <div className="w-full">
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">
-                Notification Channels
+                {t('rules_form.channels_label')}
               </label>
               {channels.length === 0 ? (
                 <div className="p-4 bg-amber-50 dark:bg-yellow-900/20 border border-amber-200 dark:border-yellow-800 rounded-xl text-sm text-amber-700 dark:text-yellow-400">
-                  No active notification channels found. Please create one in the Notification Channels tab first.
+                  {t('rules_form.no_channels')}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -461,14 +464,14 @@ export default function AlertRuleForm({ siteId, rule, onClose }: AlertRuleFormPr
               onClick={() => onClose(false)}
               className="button-secondary button-center"
             >
-              Cancel
+              {t('rules_form.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="button-primary button-center"
             >
-              {loading ? 'Saving...' : rule ? 'Update Rule' : 'Create Rule'}
+              {loading ? t('rules_form.submit_saving') : rule ? t('rules_form.submit_update') : t('rules_form.submit_create')}
             </button>
           </div>
         </form>

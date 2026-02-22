@@ -1,0 +1,66 @@
+{
+  "page": {
+    "title": "Tenants",
+    "subtitle": "Manage organizations and their members"
+  },
+  "actions": {
+    "create_tenant": "Create Tenant",
+    "create_first_tenant": "Create Your First Tenant",
+    "manage_settings": "Manage Settings"
+  },
+  "card": {
+    "no_description": "No description provided.",
+    "user_count_one": "{{count}} user",
+    "user_count_other": "{{count}} users",
+    "created": "Created {{date}}"
+  },
+  "form": {
+    "title_create": "Create New Tenant",
+    "title_edit": "Edit Tenant",
+    "name_label": "Tenant Name *",
+    "name_placeholder": "e.g., Acme Corporation",
+    "name_help": "This name appears across dashboards and settings.",
+    "description_label": "Description",
+    "description_placeholder": "Brief description of this tenant",
+    "description_help": "Optional description to help identify this tenant.",
+    "submit_create": "Create Tenant",
+    "submit_edit": "Save Changes",
+    "submit_saving": "Saving...",
+    "cancel": "Cancel"
+  },
+  "empty": {
+    "title": "No tenants found",
+    "description": "Create your first tenant to start organizing your users and sites."
+  },
+  "settings": {
+    "loading": "Loading tenant details...",
+    "not_found": "Tenant not found",
+    "return_to_list": "Return to tenants list",
+    "subtitle": "Tenant settings and management",
+    "tab_settings": "Settings",
+    "tab_users": "Users",
+    "info_title": "Tenant Information",
+    "created_label": "Created:",
+    "updated_label": "Last Updated:",
+    "id_label": "Tenant ID:",
+    "active_users_label": "Active Users",
+    "pending_invitations_label": "Pending Invitations",
+    "members_title": "Tenant Members"
+  },
+  "danger_zone": {
+    "delete_description": "Deleting this tenant will permanently remove all associated users, sites, environments, systems, and logs. This action cannot be undone.",
+    "delete_button": "Delete Tenant"
+  },
+  "confirm": {
+    "delete_title": "Delete tenant?",
+    "delete_description": "Deleting '{{name}}' will remove all associated data.",
+    "delete_label": "Delete Tenant"
+  },
+  "messages": {
+    "updated": "Tenant updated successfully",
+    "deleted": "Tenant deleted successfully",
+    "created": "Tenant created successfully",
+    "create_failed": "Failed to create tenant",
+    "fetch_failed": "Failed to fetch tenants"
+  }
+}

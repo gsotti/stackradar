@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Server, Activity, LogOut, Menu, X,
-  Moon, Sun, ChevronLeft, ChevronRight, Package, Globe, Shield, Building2, Users, Settings
+  Moon, Sun, ChevronLeft, ChevronRight, Package, Globe, Shield, Building2, Users, Settings, Languages
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -13,6 +14,7 @@ import Logo from './Logo';
 import { Tenant, Site, Environment } from '../types';
 
 export default function Sidebar() {
+  const { t } = useTranslation('sidebar');
   const { user, logout, isSuperadmin, isOrgAdmin } = useAuth();
   const { isViewer } = usePermissions();
   const {
@@ -26,7 +28,9 @@ export default function Sidebar() {
     setSelectedSite,
     selectedEnvironment,
     setSelectedEnvironment,
-    setSelectedSystem
+    setSelectedSystem,
+    language,
+    setLanguage
   } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,23 +44,23 @@ export default function Sidebar() {
 
   const navigation = [
     ...(!isSuperadmin() ? [
-      { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      { name: t('nav.dashboard'), href: '/', icon: LayoutDashboard },
       ...(!isUptimeOnly ? [
-        { name: 'Logs', href: '/logs/live', icon: Activity },
+        { name: t('nav.logs'), href: '/logs/live', icon: Activity },
       ] : []),
-      { name: 'Sites', href: '/sites', icon: Server },
+      { name: t('nav.sites'), href: '/sites', icon: Server },
       ...(!isViewer() && !isUptimeOnly ? [
-        { name: 'Environments', href: '/environments', icon: Globe },
-        { name: 'Systems', href: '/systems', icon: Package }
+        { name: t('nav.environments'), href: '/environments', icon: Globe },
+        { name: t('nav.systems'), href: '/systems', icon: Package }
       ] : []),
     ] : []),
     ...(isOrgAdmin() ? [
-      { name: 'Tenants', href: '/tenants', icon: Building2 },
-      { name: 'Users', href: '/organization/users', icon: Users },
-      { name: 'Settings', href: '/admin/settings', icon: Settings }
+      { name: t('nav.tenants'), href: '/tenants', icon: Building2 },
+      { name: t('nav.users'), href: '/organization/users', icon: Users },
+      { name: t('nav.settings'), href: '/admin/settings', icon: Settings }
     ] : []),
     ...(isSuperadmin() ? [
-      { name: 'Superadmin', href: '/superadmin', icon: Shield }
+      { name: t('nav.superadmin'), href: '/superadmin', icon: Shield }
     ] : []),
   ];
 
@@ -193,7 +197,7 @@ export default function Sidebar() {
                 }}
                 className="input-base w-full text-sm"
               >
-                <option value="">All Tenants</option>
+                <option value="">{t('selectors.allTenants')}</option>
                 {tenants.map((tenant) => (
                   <option key={tenant.id} value={tenant.id}>
                     {tenant.name}
@@ -233,11 +237,11 @@ export default function Sidebar() {
           {/* Context Filters - only show on Logs pages */}
           {!sidebarCollapsed && location.pathname.startsWith('/logs') && (
             <div className="px-3 py-3 space-y-3 border-t border-neutral-200 dark:border-neutral-700/50">
-              <h3 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider px-1">Context</h3>
+              <h3 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider px-1">{t('context.title')}</h3>
 
               {/* Site */}
               <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 px-1 text-label">Site</label>
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 px-1 text-label">{t('context.site')}</label>
                 <select
                   value={selectedSite}
                   onChange={(e) => {
@@ -248,7 +252,7 @@ export default function Sidebar() {
                   }}
                   className="input-base w-full text-sm"
                 >
-                  <option value="">All sites</option>
+                  <option value="">{t('selectors.allSites')}</option>
                   {sites.map((site) => (
                     <option key={site.id} value={site.id}>
                       {site.name}
@@ -259,7 +263,7 @@ export default function Sidebar() {
 
               {/* Environment */}
               <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 px-1 text-label">Environment</label>
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 px-1 text-label">{t('context.environment')}</label>
                 <select
                   value={selectedEnvironment}
                   onChange={(e) => {
@@ -269,7 +273,7 @@ export default function Sidebar() {
                   }}
                   className="input-base w-full text-sm"
                 >
-                  <option value="">All environments</option>
+                  <option value="">{t('selectors.allEnvironments')}</option>
                   {environments.map((env) => (
                     <option key={env.id} value={env.id}>
                       {env.display_name || env.name}
@@ -293,13 +297,27 @@ export default function Sidebar() {
               {darkMode ? (
                 <>
                   <Sun className="w-4 h-4 text-accent-warning" />
-                  {!sidebarCollapsed && <span>Light Mode</span>}
+                  {!sidebarCollapsed && <span>{t('toggle.lightMode')}</span>}
                 </>
               ) : (
                 <>
                   <Moon className="w-4 h-4 text-primary-600" />
-                  {!sidebarCollapsed && <span>Dark Mode</span>}
+                  {!sidebarCollapsed && <span>{t('toggle.darkMode')}</span>}
                 </>
+              )}
+            </button>
+          </div>
+
+          {/* Language Toggle */}
+          <div className="p-3 border-b border-neutral-200 dark:border-neutral-700/50">
+            <button
+              onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 rounded-lg transition-all text-sm font-medium"
+              title={language === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
+            >
+              <Languages className="w-4 h-4" />
+              {!sidebarCollapsed && (
+                <span>{language === 'de' ? 'English' : 'Deutsch'}</span>
               )}
             </button>
           </div>
@@ -316,7 +334,7 @@ export default function Sidebar() {
               ) : (
                 <>
                   <ChevronLeft className="w-4 h-4" />
-                  <span>Collapse</span>
+                  <span>{t('toggle.collapse')}</span>
                 </>
               )}
             </button>

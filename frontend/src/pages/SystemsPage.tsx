@@ -1,5 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Plus, Trash2, Settings, Package } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useApp } from '../contexts/AppContext';
 import { System, Environment } from '../types';
@@ -12,6 +13,8 @@ interface SystemWithDetails extends System {
 }
 
 export default function SystemsPage() {
+  const { t } = useTranslation('sites');
+  const { t: tc } = useTranslation('common');
   const { selectedTenant } = useApp();
   const [systems, setSystems] = useState<SystemWithDetails[]>([]);
   const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -91,7 +94,7 @@ export default function SystemsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-heading-2">Systems</h1>
+          <h1 className="text-heading-2">{t('page.title')}</h1>
           <p className="text-body-secondary mt-2">Manage your systems across environments</p>
         </div>
         <button
@@ -153,14 +156,14 @@ export default function SystemsPage() {
                   type="submit"
                   className="button-primary button-center"
                 >
-                  {editingSystem ? 'Save Changes' : 'Create System'}
+                  {editingSystem ? tc('actions.save') : 'Create System'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
                   className="button-secondary button-center"
                 >
-                  Cancel
+                  {tc('actions.cancel')}
                 </button>
               </div>
             </form>
@@ -199,7 +202,7 @@ export default function SystemsPage() {
                 {system.name}
               </h3>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 min-h-[1.5rem] line-clamp-1">
-                {system.description || 'No description provided'}
+                {system.description || tc('meta.no_description')}
               </p>
               <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700/50 flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
@@ -236,8 +239,8 @@ export default function SystemsPage() {
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title="Delete system?"
-        description="This action cannot be undone."
-        confirmLabel="Delete"
+        description={tc('confirm_dialog.cannot_be_undone')}
+        confirmLabel={tc('actions.delete')}
         variant="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {

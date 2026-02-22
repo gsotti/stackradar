@@ -17,8 +17,10 @@ class ApiClient {
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const lang = localStorage.getItem('language') || 'en';
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept-Language': lang,
       ...(options.headers as Record<string, string>),
     };
 
@@ -33,8 +35,6 @@ class ApiClient {
 
     if (response.status === 401) {
       this.setToken(null);
-      // Optional: avoid hard redirect during migration if it breaks things, 
-      // but keeping original behavior.
       window.location.href = '/login';
       throw new Error('Unauthorized');
     }

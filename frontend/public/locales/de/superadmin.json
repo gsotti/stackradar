@@ -1,0 +1,116 @@
+{
+  "page": {
+    "title": "Superadmin Dashboard",
+    "subtitle": "Verwalte Organisationen, Administratoren und System-Einstellungen"
+  },
+  "tabs": {
+    "organizations": "Organisationen",
+    "system_settings": "System-Einstellungen"
+  },
+  "actions": {
+    "refresh": "Aktualisieren",
+    "create_org": "Organisation erstellen",
+    "manage_users": "Benutzer verwalten",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "back_to_orgs": "Zurück zu Organisationen"
+  },
+  "orgs": {
+    "empty_title": "Keine Organisationen",
+    "empty_description": "Beginne damit, deine erste Organisation zu erstellen.",
+    "users_label_one": "{{count}} Benutzer",
+    "users_label_other": "{{count}} Benutzer",
+    "tenants_label_one": "{{count}} Tenant",
+    "tenants_label_other": "{{count}} Tenants",
+    "created_label": "Erstellt {{date}}"
+  },
+  "org_form": {
+    "title_create": "Organisation erstellen",
+    "title_edit": "Organisation bearbeiten",
+    "name_label": "Organisations-Name",
+    "name_placeholder": "Organisations-Name eingeben",
+    "description_label": "Beschreibung",
+    "description_placeholder": "Beschreibung eingeben (optional)",
+    "submit_create": "Erstellen",
+    "cancel": "Abbrechen"
+  },
+  "org_users": {
+    "title": "Organisations-Benutzer",
+    "create_user": "Benutzer erstellen",
+    "empty": "Keine Benutzer in dieser Organisation",
+    "unnamed": "Unbenannt",
+    "role_org_admin": "Org Admin",
+    "status_active": "Aktiv",
+    "status_inactive": "Inaktiv",
+    "remove_admin": "Admin entfernen",
+    "make_admin": "Zum Admin machen"
+  },
+  "org_admin_list": {
+    "count_one": "{{count}} Organisations-Admin",
+    "count_other": "{{count}} Organisations-Admins",
+    "refresh_title": "Aktualisieren",
+    "add_admin": "Org Admin hinzufügen",
+    "empty_title": "Keine Organisations-Admins gefunden",
+    "empty_description": "Erstelle deinen ersten Organisations-Admin, um Tenants und Benutzer zu verwalten.",
+    "created_label": "Erstellt:",
+    "status_label": "Status:",
+    "status_active": "Aktiv",
+    "status_inactive": "Inaktiv",
+    "role_org_admin": "Org Admin",
+    "edit": "Bearbeiten",
+    "deactivate": "Deaktivieren",
+    "activate": "Aktivieren"
+  },
+  "org_admin_form": {
+    "title": "Organisations-Admin festlegen",
+    "name_label": "Vollständiger Name",
+    "name_placeholder": "Max Mustermann",
+    "email_label": "Email-Adresse *",
+    "email_placeholder": "max@beispiel.com",
+    "password_label": "Passwort",
+    "password_keep_current": "(leer lassen, um aktuelles zu behalten)",
+    "active_label": "Aktiver Account",
+    "cancel": "Abbrechen",
+    "submit_saving": "Speichert...",
+    "submit_update": "Admin aktualisieren",
+    "submit_create": "Admin erstellen"
+  },
+  "create_user_modal": {
+    "title": "Benutzer erstellen",
+    "email_label": "Email *",
+    "name_label": "Name",
+    "password_label": "Passwort *",
+    "password_placeholder": "Passwort eingeben",
+    "cancel": "Abbrechen",
+    "submit": "Benutzer erstellen"
+  },
+  "confirm": {
+    "delete_org_title": "Organisation löschen?",
+    "delete_org_description": "Organisation \"{{name}}\" löschen.",
+    "delete_org_label": "Löschen",
+    "delete_admin_title": "Organisations-Admin löschen?",
+    "delete_admin_description": "{{name}} löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "delete_admin_label": "Löschen"
+  },
+  "messages": {
+    "settings_saved": "System-Einstellungen erfolgreich gespeichert",
+    "org_created": "Organisation erfolgreich erstellt",
+    "org_updated": "Organisation erfolgreich aktualisiert",
+    "org_deleted": "Organisation erfolgreich gelöscht",
+    "admin_promoted": "Benutzer zum Organisations-Admin befördert",
+    "admin_removed": "Organisations-Admin-Rolle entfernt",
+    "user_created": "Benutzer erfolgreich erstellt",
+    "org_admin_activated": "Organisations-Admin erfolgreich aktiviert",
+    "org_admin_deactivated": "Organisations-Admin erfolgreich deaktiviert",
+    "org_admin_activate_failed": "Admin konnte nicht aktiviert werden: {{error}}",
+    "org_admin_deactivate_failed": "Admin konnte nicht deaktiviert werden: {{error}}",
+    "org_admin_deleted": "Organisations-Admin erfolgreich gelöscht",
+    "org_admin_delete_failed": "Admin konnte nicht gelöscht werden: {{error}}",
+    "org_admin_load_failed": "Organisations-Admins konnten nicht geladen werden: {{error}}",
+    "org_admin_email_required": "Email ist erforderlich",
+    "org_admin_password_required": "Passwort ist für neue Admins erforderlich",
+    "org_admin_updated": "Organisations-Admin erfolgreich aktualisiert",
+    "org_admin_created": "Organisations-Admin erfolgreich erstellt",
+    "org_admin_save_failed": "Organisations-Admin konnte nicht gespeichert werden"
+  }
+}

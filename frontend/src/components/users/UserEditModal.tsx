@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TenantUser, TenantRoleName } from '../../types';
 import { getGravatarUrl } from '../../utils/md5';
 import RoleSelect from './RoleSelect';
@@ -12,6 +13,7 @@ interface UserEditModalProps {
 }
 
 export default function UserEditModal({ user, onSave, onClose }: UserEditModalProps) {
+  const { t } = useTranslation('users');
   const [role, setRole] = useState<TenantRoleName>(user.role);
   const [name, setName] = useState<string>(user.name || '');
   const [saving, setSaving] = useState(false);
@@ -32,7 +34,7 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
 
       <div className="card relative w-full max-w-md">
         <div className="pb-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
-          <h2 className="text-heading-3">Edit User</h2>
+          <h2 className="text-heading-3">{t('tenant_list.edit_user_title')}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
@@ -57,14 +59,14 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Email</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('edit_modal.email_label')}</p>
               <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">{user.email}</p>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Name
+              {t('edit_modal.name_label')}
             </label>
             <input
               type="text"
@@ -77,7 +79,7 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Role
+              {t('invite.role_label')}
             </label>
             <RoleSelect
               value={role}
@@ -93,14 +95,14 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
             onClick={onClose}
             className="button-secondary button-center"
           >
-            Cancel
+            {t('edit_modal.cancel')}
           </button>
           <button
             onClick={handleSave}
             className="button-primary button-center"
             disabled={saving}
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? t('edit_modal.submit_saving') : t('edit_modal.submit')}
           </button>
         </div>
       </div>

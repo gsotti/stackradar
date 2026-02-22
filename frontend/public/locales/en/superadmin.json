@@ -1,0 +1,116 @@
+{
+  "page": {
+    "title": "Superadmin Dashboard",
+    "subtitle": "Manage organizations, administrators and system settings"
+  },
+  "tabs": {
+    "organizations": "Organizations",
+    "system_settings": "System Settings"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "create_org": "Create Organization",
+    "manage_users": "Manage Users",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back_to_orgs": "Back to Organizations"
+  },
+  "orgs": {
+    "empty_title": "No Organizations",
+    "empty_description": "Get started by creating your first organization.",
+    "users_label_one": "{{count}} user",
+    "users_label_other": "{{count}} users",
+    "tenants_label_one": "{{count}} tenant",
+    "tenants_label_other": "{{count}} tenants",
+    "created_label": "Created {{date}}"
+  },
+  "org_form": {
+    "title_create": "Create Organization",
+    "title_edit": "Edit Organization",
+    "name_label": "Organization Name",
+    "name_placeholder": "Enter organization name",
+    "description_label": "Description",
+    "description_placeholder": "Enter description (optional)",
+    "submit_create": "Create",
+    "cancel": "Cancel"
+  },
+  "org_users": {
+    "title": "Organization Users",
+    "create_user": "Create User",
+    "empty": "No users in this organization",
+    "unnamed": "Unnamed",
+    "role_org_admin": "Org Admin",
+    "status_active": "Active",
+    "status_inactive": "Inactive",
+    "remove_admin": "Remove Admin",
+    "make_admin": "Make Admin"
+  },
+  "org_admin_list": {
+    "count_one": "{{count}} organization admin",
+    "count_other": "{{count}} organization admins",
+    "refresh_title": "Refresh",
+    "add_admin": "Add Org Admin",
+    "empty_title": "No organization admins found",
+    "empty_description": "Create your first organization admin to manage tenants and users.",
+    "created_label": "Created:",
+    "status_label": "Status:",
+    "status_active": "Active",
+    "status_inactive": "Inactive",
+    "role_org_admin": "Org Admin",
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "org_admin_form": {
+    "title": "Set Organization Admin",
+    "name_label": "Full Name",
+    "name_placeholder": "John Doe",
+    "email_label": "Email Address *",
+    "email_placeholder": "john@example.com",
+    "password_label": "Password",
+    "password_keep_current": "(leave blank to keep current)",
+    "active_label": "Active Account",
+    "cancel": "Cancel",
+    "submit_saving": "Saving...",
+    "submit_update": "Update Admin",
+    "submit_create": "Create Admin"
+  },
+  "create_user_modal": {
+    "title": "Create User",
+    "email_label": "Email *",
+    "name_label": "Name",
+    "password_label": "Password *",
+    "password_placeholder": "Enter password",
+    "cancel": "Cancel",
+    "submit": "Create User"
+  },
+  "confirm": {
+    "delete_org_title": "Delete organization?",
+    "delete_org_description": "Delete organization \"{{name}}\".",
+    "delete_org_label": "Delete",
+    "delete_admin_title": "Delete organization admin?",
+    "delete_admin_description": "Delete {{name}}. This action cannot be undone.",
+    "delete_admin_label": "Delete"
+  },
+  "messages": {
+    "settings_saved": "System settings saved successfully",
+    "org_created": "Organization created successfully",
+    "org_updated": "Organization updated successfully",
+    "org_deleted": "Organization deleted successfully",
+    "admin_promoted": "User promoted to Organization Admin",
+    "admin_removed": "Organization Admin role removed",
+    "user_created": "User created successfully",
+    "org_admin_activated": "Organization admin activated successfully",
+    "org_admin_deactivated": "Organization admin deactivated successfully",
+    "org_admin_activate_failed": "Failed to activate admin: {{error}}",
+    "org_admin_deactivate_failed": "Failed to deactivate admin: {{error}}",
+    "org_admin_deleted": "Organization admin deleted successfully",
+    "org_admin_delete_failed": "Failed to delete admin: {{error}}",
+    "org_admin_load_failed": "Failed to load organization admins: {{error}}",
+    "org_admin_email_required": "Email is required",
+    "org_admin_password_required": "Password is required for new admins",
+    "org_admin_updated": "Organization admin updated successfully",
+    "org_admin_created": "Organization admin created successfully",
+    "org_admin_save_failed": "Failed to save organization admin"
+  }
+}

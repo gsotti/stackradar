@@ -1,0 +1,40 @@
+{
+  "table": {
+    "column_time": "Zeit",
+    "column_level": "Level",
+    "column_source": "Quelle",
+    "column_system": "System",
+    "column_message": "Nachricht",
+    "raw_message": "Roh-Nachricht",
+    "precise_timestamp": "Präziser Zeitstempel",
+    "entry_id": "Eintrags-ID",
+    "metadata_context": "Metadaten / Kontext",
+    "no_metadata": "Keine Metadaten verfügbar",
+    "tenant_label": "Tenant",
+    "site_label": "Site"
+  },
+  "filters": {
+    "all_levels": "Alle Level",
+    "search_placeholder": "In Log-Nachrichten suchen...",
+    "refresh_title": "Logs aktualisieren"
+  },
+  "empty": {
+    "title": "Keine Logs gefunden",
+    "description": "Versuche deine Suchbegriffe oder Filter anzupassen."
+  },
+  "live": {
+    "loading_older": "Lade ältere Logs...",
+    "beginning_of_history": "Anfang der Log-Historie",
+    "listening": "Höre auf eingehende Logs...",
+    "buffer_empty": "Buffer ist leer",
+    "grep_placeholder": "Logs durchsuchen...",
+    "seek_placeholder": "Zu Datum oder Zeit springen",
+    "seek_button": "Springen zu",
+    "searchable_from": "Durchsuchbare Logs beginnen am {{date}} um {{time}}",
+    "reset_to_live": "Zurück zu Live",
+    "new_logs_below": "Neue Logs unten",
+    "decrease_text_size": "Textgröße verkleinern",
+    "increase_text_size": "Textgröße vergrößern",
+    "seek_back": "Zurück in der Zeit springen"
+  }
+}

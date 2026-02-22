@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 
 interface InvitationDetails {
@@ -12,6 +13,7 @@ interface InvitationDetails {
 }
 
 export default function AcceptInvitationPage() {
+  const { t } = useTranslation('auth');
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
@@ -31,7 +33,7 @@ export default function AcceptInvitationPage() {
 
   const loadInvitation = async () => {
     if (!token) {
-      setError('Invalid invitation link');
+      setError(t('errors.invalid_link'));
       setLoading(false);
       return;
     }
@@ -41,7 +43,7 @@ export default function AcceptInvitationPage() {
       const data = await api.get<InvitationDetails>(`/invitations/${token}`);
       setInvitation(data);
     } catch (error: any) {
-      setError(error.message || 'Invalid or expired invitation');
+      setError(error.message || t('errors.invalid_or_expired'));
     } finally {
       setLoading(false);
     }
@@ -51,17 +53,17 @@ export default function AcceptInvitationPage() {
     e.preventDefault();
 
     if (!formData.name) {
-      setError('Please enter your name');
+      setError(t('errors.name_required'));
       return;
     }
 
     if (!formData.password || formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('errors.password_min_length'));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('errors.passwords_no_match'));
       return;
     }
 
@@ -78,7 +80,7 @@ export default function AcceptInvitationPage() {
         navigate('/login');
       }, 3000);
     } catch (error: any) {
-      setError(error.message || 'Failed to accept invitation');
+      setError(error.message || t('errors.failed_to_accept'));
     } finally {
       setSubmitting(false);
     }
@@ -102,7 +104,7 @@ export default function AcceptInvitationPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="text-center">
           <RefreshCw className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading invitation...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('invitation.loading')}</p>
         </div>
       </div>
     );
@@ -117,13 +119,13 @@ export default function AcceptInvitationPage() {
               <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Account Created!
+              {t('invitation.success_title')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Your account has been created successfully. Redirecting you to login...
+              {t('invitation.success_description')}
             </p>
             <div className="animate-pulse text-blue-600 dark:text-blue-400 font-semibold">
-              Redirecting...
+              {t('invitation.redirecting')}
             </div>
           </div>
         </div>
@@ -140,7 +142,7 @@ export default function AcceptInvitationPage() {
               <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Invalid Invitation
+              {t('invitation.invalid_title')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               {error}
@@ -149,7 +151,7 @@ export default function AcceptInvitationPage() {
               onClick={() => navigate('/login')}
               className="button-primary"
             >
-              Go to Login
+              {t('invitation.go_to_login')}
             </button>
           </div>
         </div>
@@ -166,10 +168,10 @@ export default function AcceptInvitationPage() {
             <Mail className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-primary-600 dark:text-primary-400 mb-2">
-            Join {invitationData.organization_name || 'Organization'}
+            {t('invitation.page_title', { organization_name: invitation?.tenant_name || 'Organization' })}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Complete your registration to get started
+            {t('invitation.page_subtitle')}
           </p>
         </div>
 
@@ -177,18 +179,18 @@ export default function AcceptInvitationPage() {
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 mb-6 border border-blue-200 dark:border-blue-800">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Email:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('invitation.email_label')}</span>
               <span className="font-semibold text-gray-900 dark:text-white">{invitation?.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Role:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('invitation.role_label')}</span>
               <span className="font-semibold text-gray-900 dark:text-white">
                 {invitation && getRoleLabel(invitation.role)}
               </span>
             </div>
             {invitation?.invited_by_name && (
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Invited by:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('invitation.invited_by_label')}</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {invitation.invited_by_name}
                 </span>
@@ -208,7 +210,7 @@ export default function AcceptInvitationPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Full Name *
+              {t('invitation.full_name_label')}
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -217,7 +219,7 @@ export default function AcceptInvitationPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="input-base w-full pl-10 pr-4 py-3"
-                placeholder="John Doe"
+                placeholder={t('invitation.full_name_placeholder')}
                 required
                 disabled={submitting}
               />
@@ -226,7 +228,7 @@ export default function AcceptInvitationPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Password *
+              {t('invitation.password_label')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -235,7 +237,7 @@ export default function AcceptInvitationPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="input-base w-full pl-10 pr-4 py-3"
-                placeholder="Minimum 6 characters"
+                placeholder={t('invitation.password_placeholder')}
                 required
                 disabled={submitting}
                 minLength={6}
@@ -245,7 +247,7 @@ export default function AcceptInvitationPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Confirm Password *
+              {t('invitation.confirm_password_label')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -254,7 +256,7 @@ export default function AcceptInvitationPage() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="input-base w-full pl-10 pr-4 py-3"
-                placeholder="Re-enter password"
+                placeholder={t('invitation.confirm_password_placeholder')}
                 required
                 disabled={submitting}
               />
@@ -266,19 +268,19 @@ export default function AcceptInvitationPage() {
             disabled={submitting}
             className="button-primary w-full"
           >
-            {submitting ? 'Creating Account...' : 'Create Account'}
+            {submitting ? t('invitation.submit_loading') : t('invitation.submit_label')}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?{' '}
+            {t('actions.already_have_account')}{' '}
             <button
               onClick={() => navigate('/login')}
               className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
             >
-              Sign in
+              {t('actions.sign_in_link')}
             </button>
           </p>
         </div>

@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "remove": "Remove",
+    "confirm": "Confirm",
+    "refresh": "Refresh",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "enable": "Enable",
+    "disable": "Disable",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "sending": "Sending..."
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "roles": {
+    "superadmin": "Superadmin",
+    "org_admin": "Organization Admin",
+    "tenant_admin": "Tenant Admin",
+    "editor": "Editor",
+    "viewer": "Viewer",
+    "no_global_role": "No global role"
+  },
+  "confirm_dialog": {
+    "default_confirm": "Confirm",
+    "default_cancel": "Cancel",
+    "cannot_be_undone": "This action cannot be undone."
+  },
+  "errors": {
+    "load_failed": "Failed to load data",
+    "save_failed": "Failed to save",
+    "delete_failed": "Failed to delete",
+    "unknown_error": "An unexpected error occurred",
+    "fill_required": "Please fill in all required fields"
+  },
+  "pagination": {
+    "showing": "Showing {{from}}-{{to}} of {{total}} entries",
+    "per_page_50": "50 per page",
+    "per_page_100": "100 per page",
+    "per_page_250": "250 per page",
+    "per_page_500": "500 per page"
+  },
+  "time": {
+    "never": "Never",
+    "just_now": "Just now",
+    "minutes_abbr": "{{n}}m",
+    "hours_abbr": "{{n}}h",
+    "created": "Created {{date}}"
+  },
+  "meta": {
+    "you": "You",
+    "unnamed": "Unnamed",
+    "anonymous": "Anonymous",
+    "no_description": "No description provided.",
+    "unknown": "Unknown",
+    "default": "default"
+  },
+  "theme": {
+    "light_mode": "Light Mode",
+    "dark_mode": "Dark Mode",
+    "switch_to_light": "Switch to light mode",
+    "switch_to_dark": "Switch to dark mode"
+  }
+}

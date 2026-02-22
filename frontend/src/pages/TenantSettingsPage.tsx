@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Building2, RefreshCw, Trash2, Users, Settings, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -16,6 +17,8 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 type TabType = 'settings' | 'users';
 
 export default function TenantSettingsPage() {
+  const { t } = useTranslation('tenants');
+  const { t: tc } = useTranslation('common');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -90,9 +93,9 @@ export default function TenantSettingsPage() {
     try {
       const updated = await api.put<Tenant>(`/tenants/${id}`, data);
       setTenant(updated);
-      showSuccess('Tenant updated successfully');
+      showSuccess(t('messages.updated'));
     } catch (error: any) {
-      showError(error.message || 'Failed to update tenant');
+      showError(error.message || tc('errors.save_failed'));
       throw error;
     }
   };
@@ -100,10 +103,10 @@ export default function TenantSettingsPage() {
   const handleDeleteTenant = async () => {
      try {
        await api.delete(`/tenants/${id}`, { confirm: true });
-       showSuccess('Tenant deleted successfully');
+       showSuccess(t('messages.deleted'));
        navigate('/tenants');
      } catch (error: any) {
-       showError(error.message || 'Failed to delete tenant');
+       showError(error.message || tc('errors.delete_failed'));
      }
    };
 
@@ -125,7 +128,7 @@ export default function TenantSettingsPage() {
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
         <div className="text-center">
           <RefreshCw className="w-10 h-10 animate-spin text-primary-500 mx-auto mb-3" />
-          <p className="text-neutral-600 dark:text-neutral-400">Loading tenant details...</p>
+          <p className="text-neutral-600 dark:text-neutral-400">{t('settings.loading')}</p>
         </div>
       </div>
     );
@@ -135,12 +138,12 @@ export default function TenantSettingsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)]">
         <Building2 className="w-16 h-16 text-neutral-400 dark:text-neutral-600 mb-3" />
-        <h2 className="text-heading-4 mb-2">Tenant not found</h2>
+        <h2 className="text-heading-4 mb-2">{t('settings.not_found')}</h2>
         <Link
           to="/tenants"
           className="text-primary-600 dark:text-primary-400 hover:underline"
         >
-          Return to tenants list
+          {t('settings.return_to_list')}
         </Link>
       </div>
     );
@@ -163,7 +166,7 @@ export default function TenantSettingsPage() {
           </div>
           <div>
             <h1 className="text-heading-3 text-neutral-900 dark:text-white">{tenant.name}</h1>
-            <p className="text-body-secondary text-sm">Tenant settings and management</p>
+            <p className="text-body-secondary text-sm">{t('settings.subtitle')}</p>
           </div>
         </div>
 
@@ -173,7 +176,7 @@ export default function TenantSettingsPage() {
             <button
               onClick={loadUsersData}
               className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
-              title="Refresh"
+              title={tc('actions.refresh')}
             >
               <RefreshCw className={`w-5 h-5 ${usersLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -182,7 +185,7 @@ export default function TenantSettingsPage() {
               className="button-primary flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" />
-              Create User
+              {tc('actions.create')} User
             </button>
             <button
               onClick={() => setShowInviteForm(true)}
@@ -210,7 +213,7 @@ export default function TenantSettingsPage() {
             `}
           >
             <Settings className="w-4 h-4" />
-            Settings
+            {t('settings.tab_settings')}
           </button>
           <button
             onClick={() => setActiveTab('users')}
@@ -224,7 +227,7 @@ export default function TenantSettingsPage() {
             `}
           >
             <Users className="w-4 h-4" />
-            Users
+            {t('settings.tab_users')}
             {users.length > 0 && (
               <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">
                 {users.length}
@@ -246,7 +249,7 @@ export default function TenantSettingsPage() {
                 description: tenant.description || ''
               }}
               onSubmit={handleUpdateTenant}
-              submitLabel={canManage ? 'Save Changes' : 'View Only'}
+              submitLabel={canManage ? tc('actions.save') : 'View Only'}
             />
           </div>
 
@@ -259,25 +262,25 @@ export default function TenantSettingsPage() {
                   Danger Zone
                 </h2>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                  Deleting this tenant will permanently remove all associated users, sites, environments, systems, and logs. This action cannot be undone.
+                  {t('danger_zone.delete_description')}
                 </p>
                 <button
                   onClick={() => setShowDeleteTenantModal(true)}
                   className="button-danger w-full justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete Tenant
+                  {t('danger_zone.delete_button')}
                 </button>
               </div>
 
               {/* Info Box */}
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                  Tenant Information
+                  {t('settings.info_title')}
                 </h3>
                 <dl className="space-y-2 text-sm">
                   <div>
-                    <dt className="text-blue-700 dark:text-blue-400 font-medium">Created:</dt>
+                    <dt className="text-blue-700 dark:text-blue-400 font-medium">{t('settings.created_label')}</dt>
                     <dd className="text-blue-900 dark:text-blue-200">
                       {new Date(tenant.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -287,7 +290,7 @@ export default function TenantSettingsPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-blue-700 dark:text-blue-400 font-medium">Last Updated:</dt>
+                    <dt className="text-blue-700 dark:text-blue-400 font-medium">{t('settings.updated_label')}</dt>
                     <dd className="text-blue-900 dark:text-blue-200">
                       {new Date(tenant.updated_at).toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -297,7 +300,7 @@ export default function TenantSettingsPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-blue-700 dark:text-blue-400 font-medium">Tenant ID:</dt>
+                    <dt className="text-blue-700 dark:text-blue-400 font-medium">{t('settings.id_label')}</dt>
                     <dd className="text-blue-900 dark:text-blue-200 font-mono">{tenant.id}</dd>
                   </div>
                 </dl>
@@ -321,7 +324,7 @@ export default function TenantSettingsPage() {
                       <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">Active Users</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('settings.active_users_label')}</p>
                       <p className="text-2xl font-bold text-neutral-900 dark:text-white">{users.length}</p>
                     </div>
                   </div>
@@ -332,7 +335,7 @@ export default function TenantSettingsPage() {
                       <UserPlus className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Pending Invitations</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('settings.pending_invitations_label')}</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">{invitations.length}</p>
                     </div>
                   </div>
@@ -355,7 +358,7 @@ export default function TenantSettingsPage() {
                 <div className="flex items-center gap-2 mb-6">
                   <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    Tenant Members
+                    {t('settings.members_title')}
                   </h3>
                   <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">
                     {users.length}
@@ -405,9 +408,9 @@ export default function TenantSettingsPage() {
 
       <ConfirmDialog
         isOpen={showDeleteTenantModal}
-        title="Delete tenant?"
-        description={`Deleting "${tenant?.name}" will remove all associated users, sites, environments, systems, and logs. This action cannot be undone.`}
-        confirmLabel="Delete Tenant"
+        title={t('confirm.delete_title')}
+        description={t('confirm.delete_description', { name: tenant?.name })}
+        confirmLabel={t('confirm.delete_label')}
         variant="danger"
         onCancel={() => setShowDeleteTenantModal(false)}
         onConfirm={() => {

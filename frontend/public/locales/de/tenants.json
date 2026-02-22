@@ -1,0 +1,66 @@
+{
+  "page": {
+    "title": "Tenants",
+    "subtitle": "Verwalte Organisationen und ihre Mitglieder"
+  },
+  "actions": {
+    "create_tenant": "Tenant erstellen",
+    "create_first_tenant": "Erstelle deinen ersten Tenant",
+    "manage_settings": "Einstellungen verwalten"
+  },
+  "card": {
+    "no_description": "Keine Beschreibung vorhanden.",
+    "user_count_one": "{{count}} Benutzer",
+    "user_count_other": "{{count}} Benutzer",
+    "created": "Erstellt {{date}}"
+  },
+  "form": {
+    "title_create": "Neuen Tenant erstellen",
+    "title_edit": "Tenant bearbeiten",
+    "name_label": "Tenant-Name *",
+    "name_placeholder": "z.B. Acme Corporation",
+    "name_help": "Dieser Name erscheint in allen Dashboards und Einstellungen.",
+    "description_label": "Beschreibung",
+    "description_placeholder": "Kurze Beschreibung dieses Tenants",
+    "description_help": "Optionale Beschreibung zur Identifizierung dieses Tenants.",
+    "submit_create": "Tenant erstellen",
+    "submit_edit": "Änderungen speichern",
+    "submit_saving": "Speichert...",
+    "cancel": "Abbrechen"
+  },
+  "empty": {
+    "title": "Keine Tenants gefunden",
+    "description": "Erstelle deinen ersten Tenant, um mit der Organisation deiner Benutzer und Sites zu beginnen."
+  },
+  "settings": {
+    "loading": "Lade Tenant-Details...",
+    "not_found": "Tenant nicht gefunden",
+    "return_to_list": "Zurück zur Tenants-Liste",
+    "subtitle": "Tenant-Einstellungen und Verwaltung",
+    "tab_settings": "Einstellungen",
+    "tab_users": "Benutzer",
+    "info_title": "Tenant-Informationen",
+    "created_label": "Erstellt:",
+    "updated_label": "Zuletzt aktualisiert:",
+    "id_label": "Tenant-ID:",
+    "active_users_label": "Aktive Benutzer",
+    "pending_invitations_label": "Ausstehende Einladungen",
+    "members_title": "Tenant-Mitglieder"
+  },
+  "danger_zone": {
+    "delete_description": "Das Löschen dieses Tenants entfernt dauerhaft alle zugehörigen Benutzer, Sites, Environments, Systeme und Logs. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "delete_button": "Tenant löschen"
+  },
+  "confirm": {
+    "delete_title": "Tenant löschen?",
+    "delete_description": "'{{name}}' löschen wird alle zugehörigen Daten entfernen.",
+    "delete_label": "Tenant löschen"
+  },
+  "messages": {
+    "updated": "Tenant erfolgreich aktualisiert",
+    "deleted": "Tenant erfolgreich gelöscht",
+    "created": "Tenant erfolgreich erstellt",
+    "create_failed": "Tenant konnte nicht erstellt werden",
+    "fetch_failed": "Tenants konnten nicht abgerufen werden"
+  }
+}

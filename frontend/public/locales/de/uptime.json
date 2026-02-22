@@ -1,0 +1,85 @@
+{
+  "status": {
+    "up": "Erreichbar",
+    "down": "Nicht erreichbar",
+    "degraded": "Beeinträchtigt",
+    "unknown": "Unbekannt",
+    "operational": "Betriebsbereit",
+    "pending": "Ausstehend"
+  },
+  "status_help": {
+    "up": "Erwarteter Statuscode zurückgegeben.",
+    "down": "Anfrage fehlgeschlagen oder Timeout.",
+    "degraded": "Antwort erhalten, aber Statuscode stimmte nicht mit erwartetem überein.",
+    "pending": "Noch keine aktuellen Check-Daten."
+  },
+  "monitors": {
+    "loading": "Lade Monitore...",
+    "add_button": "Monitor hinzufügen",
+    "main_badge": "Main",
+    "paused_badge": "Pausiert",
+    "uptime_label": "uptime",
+    "ms_avg_label": "ms Ø",
+    "check_now": "Jetzt prüfen",
+    "checking": "Prüfe...",
+    "counts": {
+      "up_one": "{{count}} erreichbar",
+      "up_other": "{{count}} erreichbar",
+      "down_one": "{{count}} nicht erreichbar",
+      "down_other": "{{count}} nicht erreichbar",
+      "degraded_one": "{{count}} beeinträchtigt",
+      "degraded_other": "{{count}} beeinträchtigt"
+    }
+  },
+  "empty": {
+    "title": "Noch keine Monitore",
+    "description_site": "Für diese Site wurden noch keine Uptime Monitore konfiguriert.",
+    "description_action": "Überwache deine Endpoints, um Uptime zu verfolgen und Alerts zu erhalten, wenn sie nicht erreichbar sind.",
+    "create_first": "Ersten Monitor erstellen",
+    "overview_description": "Wechsle zum Monitore-Tab, um Uptime Checks für diese Site einzurichten."
+  },
+  "form": {
+    "title_edit": "Monitor bearbeiten",
+    "title_create": "Monitor hinzufügen",
+    "name_label": "Name *",
+    "name_placeholder": "API Health Check",
+    "url_label": "URL *",
+    "url_placeholder": "https://api.beispiel.com/health",
+    "method_label": "HTTP-Methode",
+    "interval_label": "Check-Intervall",
+    "interval_1m": "1 Minute",
+    "interval_5m": "5 Minuten",
+    "interval_15m": "15 Minuten",
+    "interval_30m": "30 Minuten",
+    "interval_1h": "1 Stunde",
+    "expected_status_label": "Erwarteter Status",
+    "timeout_label": "Timeout (Sekunden)",
+    "is_main_label": "Haupt-Monitor (zeigt Status in Site-Übersicht)",
+    "cancel": "Abbrechen",
+    "submit_saving": "Speichert...",
+    "submit_update": "Aktualisieren",
+    "submit_create": "Erstellen"
+  },
+  "confirm": {
+    "delete_title": "Monitor löschen?",
+    "delete_description": "'{{name}}' und alle Check-Historie löschen.",
+    "delete_label": "Löschen"
+  },
+  "messages": {
+    "created": "Monitor erstellt",
+    "updated": "Monitor aktualisiert",
+    "deleted": "Monitor gelöscht",
+    "create_failed": "Monitor konnte nicht erstellt werden",
+    "update_failed": "Monitor konnte nicht aktualisiert werden",
+    "delete_failed": "Monitor konnte nicht gelöscht werden",
+    "check_complete": "Check abgeschlossen: {{status}} ({{ms}}ms)",
+    "check_failed": "Check fehlgeschlagen",
+    "load_failed": "Monitore konnten nicht geladen werden"
+  },
+  "overview": {
+    "loading": "Lade Uptime-Daten...",
+    "refresh": "Aktualisieren",
+    "load_failed": "Uptime Monitore konnten nicht geladen werden",
+    "no_monitors_title": "Keine Monitore konfiguriert"
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Zap, Clock, RefreshCw, Radio } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatInLocalTime, parseAsUTC } from '../../utils/dateUtils';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -15,19 +16,7 @@ const statusDot: Record<UptimeStatus, string> = {
   unknown: 'bg-gray-300 dark:bg-gray-500',
 };
 
-const statusLabel: Record<UptimeStatus, string> = {
-  up: 'Operational',
-  down: 'Down',
-  degraded: 'Degraded',
-  unknown: 'Pending',
-};
 
-const statusHelp: Record<UptimeStatus, string> = {
-  up: 'Expected status code returned.',
-  down: 'Request failed or timed out.',
-  degraded: 'Response received but status code did not match expected.',
-  unknown: 'No recent check data yet.',
-};
 
 const statusBadge: Record<UptimeStatus, string> = {
   up: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
@@ -44,12 +33,12 @@ const intervalLabels: Record<number, string> = {
   3600: '1h',
 };
 
-function formatTimeAgo(date: string | null | undefined) {
-  if (!date) return 'Never';
+function formatTimeAgo(date: string | null | undefined, t: any) {
+  if (!date) return t('common:time.never');
   const parsedDate = parseAsUTC(date);
   if (!parsedDate) return date;
   const seconds = Math.floor((Date.now() - parsedDate.getTime()) / 1000);
-  if (seconds < 0) return 'Just now';
+  if (seconds < 0) return t('common:time.just_now');
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -61,6 +50,8 @@ interface UptimeMonitorsViewProps {
 }
 
 export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) {
+  const { t } = useTranslation('uptime');
+  const { t: tc } = useTranslation('common');
   const { showSuccess, showError } = useNotification();
   const { isViewer } = usePermissions();
   const [monitors, setMonitors] = useState<UptimeMonitor[]>([]);
@@ -91,7 +82,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
       checksResults.forEach((r) => { map[r.id] = r.checks; });
       setChecksMap(map);
     } catch (error) {
-      showError('Failed to load monitors');
+      showError(t('messages.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -107,11 +98,11 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
     setSaving(true);
     try {
       await api.post('/uptime/monitors', { ...form, site_id: parseInt(String(siteId)) });
-      showSuccess('Monitor created');
+      showSuccess(t('messages.created'));
       setShowForm(false);
       fetchData();
     } catch (error: any) {
-      showError(error.message || 'Failed to create monitor');
+      showError(error.message || t('messages.create_failed'));
     } finally {
       setSaving(false);
     }
@@ -122,11 +113,11 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
     setSaving(true);
     try {
       await api.put(`/uptime/monitors/${editingMonitor.id}`, form);
-      showSuccess('Monitor updated');
+      showSuccess(t('messages.updated'));
       setEditingMonitor(null);
       fetchData();
     } catch (error: any) {
-      showError(error.message || 'Failed to update monitor');
+      showError(error.message || t('messages.update_failed'));
     } finally {
       setSaving(false);
     }
@@ -135,10 +126,10 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
   const handleDelete = async (monitor: UptimeMonitor) => {
     try {
       await api.delete(`/uptime/monitors/${monitor.id}`);
-      showSuccess('Monitor deleted');
+      showSuccess(t('messages.deleted'));
       fetchData();
     } catch (error: any) {
-      showError(error.message || 'Failed to delete monitor');
+      showError(error.message || t('messages.delete_failed'));
     }
   };
 
@@ -146,10 +137,10 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
     setCheckingId(monitor.id);
     try {
       const result = await api.post<any>(`/uptime/monitors/${monitor.id}/check`, {});
-      showSuccess(`Check complete: ${result.status} (${result.responseTimeMs}ms)`);
+      showSuccess(t('messages.check_complete', { status: result.status, ms: result.responseTimeMs }));
       fetchData();
     } catch (error: any) {
-      showError(error.message || 'Check failed');
+      showError(error.message || t('messages.check_failed'));
     } finally {
       setCheckingId(null);
     }
@@ -175,7 +166,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <RefreshCw className="w-10 h-10 animate-spin text-blue-500 mx-auto mb-3" />
-          <p className="text-gray-600 dark:text-gray-400">Loading monitors...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('monitors.loading')}</p>
         </div>
       </div>
     );
@@ -190,24 +181,24 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
             <>
               <div className="flex items-center gap-3 text-sm">
                 <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 dark:bg-emerald-500" />{upCount} up
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 dark:bg-emerald-500" />{t('monitors.counts.up', { count: upCount })}
                 </span>
                 {downCount > 0 && (
                   <span className="flex items-center gap-1.5 text-rose-500 dark:text-rose-400 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-rose-400 dark:bg-rose-500" />{downCount} down
+                    <span className="w-2 h-2 rounded-full bg-rose-400 dark:bg-rose-500" />{t('monitors.counts.down', { count: downCount })}
                   </span>
                 )}
                 {degradedCount > 0 && (
                   <span className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 dark:bg-amber-500" />{degradedCount} degraded
+                    <span className="w-2 h-2 rounded-full bg-amber-400 dark:bg-amber-500" />{t('monitors.counts.degraded', { count: degradedCount })}
                   </span>
                 )}
               </div>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {overallUptimePct !== null ? `${overallUptimePct.toFixed(1)}% uptime` : ''}
+                {overallUptimePct !== null ? `${overallUptimePct.toFixed(1)}% ${t('monitors.uptime_label')}` : ''}
                 {overallUptimePct !== null && avgResponseTime !== null ? ' · ' : ''}
-                {avgResponseTime !== null ? `${avgResponseTime}ms avg` : ''}
+                {avgResponseTime !== null ? `${avgResponseTime}${t('monitors.ms_avg_label')}` : ''}
               </span>
             </>
           )}
@@ -218,7 +209,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Add Monitor
+            {t('monitors.add_button')}
           </button>
         )}
       </div>
@@ -229,9 +220,9 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <Radio className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No Monitors Yet</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{t('empty.title')}</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 max-w-sm mx-auto">
-            {isViewer() ? 'No uptime monitors have been configured for this site.' : 'Monitor your endpoints to track uptime and get alerts when they go down.'}
+            {isViewer() ? t('empty.description_site') : t('empty.description_action')}
           </p>
           {!isViewer() && (
             <button
@@ -239,7 +230,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
             >
               <Plus className="w-4 h-4" />
-              Create First Monitor
+              {t('empty.create_first')}
             </button>
           )}
         </div>
@@ -270,15 +261,15 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                       <h3 className="font-semibold text-sm text-neutral-900 dark:text-white truncate">{monitor.name}</h3>
                       <span
                         className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${statusBadge[mStatus]}`}
-                        title={statusHelp[mStatus]}
+                        title={t(`status_help.${mStatus}`)}
                       >
-                        {statusLabel[mStatus]}
+                        {t(`status.${mStatus}`)}
                       </span>
                       {monitor.is_main && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 uppercase">Main</span>
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 uppercase">{t('monitors.main_badge')}</span>
                       )}
                       {!monitor.enabled && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">Paused</span>
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">{t('monitors.paused_badge')}</span>
                       )}
                     </div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-1">
@@ -312,13 +303,13 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                 <div className="flex items-center justify-between text-xs mb-3">
                   <div className="text-neutral-600 dark:text-neutral-400">
                     {uptimePct !== null ? (
-                      <span><span className="font-semibold text-neutral-900 dark:text-white">{uptimePct.toFixed(1)}%</span> uptime</span>
+                      <span><span className="font-semibold text-neutral-900 dark:text-white">{uptimePct.toFixed(1)}%</span> {t('monitors.uptime_label')}</span>
                     ) : (
                       <span>—</span>
                     )}
                   </div>
                   <span className="text-neutral-500 dark:text-neutral-400">
-                    {formatTimeAgo(monitor.last_checked_at)}
+                    {formatTimeAgo(monitor.last_checked_at, tc)}
                   </span>
                 </div>
 
@@ -331,7 +322,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                       className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-md transition-colors disabled:opacity-50"
                     >
                       <Radio className="w-3 h-3" />
-                      {checkingId === monitor.id ? 'Checking...' : 'Check Now'}
+                      {checkingId === monitor.id ? t('monitors.checking') : t('monitors.check_now')}
                     </button>
                     <button
                       onClick={() => setEditingMonitor(monitor)}
@@ -343,7 +334,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                       onClick={() => setDeleteTarget(monitor)}
                       className="button-danger button-sm"
                     >
-                      Delete
+                      {tc('actions.delete')}
                     </button>
                   </div>
                 )}
@@ -373,9 +364,9 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete monitor?"
-        description={deleteTarget ? `Delete "${deleteTarget.name}" and all check history.` : undefined}
-        confirmLabel="Delete"
+        title={t('confirm.delete_title')}
+        description={deleteTarget ? t('confirm.delete_description', { name: deleteTarget.name }) : undefined}
+        confirmLabel={t('confirm.delete_label')}
         variant="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {

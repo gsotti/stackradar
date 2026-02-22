@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Settings, Building2, Users, RefreshCw, Plus, Pencil, Trash2, X, ArrowLeft, UserCog } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useNotification } from '../contexts/NotificationContext';
 import { Organization, User } from '../types';
@@ -23,6 +24,8 @@ interface OrgUser extends User {
 }
 
 export default function SuperadminPage() {
+  const { t } = useTranslation('superadmin');
+  const { t: tc } = useTranslation('common');
   const [activeTab, setActiveTab] = useState<TabType>('organizations');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
@@ -84,7 +87,7 @@ export default function SuperadminPage() {
     setSettingsSaving(true);
     try {
       await api.put('/superadmin/settings', { registry_owner: registryOwner, app_url: appUrl });
-      showSuccess('System settings saved successfully');
+      showSuccess(t('messages.settings_saved'));
     } catch (error: any) {
       showError(error.message || 'Failed to save system settings');
     } finally {
@@ -97,7 +100,7 @@ export default function SuperadminPage() {
     setSubmitting(true);
     try {
       await api.post('/organizations', formData);
-      showSuccess('Organization created successfully');
+      showSuccess(t('messages.org_created'));
       setShowCreateModal(false);
       setFormData({ name: '', description: '' });
       loadOrganizations();
@@ -115,7 +118,7 @@ export default function SuperadminPage() {
     setSubmitting(true);
     try {
       await api.put(`/organizations/${editingOrg.id}`, formData);
-      showSuccess('Organization updated successfully');
+      showSuccess(t('messages.org_updated'));
       setEditingOrg(null);
       setFormData({ name: '', description: '' });
       loadOrganizations();
@@ -129,7 +132,7 @@ export default function SuperadminPage() {
   const handleDeleteOrganization = async (org: Organization) => {
      try {
        await api.delete(`/organizations/${org.id}`);
-       showSuccess('Organization deleted successfully');
+       showSuccess(t('messages.org_deleted'));
        loadOrganizations();
      } catch (error: any) {
        showError(error.message || 'Failed to delete organization');
@@ -171,7 +174,7 @@ export default function SuperadminPage() {
      if (!viewingOrg) return;
      try {
        await api.post(`/organizations/${viewingOrg.id}/users/${user.id}/set-org-admin`, {});
-       showSuccess('User promoted to Organization Admin');
+       showSuccess(t('messages.admin_promoted'));
        await loadOrgUsers(viewingOrg.id);
      } catch (error: any) {
        showError(error.message || 'Failed to promote user');
@@ -188,7 +191,7 @@ export default function SuperadminPage() {
         name: userFormData.name,
         password: userFormData.password
       });
-      showSuccess('User created successfully');
+      showSuccess(t('messages.user_created'));
       setShowCreateUserModal(false);
       setUserFormData({ email: '', name: '', password: '' });
       await loadOrgUsers(viewingOrg.id);
@@ -201,7 +204,7 @@ export default function SuperadminPage() {
      if (!viewingOrg) return;
      try {
        await api.post(`/organizations/${viewingOrg.id}/users/${user.id}/remove-org-admin`, {});
-       showSuccess('Organization Admin role removed');
+       showSuccess(t('messages.admin_removed'));
        await loadOrgUsers(viewingOrg.id);
      } catch (error: any) {
        showError(error.message || 'Failed to remove admin role');
@@ -213,8 +216,8 @@ export default function SuperadminPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-heading-2">Superadmin Dashboard</h1>
-          <p className="text-body-secondary mt-2">Manage organizations, administrators and system settings</p>
+          <h1 className="text-heading-2">{t('page.title')}</h1>
+          <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
         </div>
 
         {activeTab === 'organizations' && (
@@ -222,7 +225,7 @@ export default function SuperadminPage() {
             <button
               onClick={loadOrganizations}
               className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
-              title="Refresh"
+              title={t('actions.refresh')}
             >
               <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -231,7 +234,7 @@ export default function SuperadminPage() {
               className="button-primary flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Create Organization
+              {t('actions.create_org')}
             </button>
           </div>
         )}
@@ -249,7 +252,7 @@ export default function SuperadminPage() {
             }`}
           >
             <Building2 className="w-4 h-4" />
-            Organizations
+            {t('tabs.organizations')}
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -260,7 +263,7 @@ export default function SuperadminPage() {
             }`}
           >
             <Settings className="w-4 h-4" />
-            System Settings
+            {t('tabs.system_settings')}
           </button>
         </div>
       )}
@@ -279,7 +282,7 @@ export default function SuperadminPage() {
               className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Organizations
+              {t('actions.back_to_orgs')}
             </button>
 
             {/* Organization Header */}
@@ -297,11 +300,11 @@ export default function SuperadminPage() {
                     <div className="flex items-center gap-4 mt-2">
                       <div className="flex items-center gap-2 text-sm text-neutral-500">
                         <Users className="w-4 h-4" />
-                        {viewingOrg.user_count || 0} users
+                        {t('orgs.users_label', { count: Number(viewingOrg.user_count) || 0 })}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-neutral-500">
                         <Building2 className="w-4 h-4" />
-                        {viewingOrg.tenant_count || 0} tenants
+                        {t(`orgs.tenants_label_${viewingOrg.tenant_count === 1 ? 'one' : 'other'}`, { count: viewingOrg.tenant_count || 0 })}
                       </div>
                     </div>
                   </div>
@@ -311,7 +314,7 @@ export default function SuperadminPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all font-medium"
                 >
                   <Pencil className="w-4 h-4" />
-                  Edit Org
+                  {t('actions.edit')}
                 </button>
               </div>
             </div>
@@ -320,7 +323,7 @@ export default function SuperadminPage() {
             <div className="card">
               <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-neutral-900 dark:text-white">Organization Users</h3>
+                  <h3 className="text-xl font-bold text-neutral-900 dark:text-white">{t('org_users.title')}</h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => loadOrgUsers(viewingOrg.id)}
@@ -336,7 +339,7 @@ export default function SuperadminPage() {
                       className="button-primary flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
-                      Create User
+                      {t('org_users.create_user')}
                     </button>
                   </div>
                 </div>
@@ -350,7 +353,7 @@ export default function SuperadminPage() {
                 ) : orgUsers.length === 0 ? (
                   <div className="text-center py-12">
                     <Users className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
-                    <p className="text-neutral-500 dark:text-neutral-400">No users in this organization</p>
+                    <p className="text-neutral-500 dark:text-neutral-400">{t('org_users.empty')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -388,26 +391,26 @@ export default function SuperadminPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h4 className="font-semibold text-neutral-900 dark:text-white">
-                              {user.name || 'Unnamed'}
+                              {user.name || t('org_users.unnamed')}
                             </h4>
                             {user.global_role === 'org_admin' && (
                               <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
                                 <Shield className="w-3 h-3" />
-                                Org Admin
+                                {t('org_users.role_org_admin')}
                               </span>
                             )}
                             {user.global_role === 'superadmin' && (
                               <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                                Superadmin
+                                {tc('roles.superadmin')}
                               </span>
                             )}
                             {user.is_active ? (
                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                                Active
+                                {t('org_users.status_active')}
                               </span>
                             ) : (
                               <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                                Inactive
+                                {t('org_users.status_inactive')}
                               </span>
                             )}
                           </div>
@@ -422,7 +425,7 @@ export default function SuperadminPage() {
                                 className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-all"
                               >
                                 <UserCog className="w-4 h-4" />
-                                Remove Admin
+                                {t('org_users.remove_admin')}
                               </button>
                             ) : (
                               <button
@@ -430,7 +433,7 @@ export default function SuperadminPage() {
                                 className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-all"
                               >
                                 <Shield className="w-4 h-4" />
-                                Make Admin
+                                {t('org_users.make_admin')}
                               </button>
                             )}
                           </div>
@@ -448,7 +451,7 @@ export default function SuperadminPage() {
                 <div className="card max-w-md w-full">
                   <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
                     <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                      Create User
+                      {t('create_user_modal.title')}
                     </h2>
                     <button
                       onClick={() => setShowCreateUserModal(false)}
@@ -461,7 +464,7 @@ export default function SuperadminPage() {
                   <form onSubmit={handleCreateOrgUser} className="p-6 space-y-4">
                     <div>
                       <label className="text-label mb-2">
-                        Email *
+                        {t('create_user_modal.email_label')}
                       </label>
                       <input
                         type="email"
@@ -475,7 +478,7 @@ export default function SuperadminPage() {
 
                     <div>
                       <label className="text-label mb-2">
-                        Name
+                        {t('create_user_modal.name_label')}
                       </label>
                       <input
                         type="text"
@@ -488,7 +491,7 @@ export default function SuperadminPage() {
 
                     <div>
                       <label className="text-label mb-2">
-                        Password *
+                        {t('create_user_modal.password_label')}
                       </label>
                       <input
                         type="password"
@@ -496,7 +499,7 @@ export default function SuperadminPage() {
                         value={userFormData.password}
                         onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
                         className="input-base w-full"
-                        placeholder="Enter password"
+                        placeholder={t('create_user_modal.password_placeholder')}
                       />
                     </div>
 
@@ -506,13 +509,13 @@ export default function SuperadminPage() {
                         onClick={() => setShowCreateUserModal(false)}
                         className="button-secondary button-center"
                       >
-                        Cancel
+                        {t('create_user_modal.cancel')}
                       </button>
                       <button
                         type="submit"
                         className="button-primary button-center"
                       >
-                        Create User
+                        {t('create_user_modal.submit')}
                       </button>
                     </div>
                   </form>
@@ -529,16 +532,16 @@ export default function SuperadminPage() {
             ) : organizations.length === 0 ? (
               <div className="card text-center py-20 border-2 border-dashed">
                 <Building2 className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
-                <h3 className="text-xl font-bold text-neutral-900 dark:text-white">No Organizations</h3>
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white">{t('orgs.empty_title')}</h3>
                 <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-6">
-                  Get started by creating your first organization.
+                  {t('orgs.empty_description')}
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="button-primary inline-flex items-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
-                  Create Organization
+                  {t('actions.create_org')}
                 </button>
               </div>
             ) : (
@@ -571,19 +574,19 @@ export default function SuperadminPage() {
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         <span className="text-neutral-600 dark:text-neutral-400">
-                          {org.user_count || 0} users
+                          {t('orgs.users_label', { count: Number(org.user_count) || 0 })}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                         <span className="text-neutral-600 dark:text-neutral-400">
-                          {org.tenant_count || 0} tenants
+                          {t(`orgs.tenants_label_${org.tenant_count === 1 ? 'one' : 'other'}`, { count: org.tenant_count || 0 })}
                         </span>
                       </div>
                     </div>
 
                     <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
-                      Created {new Date(org.created_at).toLocaleDateString()}
+                      {t('orgs.created_label', { date: new Date(org.created_at).toLocaleDateString() })}
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -592,7 +595,7 @@ export default function SuperadminPage() {
                         className="button-primary flex items-center justify-center gap-2 text-sm"
                       >
                         <Users className="w-4 h-4" />
-                        Manage Users
+                        {t('actions.manage_users')}
                       </button>
                       <div className="flex gap-2">
                         <button
@@ -600,14 +603,14 @@ export default function SuperadminPage() {
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all font-medium text-sm"
                         >
                           <Pencil className="w-4 h-4" />
-                          Edit
+                          {t('actions.edit')}
                         </button>
                         <button
                           onClick={() => setDeleteOrgTarget(org)}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-all font-medium text-sm"
                         >
                           <Trash2 className="w-4 h-4" />
-                          Delete
+                          {t('actions.delete')}
                         </button>
                       </div>
                     </div>
@@ -693,12 +696,12 @@ export default function SuperadminPage() {
                       {settingsSaving ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
-                          Saving...
+                          {tc('actions.saving')}
                         </>
                       ) : (
                         <>
                           <Settings className="w-4 h-4" />
-                          Save Settings
+                          {tc('actions.save')}
                         </>
                       )}
                     </button>
@@ -716,7 +719,7 @@ export default function SuperadminPage() {
           <div className="card max-w-lg w-full">
             <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
               <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
-                {editingOrg ? 'Edit Organization' : 'Create Organization'}
+                {editingOrg ? t('org_form.title_edit') : t('org_form.title_create')}
               </h2>
               <button
                 onClick={closeModal}
@@ -729,27 +732,27 @@ export default function SuperadminPage() {
             <form onSubmit={editingOrg ? handleUpdateOrganization : handleCreateOrganization} className="p-6 space-y-4">
               <div>
                 <label className="text-label mb-2">
-                  Organization Name
+                  {t('org_form.name_label')}
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="input-base w-full"
-                  placeholder="Enter organization name"
+                  placeholder={t('org_form.name_placeholder')}
                   required
                 />
               </div>
 
               <div>
                 <label className="text-label mb-2">
-                  Description
+                  {t('org_form.description_label')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="input-base w-full resize-none"
-                  placeholder="Enter description (optional)"
+                  placeholder={t('org_form.description_placeholder')}
                   rows={3}
                 />
               </div>
@@ -761,14 +764,14 @@ export default function SuperadminPage() {
                   className="button-secondary button-center"
                   disabled={submitting}
                 >
-                  Cancel
+                  {t('org_form.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="button-primary button-center"
                   disabled={submitting}
                 >
-                  {submitting ? 'Saving...' : editingOrg ? 'Save Changes' : 'Create'}
+                  {submitting ? tc('actions.saving') : editingOrg ? tc('actions.save') : t('org_form.submit_create')}
                 </button>
               </div>
             </form>
@@ -778,9 +781,9 @@ export default function SuperadminPage() {
 
       <ConfirmDialog
         isOpen={!!deleteOrgTarget}
-        title="Delete organization?"
-        description={deleteOrgTarget ? `Delete "${deleteOrgTarget.name}" and ${deleteOrgTarget.user_count || 0} users, ${deleteOrgTarget.tenant_count || 0} tenants.` : undefined}
-        confirmLabel="Delete"
+        title={t('confirm.delete_org_title')}
+        description={deleteOrgTarget ? t('confirm.delete_org_description', { name: deleteOrgTarget.name }) : undefined}
+        confirmLabel={t('confirm.delete_org_label')}
         variant="danger"
         onCancel={() => setDeleteOrgTarget(null)}
         onConfirm={() => {

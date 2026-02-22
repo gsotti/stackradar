@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, RefreshCw, Building2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -13,6 +14,8 @@ interface TenantWithUserCount extends Tenant {
 }
 
 export default function TenantsPage() {
+  const { t } = useTranslation('tenants');
+  const { t: tc } = useTranslation('common');
   const navigate = useNavigate();
   const { isOrgAdmin } = useAuth();
   const { showError, showSuccess } = useNotification();
@@ -30,7 +33,7 @@ export default function TenantsPage() {
       const data = await api.get<TenantWithUserCount[]>('/tenants');
       setTenants(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to fetch tenants');
+      showError(error.message || t('messages.fetch_failed'));
     } finally {
       setLoading(false);
     }
@@ -39,13 +42,13 @@ export default function TenantsPage() {
   const handleCreateTenant = async (data: { name: string; description: string }) => {
     try {
       const newTenant = await api.post<Tenant>('/tenants', data);
-      showSuccess('Tenant created successfully');
+      showSuccess(t('messages.created'));
       setShowForm(false);
       fetchTenants();
       // Navigate to the new tenant's settings page
       navigate(`/tenants/${newTenant.id}/settings`);
     } catch (error: any) {
-      showError(error.message || 'Failed to create tenant');
+      showError(error.message || t('messages.create_failed'));
       throw error;
     }
   };
@@ -62,8 +65,8 @@ export default function TenantsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-heading-2">Tenants</h1>
-          <p className="text-body-secondary mt-2">Manage organizations and their members</p>
+          <h1 className="text-heading-2">{t('page.title')}</h1>
+          <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
         </div>
         {isOrgAdmin() && (
           <button
@@ -71,7 +74,7 @@ export default function TenantsPage() {
             className="button-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Create Tenant
+            {t('actions.create_tenant')}
           </button>
         )}
       </div>
@@ -92,9 +95,9 @@ export default function TenantsPage() {
       {tenants.length === 0 ? (
         <div className="text-center py-16 surface rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700">
           <Building2 className="w-16 h-16 text-neutral-400 dark:text-neutral-600 mx-auto mb-3 opacity-50" />
-          <h3 className="text-heading-4 mb-2">No tenants found</h3>
+          <h3 className="text-heading-4 mb-2">{t('empty.title')}</h3>
           <p className="text-neutral-600 dark:text-neutral-400 max-w-sm mx-auto mb-6">
-            Create your first tenant to start organizing your users and sites.
+            {t('empty.description')}
           </p>
           {isOrgAdmin() && (
             <button
@@ -102,7 +105,7 @@ export default function TenantsPage() {
               className="button-primary inline-flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Create Your First Tenant
+              {t('actions.create_first_tenant')}
             </button>
           )}
         </div>

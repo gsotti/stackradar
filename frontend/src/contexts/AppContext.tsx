@@ -1,9 +1,13 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContextType } from '../types';
+import { api } from '../utils/api';
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { i18n } = useTranslation();
+
   // Detail page ID state
   const [selectedSiteId, setSelectedSiteId] = useState('');
   const [selectedSystemId, setSelectedSystemId] = useState(() => {
@@ -19,6 +23,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('sidebarCollapsed');
     return saved !== null ? saved === 'true' : false;
   });
+
+  // Language state
+  const [language, setLanguageState] = useState(() => {
+    return localStorage.getItem('language') || i18n.language || 'en';
+  });
+
+  const setLanguage = (lang: string) => {
+    setLanguageState(lang);
+    localStorage.setItem('language', lang);
+    i18n.changeLanguage(lang);
+    // Persist to backend (fire-and-forget)
+    api.put('/auth/language', { language: lang }).catch(() => {});
+  };
 
   // Hierarchy filters for logs (global context)
   // New hierarchy: Tenant → Site → Environment → System
@@ -86,7 +103,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       selectedEnvironment,
       setSelectedEnvironment,
       selectedSystem,
-      setSelectedSystem
+      setSelectedSystem,
+      language,
+      setLanguage
     }}>
       {children}
     </AppContext.Provider>

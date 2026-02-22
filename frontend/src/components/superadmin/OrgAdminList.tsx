@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, RefreshCw, Shield, UserCheck, UserX, Edit2, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { getGravatarUrl } from '../../utils/md5';
@@ -8,6 +9,8 @@ import OrgAdminForm from './OrgAdminForm';
 import ConfirmDialog from '../common/ConfirmDialog';
 
 export default function OrgAdminList() {
+  const { t } = useTranslation('superadmin');
+  const { t: tc } = useTranslation('common');
   const [orgAdmins, setOrgAdmins] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -21,7 +24,7 @@ export default function OrgAdminList() {
       const data = await api.get<User[]>('/superadmin/org-admins');
       setOrgAdmins(data);
     } catch (error: any) {
-      showError('Failed to load organization admins: ' + error.message);
+      showError(t('messages.org_admin_load_failed', { error: error.message }));
     } finally {
       setLoading(false);
     }
@@ -36,20 +39,20 @@ export default function OrgAdminList() {
       await api.put(`/superadmin/org-admins/${admin.id}`, {
         is_active: !admin.is_active
       });
-      showSuccess(`Organization admin ${admin.is_active ? 'deactivated' : 'activated'} successfully`);
+      showSuccess(admin.is_active ? t('messages.org_admin_deactivated') : t('messages.org_admin_activated'));
       loadOrgAdmins();
     } catch (error: any) {
-      showError(`Failed to ${admin.is_active ? 'deactivate' : 'activate'} admin: ` + error.message);
+      showError(admin.is_active ? t('messages.org_admin_deactivate_failed', { error: error.message }) : t('messages.org_admin_activate_failed', { error: error.message }));
     }
   };
 
   const handleDelete = async (admin: User) => {
      try {
        await api.delete(`/superadmin/org-admins/${admin.id}`);
-       showSuccess('Organization admin deleted successfully');
+       showSuccess(t('messages.org_admin_deleted'));
        loadOrgAdmins();
      } catch (error: any) {
-       showError('Failed to delete admin: ' + error.message);
+       showError(t('messages.org_admin_delete_failed', { error: error.message }));
      }
    };
 
@@ -74,13 +77,13 @@ export default function OrgAdminList() {
       {/* Header Actions */}
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          {orgAdmins.length} organization admin{orgAdmins.length !== 1 ? 's' : ''}
+          {t(`org_admin_list.count_${orgAdmins.length === 1 ? 'one' : 'other'}`, { count: orgAdmins.length })}
         </p>
         <div className="flex gap-2">
           <button
             onClick={loadOrgAdmins}
             className="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
-            title="Refresh"
+            title={t('org_admin_list.refresh_title')}
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -89,7 +92,7 @@ export default function OrgAdminList() {
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 font-semibold"
           >
             <Plus className="w-5 h-5" />
-            Add Org Admin
+            {t('org_admin_list.add_admin')}
           </button>
         </div>
       </div>
@@ -98,9 +101,9 @@ export default function OrgAdminList() {
       {orgAdmins.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
           <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">No organization admins found</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('org_admin_list.empty_title')}</h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-            Create your first organization admin to manage tenants and users.
+            {t('org_admin_list.empty_description')}
           </p>
         </div>
       ) : (
@@ -133,14 +136,14 @@ export default function OrgAdminList() {
                       )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 dark:text-white truncate">{admin.name || 'Anonymous'}</h3>
+                      <h3 className="font-bold text-gray-900 dark:text-white truncate">{admin.name || tc('meta.anonymous')}</h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{admin.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-purple-200 dark:border-purple-800 flex items-center gap-1">
                       <Shield className="w-3 h-3" />
-                      Org Admin
+                      {t('org_admin_list.role_org_admin')}
                     </span>
                   </div>
                 </div>
@@ -148,13 +151,13 @@ export default function OrgAdminList() {
                 {/* Details */}
                 <div className="flex items-center gap-4 mb-4 text-xs text-gray-500 dark:text-gray-400">
                   <div className="flex items-center gap-1">
-                    <span className="font-semibold">Created:</span>
+                    <span className="font-semibold">{t('org_admin_list.created_label')}</span>
                     <span>{new Date(admin.created_at).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="font-semibold">Status:</span>
+                    <span className="font-semibold">{t('org_admin_list.status_label')}</span>
                     <span className={admin.is_active ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                      {admin.is_active ? 'Active' : 'Inactive'}
+                      {admin.is_active ? t('org_admin_list.status_active') : t('org_admin_list.status_inactive')}
                     </span>
                   </div>
                 </div>
@@ -166,7 +169,7 @@ export default function OrgAdminList() {
                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all font-bold text-sm"
                   >
                     <Edit2 className="w-4 h-4" />
-                    Edit
+                    {t('org_admin_list.edit')}
                   </button>
                   <button
                     onClick={() => handleToggleActive(admin)}
@@ -177,7 +180,7 @@ export default function OrgAdminList() {
                     }`}
                   >
                     {admin.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                    {admin.is_active ? 'Deactivate' : 'Activate'}
+                    {admin.is_active ? t('org_admin_list.deactivate') : t('org_admin_list.activate')}
                   </button>
                   <button
                     onClick={() => setDeleteTarget(admin)}
@@ -202,9 +205,9 @@ export default function OrgAdminList() {
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete organization admin?"
-        description={deleteTarget ? `Delete ${deleteTarget.name || deleteTarget.email}. This action cannot be undone.` : undefined}
-        confirmLabel="Delete"
+        title={t('confirm.delete_admin_title')}
+        description={deleteTarget ? t('confirm.delete_admin_description', { name: deleteTarget.name || deleteTarget.email }) : undefined}
+        confirmLabel={t('confirm.delete_admin_label')}
         variant="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {

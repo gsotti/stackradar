@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Mail, Webhook, Power, Zap, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { api } from '../../utils/api';
@@ -12,6 +13,8 @@ interface NotificationChannelListProps {
 }
 
 export default function NotificationChannelList({ siteId }: NotificationChannelListProps) {
+  const { t } = useTranslation('alerts');
+  const { t: tc } = useTranslation('common');
   const [channels, setChannels] = useState<NotificationChannel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -43,7 +46,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
       const data = await api.get<NotificationChannel[]>(`/alerts/channels?site_id=${siteId}`);
       setChannels(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to load notification channels');
+      showError(error.message || t('channels_messages.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -62,20 +65,20 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   const handleDelete = async (channelId: number) => {
      try {
        await api.delete(`/alerts/channels/${channelId}`);
-       showSuccess('Notification channel deleted successfully');
+       showSuccess(t('channels_messages.deleted'));
        loadChannels();
      } catch (error: any) {
-       showError(error.message || 'Failed to delete notification channel');
+       showError(error.message || t('channels_messages.delete_failed'));
      }
    };
 
   const handleToggle = async (channel: NotificationChannel) => {
     try {
       await api.put(`/alerts/channels/${channel.id}`, { enabled: !channel.enabled });
-      showSuccess(`Channel ${channel.enabled ? 'disabled' : 'enabled'}`);
+      showSuccess(t('channels_messages.toggled', { state: channel.enabled ? tc('status.disabled') : tc('status.enabled') }));
       loadChannels();
     } catch (error: any) {
-      showError(error.message || 'Failed to toggle channel');
+      showError(error.message || t('channels_messages.toggle_failed'));
     }
   };
 
@@ -86,12 +89,12 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
         channel_id: channelId,
         site_id: Number(siteId)
       });
-      showSuccess(result.message || 'Test alert sent successfully');
+      showSuccess(result.message || t('channels_messages.test_sent'));
       if (result.alert_name) {
-        showInfo(`Alert: ${result.alert_name} (${result.severity})`);
+        showInfo(t('channels_messages.test_alert_info', { name: result.alert_name, severity: result.severity }));
       }
     } catch (error: any) {
-      showError(error.message || 'Failed to send test alert');
+      showError(error.message || t('channels_messages.test_failed'));
     } finally {
       setTestingChannelId(null);
     }
@@ -108,7 +111,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 dark:text-gray-400">Loading notification channels...</div>
+        <div className="text-gray-500 dark:text-gray-400">{t('channels.loading')}</div>
       </div>
     );
   }
@@ -121,10 +124,10 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
           <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">No SMTP configuration</p>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">{t('channels.smtp_warning_title')}</p>
               <p className="text-sm text-amber-700 dark:text-amber-300 mt-0.5">
-                Email notification channels are disabled until an SMTP server is configured in{' '}
-                <a href="/admin/settings" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-100">Admin Settings</a>.
+                {t('channels.smtp_warning_text')}{' '}
+                <a href="/admin/settings" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-100">{t('channels.smtp_warning_link')}</a>.
               </p>
             </div>
           </div>
@@ -133,7 +136,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
         {/* Header */}
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Notification Channels
+            {t('channels.title')}
           </h3>
           {!isViewer() && (
             <button
@@ -141,7 +144,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              Add Channel
+              {t('channels.add_channel')}
             </button>
           )}
         </div>
@@ -150,7 +153,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
         {channels.length === 0 ? (
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8 text-center border border-dashed border-gray-300 dark:border-gray-700">
             <Mail className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 dark:text-gray-400">No notification channels configured yet.</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('channels.empty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -188,7 +191,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
                             ? 'text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20'
                             : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
-                        title={channel.enabled ? 'Disable' : 'Enable'}
+                        title={channel.enabled ? t('channels.disable_title') : t('channels.enable_title')}
                       >
                         <Power className="w-4 h-4" />
                       </button>
@@ -196,14 +199,14 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
                         onClick={() => handleTest(channel.id)}
                         disabled={testingChannelId === channel.id || !channel.enabled}
                         className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors disabled:opacity-50"
-                        title="Send Test Notification"
+                        title={t('channels.send_test_title')}
                       >
                         <Zap className={`w-4 h-4 ${testingChannelId === channel.id ? 'animate-pulse' : ''}`} />
                       </button>
                       <button
                         onClick={() => handleEdit(channel)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                        title="Edit"
+                        title={t('channels.edit_title')}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -211,7 +214,7 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
                         onClick={() => setDeleteTarget(channel)}
                         className="button-danger button-sm"
                       >
-                        Delete
+                        {t('channels.delete_button')}
                       </button>
                     </div>
                   )}
@@ -241,9 +244,9 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete notification channel?"
-        description={deleteTarget ? `Delete "${deleteTarget.name}".` : undefined}
-        confirmLabel="Delete"
+        title={t('channels_confirm.delete_title')}
+        description={deleteTarget ? t('channels_confirm.delete_description', { name: deleteTarget.name }) : undefined}
+        confirmLabel={t('channels_confirm.delete_label')}
         variant="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {

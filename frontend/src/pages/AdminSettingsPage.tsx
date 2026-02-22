@@ -1,10 +1,13 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { Save, Mail, TestTube, CheckCircle, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../contexts/NotificationContext';
 import { api } from '../utils/api';
 import { SmtpConfig } from '../types';
 
 export default function AdminSettingsPage() {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const [smtpConfig, setSmtpConfig] = useState({
     host: '',
     port: 587,
@@ -44,7 +47,7 @@ export default function AdminSettingsPage() {
         setConfigExists(false);
       }
     } catch (error: any) {
-      showError('Failed to load SMTP configuration');
+      showError(t('messages.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -54,7 +57,7 @@ export default function AdminSettingsPage() {
     e.preventDefault();
 
     if (!smtpConfig.host || !smtpConfig.port || !smtpConfig.from_email) {
-      showError('Please fill in all required fields');
+      showError(t('messages.fill_required'));
       return;
     }
 
@@ -69,14 +72,14 @@ export default function AdminSettingsPage() {
 
       if (configExists) {
         await api.put('/alerts/smtp-config', payload);
-        showSuccess('SMTP configuration updated successfully');
+        showSuccess(t('messages.updated'));
       } else {
         await api.post('/alerts/smtp-config', payload);
-        showSuccess('SMTP configuration created successfully');
+        showSuccess(t('messages.created'));
         setConfigExists(true);
       }
     } catch (error: any) {
-      showError(error.message || 'Failed to save SMTP configuration');
+      showError(error.message || t('messages.save_failed'));
     } finally {
       setSaving(false);
     }
@@ -84,16 +87,16 @@ export default function AdminSettingsPage() {
 
   const handleTest = async () => {
     if (!testEmail) {
-      showError('Please enter a test email address');
+      showError(t('messages.test_email_required'));
       return;
     }
 
     try {
       setTesting(true);
       await api.post('/alerts/smtp-config/test', { test_email: testEmail });
-      showSuccess(`Test email sent successfully to ${testEmail}`);
+      showSuccess(t('messages.test_sent', { email: testEmail }));
     } catch (error: any) {
-      showError(error.message || 'Failed to send test email');
+      showError(error.message || t('messages.test_failed'));
     } finally {
       setTesting(false);
     }
@@ -112,7 +115,7 @@ export default function AdminSettingsPage() {
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
         <div className="text-center">
           <Mail className="w-12 h-12 text-primary-500 animate-pulse mx-auto mb-4" />
-          <p className="text-neutral-600 dark:text-neutral-400">Loading settings...</p>
+          <p className="text-neutral-600 dark:text-neutral-400">{t('loading')}</p>
         </div>
       </div>
     );
@@ -122,8 +125,8 @@ export default function AdminSettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-heading-2">Admin Settings</h1>
-        <p className="text-body-secondary mt-2">Configure platform-wide settings — these apply to all organizations</p>
+        <h1 className="text-heading-2">{t('page.title')}</h1>
+        <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -134,33 +137,33 @@ export default function AdminSettingsPage() {
               <div className="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
                 <Mail className="w-4 h-4 text-primary-600 dark:text-primary-400" />
               </div>
-              <h2 className="text-heading-4">Email Configuration (SMTP)</h2>
+              <h2 className="text-heading-4">{t('smtp.section_title')}</h2>
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-label mb-2">SMTP Host *</label>
+                  <label className="block text-label mb-2">{t('smtp.host_label')}</label>
                   <input
                     type="text"
                     name="host"
                     value={smtpConfig.host}
                     onChange={handleChange}
                     className="input-base w-full"
-                    placeholder="smtp.example.com"
+                    placeholder={t('smtp.host_placeholder')}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-label mb-2">SMTP Port *</label>
+                  <label className="block text-label mb-2">{t('smtp.port_label')}</label>
                   <input
                     type="number"
                     name="port"
                     value={smtpConfig.port}
                     onChange={handleChange}
                     className="input-base w-full"
-                    placeholder="587"
+                    placeholder={t('smtp.port_placeholder')}
                     required
                   />
                 </div>
@@ -177,56 +180,56 @@ export default function AdminSettingsPage() {
                       />
                       <div className="w-10 h-6 bg-neutral-300 dark:bg-neutral-700 rounded-full peer-checked:bg-primary-500 peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                     </div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-primary-600 transition-colors">Use SSL/TLS (Secure)</span>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 group-hover:text-primary-600 transition-colors">{t('smtp.secure_label')}</span>
                   </label>
                 </div>
 
                 <div>
-                  <label className="block text-label mb-2">Username</label>
+                  <label className="block text-label mb-2">{t('smtp.username_label')}</label>
                   <input
                     type="text"
                     name="auth_user"
                     value={smtpConfig.auth_user}
                     onChange={handleChange}
                     className="input-base w-full"
-                    placeholder="user@example.com"
+                    placeholder={t('smtp.username_placeholder')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-label mb-2">Password</label>
+                  <label className="block text-label mb-2">{t('smtp.password_label')}</label>
                   <input
                     type="password"
                     name="auth_password"
                     value={smtpConfig.auth_password}
                     onChange={handleChange}
                     className="input-base w-full"
-                    placeholder={configExists ? '•••••••• (unchanged)' : 'Enter password'}
+                    placeholder={configExists ? t('smtp.password_unchanged_placeholder') : t('smtp.password_placeholder')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-label mb-2">From Email *</label>
+                  <label className="block text-label mb-2">{t('smtp.from_email_label')}</label>
                   <input
                     type="email"
                     name="from_email"
                     value={smtpConfig.from_email}
                     onChange={handleChange}
                     className="input-base w-full"
-                    placeholder="alerts@stackradar.io"
+                    placeholder={t('smtp.from_email_placeholder')}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-label mb-2">From Name</label>
+                  <label className="block text-label mb-2">{t('smtp.from_name_label')}</label>
                   <input
                     type="text"
                     name="from_name"
                     value={smtpConfig.from_name}
                     onChange={handleChange}
                     className="input-base w-full"
-                    placeholder="StackRadar Alerts"
+                    placeholder={t('smtp.from_name_placeholder')}
                   />
                 </div>
               </div>
@@ -242,7 +245,7 @@ export default function AdminSettingsPage() {
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  {configExists ? 'Save Configuration' : 'Create Configuration'}
+                  {configExists ? t('smtp.save_button') : t('smtp.create_button')}
                 </button>
               </div>
             </form>
@@ -257,22 +260,22 @@ export default function AdminSettingsPage() {
               <div className="p-2 bg-accent-warning/10 dark:bg-accent-warning/10 rounded-lg">
                 <TestTube className="w-4 h-4 text-accent-warning" />
               </div>
-              <h3 className="font-semibold text-neutral-900 dark:text-white">Test Connection</h3>
+              <h3 className="font-semibold text-neutral-900 dark:text-white">{t('smtp_test.title')}</h3>
             </div>
             
             <p className="text-body-secondary text-xs mb-4">
-              Verify your SMTP settings by sending a test email to yourself.
+              {t('smtp_test.description')}
             </p>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-label mb-2">Test Recipient</label>
+                <label className="block text-label mb-2">{t('smtp_test.recipient_label')}</label>
                 <input
                   type="email"
                   value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)}
                   className="input-base w-full text-sm"
-                  placeholder="your-email@example.com"
+                  placeholder={t('smtp_test.recipient_placeholder')}
                 />
               </div>
               <button
@@ -285,11 +288,11 @@ export default function AdminSettingsPage() {
                 ) : (
                   <Mail className="w-4 h-4" />
                 )}
-                Send Test Email
+                {t('smtp_test.send_button')}
               </button>
               {!configExists && (
                 <p className="text-[10px] text-center text-accent-warning">
-                  Save configuration before testing
+                  {t('smtp_test.save_first')}
                 </p>
               )}
             </div>

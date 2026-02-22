@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Radio } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatInLocalTime, parseAsUTC } from '../../utils/dateUtils';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -12,12 +13,12 @@ const statusDot: Record<UptimeStatus, string> = {
   unknown: 'bg-gray-300 dark:bg-gray-500',
 };
 
-function formatTimeAgo(date: string | null | undefined) {
-  if (!date) return 'Never';
+function formatTimeAgo(date: string | null | undefined, t: any) {
+  if (!date) return t('common:time.never');
   const parsed = parseAsUTC(date);
   if (!parsed) return date;
   const seconds = Math.floor((Date.now() - parsed.getTime()) / 1000);
-  if (seconds < 0) return 'Just now';
+  if (seconds < 0) return t('common:time.just_now');
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -29,6 +30,8 @@ interface UptimeOverviewDashboardProps {
 }
 
 export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashboardProps) {
+  const { t } = useTranslation('uptime');
+  const { t: tc } = useTranslation('common');
   const { showError } = useNotification();
   const [monitors, setMonitors] = useState<UptimeMonitor[]>([]);
   const [checksMap, setChecksMap] = useState<Record<number, UptimeCheck[]>>({});
@@ -55,7 +58,7 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
       results.forEach((r) => { map[r.id] = r.checks; });
       setChecksMap(map);
     } catch {
-      showError('Failed to load uptime monitors');
+      showError(t('overview.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -87,7 +90,7 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <RefreshCw className="w-10 h-10 animate-spin text-blue-500 mx-auto mb-3" />
-          <p className="text-gray-600 dark:text-gray-400">Loading uptime data...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('overview.loading')}</p>
         </div>
       </div>
     );
@@ -99,9 +102,9 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
           <Radio className="w-8 h-8 text-gray-400" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No Monitors Configured</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{t('overview.no_monitors_title')}</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-          Switch to the Monitors tab to set up uptime checks for this site.
+          {t('empty.overview_description')}
         </p>
       </div>
     );
@@ -114,24 +117,24 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 text-sm">
             <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 dark:bg-emerald-500" />{upCount} up
+              <span className="w-2 h-2 rounded-full bg-emerald-400 dark:bg-emerald-500" />{t('monitors.counts.up', { count: upCount })}
             </span>
             {downCount > 0 && (
               <span className="flex items-center gap-1.5 text-rose-500 dark:text-rose-400 font-medium">
-                <span className="w-2 h-2 rounded-full bg-rose-400 dark:bg-rose-500" />{downCount} down
+                <span className="w-2 h-2 rounded-full bg-rose-400 dark:bg-rose-500" />{t('monitors.counts.down', { count: downCount })}
               </span>
             )}
             {degradedCount > 0 && (
               <span className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400">
-                <span className="w-2 h-2 rounded-full bg-amber-400 dark:bg-amber-500" />{degradedCount} degraded
+                <span className="w-2 h-2 rounded-full bg-amber-400 dark:bg-amber-500" />{t('monitors.counts.degraded', { count: degradedCount })}
               </span>
             )}
           </div>
           <span className="text-gray-300 dark:text-gray-600">|</span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {overallUptimePct !== null ? `${overallUptimePct.toFixed(1)}% uptime` : ''}
+            {overallUptimePct !== null ? `${overallUptimePct.toFixed(1)}% ${t('monitors.uptime_label')}` : ''}
             {overallUptimePct !== null && avgResponseTime !== null ? ' · ' : ''}
-            {avgResponseTime !== null ? `${avgResponseTime}ms avg` : ''}
+            {avgResponseTime !== null ? `${avgResponseTime}${t('monitors.ms_avg_label')}` : ''}
           </span>
         </div>
         <button
@@ -139,7 +142,7 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Refresh
+          {t('overview.refresh')}
         </button>
       </div>
 
@@ -164,10 +167,10 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{monitor.name}</span>
                     {monitor.is_main && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 uppercase">Main</span>
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 uppercase">{t('monitors.main_badge')}</span>
                     )}
                     {!monitor.enabled && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-500">Paused</span>
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-500">{t('monitors.paused_badge')}</span>
                     )}
                   </div>
                   <span className="text-xs text-gray-400 dark:text-gray-500 truncate block">
@@ -208,7 +211,7 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
                 {/* Last checked */}
                 <div className="hidden lg:block text-right w-20 flex-shrink-0">
                   <span className="text-xs text-gray-400 dark:text-gray-500">
-                    {formatTimeAgo(monitor.last_checked_at)}
+                    {formatTimeAgo(monitor.last_checked_at, tc)}
                   </span>
                 </div>
               </div>

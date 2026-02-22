@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Server, AlertTriangle, Activity, RefreshCw, TrendingUp, TrendingDown, Eye, Radio } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useApp } from '../contexts/AppContext';
 import { Site, System, UptimeMonitor, UptimeCheck, UptimeStatus } from '../types';
@@ -22,6 +23,8 @@ interface UptimeStats {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation('dashboard');
+  const { t: tc } = useTranslation('common');
   const { selectedTenant, selectedEnvironment, selectedSite } = useApp();
   const [sites, setSites] = useState<Site[]>([]);
   const [systems, setSystems] = useState<System[]>([]);
@@ -100,7 +103,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
         <div className="text-center">
           <RefreshCw className="w-12 h-12 animate-spin text-primary-500 mx-auto mb-4" />
-          <p className="text-neutral-600 dark:text-neutral-400">Loading dashboard...</p>
+          <p className="text-neutral-600 dark:text-neutral-400">{t('loading')}</p>
         </div>
       </div>
     );
@@ -165,24 +168,24 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-heading-2">Dashboard Overview</h1>
-            <p className="text-body-secondary mt-2">Real-time monitoring and analytics</p>
+            <h1 className="text-heading-2">{t('page.title')}</h1>
+            <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
           </div>
           <button
             onClick={() => window.location.reload()}
             className="button-primary flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t('actions.refresh')}
           </button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Activity className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mb-4" />
-          <h2 className="text-lg font-semibold text-neutral-700 dark:text-neutral-300 mb-2">No data yet</h2>
+          <h2 className="text-lg font-semibold text-neutral-700 dark:text-neutral-300 mb-2">{t('empty.no_data')}</h2>
           <p className="text-neutral-500 dark:text-neutral-400 max-w-sm">
-            Start ingesting logs or configure uptime monitors to see data here.
-            {selectedTenant && ' Try switching to a different tenant.'}
+            {t('empty.no_data_description')}
+            {selectedTenant && ` ${t('empty.wrong_tenant')}`}
           </p>
         </div>
       </div>
@@ -229,22 +232,22 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-heading-2">Dashboard Overview</h1>
-            <p className="text-body-secondary mt-2">Real-time monitoring and analytics</p>
+            <h1 className="text-heading-2">{t('page.title')}</h1>
+            <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
           </div>
           <button
             onClick={() => window.location.reload()}
             className="button-primary flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t('actions.refresh')}
           </button>
         </div>
 
         {/* Summary stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="card-compact border-l-4 border-l-accent-success">
-            <p className="text-label mb-2">Endpoints</p>
+            <p className="text-label mb-2">{t('uptime_summary.endpoints')}</p>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">{monitors.length}</p>
             <div className="flex flex-wrap gap-2 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
               <span>{upCount} up</span>
@@ -253,23 +256,23 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="card-compact">
-            <p className="text-label mb-2">Uptime</p>
+            <p className="text-label mb-2">{t('uptime_summary.uptime_label')}</p>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
               {uptimeOnlyPct !== null ? `${uptimeOnlyPct.toFixed(1)}%` : '—'}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">Last 30 checks</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{t('uptime_summary.last_30_checks')}</p>
           </div>
           <div className="card-compact">
-            <p className="text-label mb-2">Avg Response</p>
+            <p className="text-label mb-2">{t('uptime_summary.avg_response')}</p>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
               {avgResponseTime !== null ? <>{avgResponseTime}<span className="text-sm font-normal text-neutral-400 ml-0.5">ms</span></> : '—'}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">Across all monitors</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{t('uptime_summary.across_all_monitors')}</p>
           </div>
           <div className="card-compact">
-            <p className="text-label mb-2">Sites</p>
+            <p className="text-label mb-2">{t('uptime_summary.sites')}</p>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">{sites.length}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">Being monitored</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{t('uptime_summary.being_monitored')}</p>
           </div>
         </div>
 
@@ -302,10 +305,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {monitor.is_main && (
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 uppercase">Main</span>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 uppercase">{t('uptime_summary.main_label')}</span>
                     )}
                     {!monitor.enabled && (
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">Paused</span>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">{t('uptime_summary.paused_label')}</span>
                     )}
                   </div>
                 </div>
@@ -337,10 +340,10 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-3 text-neutral-500 dark:text-neutral-400">
                     <span>
-                      {uptimePct !== null ? <><span className="font-medium text-neutral-700 dark:text-neutral-300">{uptimePct.toFixed(1)}%</span> uptime</> : '—'}
+                      {uptimePct !== null ? <><span className="font-medium text-neutral-700 dark:text-neutral-300">{uptimePct.toFixed(1)}%</span> {t('uptime_summary.uptime_percent')}</> : '—'}
                     </span>
                     <span>
-                      {avgMs !== null ? <><span className="font-medium text-neutral-700 dark:text-neutral-300">{avgMs}</span>ms avg</> : ''}
+                      {avgMs !== null ? <><span className="font-medium text-neutral-700 dark:text-neutral-300">{avgMs}</span>{t('uptime_summary.ms_avg')}</> : ''}
                     </span>
                   </div>
                   <span className="text-neutral-500 dark:text-neutral-400">
@@ -360,15 +363,15 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-heading-2">Dashboard Overview</h1>
-          <p className="text-body-secondary mt-2">Real-time monitoring and analytics</p>
+          <h1 className="text-heading-2">{t('page.title')}</h1>
+          <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
         </div>
         <button
           onClick={() => window.location.reload()}
           className="button-primary flex items-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          {t('actions.refresh')}
         </button>
       </div>
 
@@ -387,9 +390,9 @@ export default function DashboardPage() {
                   <span>{logTrend}%</span>
                 </div>
               </div>
-              <p className="text-label mb-1">Total Logs (24h)</p>
+              <p className="text-label mb-1">{t('stats.total_logs')}</p>
               <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{stats?.total_logs?.toLocaleString() || 0}</p>
-              <p className="text-body-secondary text-xs">Last 24 hours</p>
+              <p className="text-body-secondary text-xs">{t('stats.total_logs_subtitle')}</p>
             </div>
           )}
 
@@ -402,12 +405,12 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-1 px-2 py-1 bg-accent-success/10 rounded-full">
                   <div className="w-2 h-2 bg-accent-success rounded-full status-pulse"></div>
-                  <span className="text-accent-success text-xs font-medium">Online</span>
+                  <span className="text-accent-success text-xs font-medium">{t('stats.online_label')}</span>
                 </div>
               </div>
-              <p className="text-label mb-1">Active Systems</p>
+              <p className="text-label mb-1">{t('stats.active_systems')}</p>
               <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{systems.length}</p>
-              <p className="text-body-secondary text-xs">All systems operational</p>
+              <p className="text-body-secondary text-xs">{t('stats.active_systems_subtitle')}</p>
             </div>
           )}
 
@@ -423,9 +426,9 @@ export default function DashboardPage() {
                   <span>{Math.abs(errorTrend)}%</span>
                 </div>
               </div>
-              <p className="text-label mb-1">Errors (24h)</p>
+              <p className="text-label mb-1">{t('stats.errors_24h')}</p>
               <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{totalErrors.toLocaleString()}</p>
-              <p className="text-body-secondary text-xs">{errorRate}% error rate</p>
+              <p className="text-body-secondary text-xs">{errorRate}% {t('stats.error_rate')}</p>
             </div>
           )}
 
@@ -437,12 +440,12 @@ export default function DashboardPage() {
                   <Eye className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div className="flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full">
-                  <span className="text-xs font-medium text-primary-700 dark:text-primary-300">Tracked</span>
+                  <span className="text-xs font-medium text-primary-700 dark:text-primary-300">{t('stats.tracked_label')}</span>
                 </div>
               </div>
-              <p className="text-label mb-1">Log Sources</p>
+              <p className="text-label mb-1">{t('stats.log_sources')}</p>
               <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{stats?.top_sources?.length || 0}</p>
-              <p className="text-body-secondary text-xs">Unique sources</p>
+              <p className="text-body-secondary text-xs">{t('stats.log_sources_subtitle')}</p>
             </div>
           )}
         </div>
@@ -454,23 +457,23 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-heading-4 flex items-center gap-2">
               <Radio className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-              Uptime Monitors
+              {t('stats.uptime_monitors')}
             </h2>
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 dark:bg-emerald-500"></div>
-                <span className="text-gray-600 dark:text-gray-400">{uptimeStats?.up || 0} Up</span>
+                <span className="text-gray-600 dark:text-gray-400">{uptimeStats?.up || 0} {t('stats.up')}</span>
               </div>
               {Number(uptimeStats?.degraded) > 0 && (
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-amber-500"></div>
-                  <span className="text-amber-500 dark:text-amber-400 font-medium">{uptimeStats?.degraded} Degraded</span>
+                  <span className="text-amber-500 dark:text-amber-400 font-medium">{uptimeStats?.degraded} {t('stats.degraded')}</span>
                 </div>
               )}
               {Number(uptimeStats?.down) > 0 && (
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-rose-400 dark:bg-rose-500"></div>
-                  <span className="text-rose-500 dark:text-rose-400 font-medium">{uptimeStats?.down} Down</span>
+                  <span className="text-rose-500 dark:text-rose-400 font-medium">{uptimeStats?.down} {t('stats.down')}</span>
                 </div>
               )}
             </div>
@@ -516,11 +519,11 @@ export default function DashboardPage() {
             <div className="card">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-heading-4">Activity Timeline</h2>
-                  <p className="text-body-secondary mt-1">Logs per hour (last 24h)</p>
+                  <h2 className="text-heading-4">{t('charts.activity_timeline')}</h2>
+                  <p className="text-body-secondary mt-1">{t('charts.activity_timeline_subtitle')}</p>
                 </div>
                 <div className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-sm font-medium border border-primary-200 dark:border-primary-800">
-                  Real-time
+                  {t('charts.realtime_label')}
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={280}>
@@ -567,11 +570,11 @@ export default function DashboardPage() {
             <div className="card">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-heading-4">Log Distribution</h2>
-                  <p className="text-body-secondary mt-1">By severity level</p>
+                  <h2 className="text-heading-4">{t('charts.log_distribution')}</h2>
+                  <p className="text-body-secondary mt-1">{t('charts.log_distribution_subtitle')}</p>
                 </div>
                 <div className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-sm font-medium border border-primary-200 dark:border-primary-800">
-                  Breakdown
+                  {t('charts.breakdown_label')}
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={280}>
@@ -674,11 +677,11 @@ export default function DashboardPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-heading-4">Top Log Sources</h2>
-              <p className="text-body-secondary mt-1">Most active sources in the last 24 hours</p>
+              <h2 className="text-heading-4">{t('charts.top_sources')}</h2>
+              <p className="text-body-secondary mt-1">{t('charts.top_sources_subtitle')}</p>
             </div>
             <div className="px-3 py-1 bg-accent-success/10 text-accent-success rounded-lg text-sm font-medium border border-accent-success/20">
-              Top 10
+              {t('charts.top_10_label')}
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -728,10 +731,10 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-heading-4 flex items-center gap-2">
               <Server className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-              Connected Systems
+              {t('systems_table.connected_systems')}
             </h2>
             <div className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-sm font-medium border border-primary-200 dark:border-primary-800">
-              {systems.length} Total
+              {systems.length} {t('systems_table.total_label')}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -751,7 +754,7 @@ export default function DashboardPage() {
                     </h3>
                     <div className="flex items-center gap-1">
                       <div className="w-1.5 h-1.5 bg-accent-success dark:bg-accent-success rounded-full animate-pulse"></div>
-                      <span className="text-[10px] font-medium text-accent-success">Active</span>
+                      <span className="text-[10px] font-medium text-accent-success">{t('systems_table.active_label')}</span>
                     </div>
                   </div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate opacity-70">

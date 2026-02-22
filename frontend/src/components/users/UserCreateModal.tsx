@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, Mail, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TenantRoleName } from '../../types';
 import RoleSelect from './RoleSelect';
 
@@ -10,6 +11,7 @@ interface UserCreateModalProps {
 }
 
 export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreateModalProps) {
+  const { t } = useTranslation('users');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,11 +23,11 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
 
   const handleSave = async () => {
     if (!formData.email) {
-      setError('Email is required');
+      setError(t('messages.invite_email_required'));
       return;
     }
     if (!formData.password || formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('messages.password_min_length'));
       return;
     }
 
@@ -35,7 +37,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
       await onSave(formData);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+      setError(err.message || t('messages.create_failed'));
     } finally {
       setSaving(false);
     }
@@ -47,7 +49,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
 
       <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create User</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('actions.create_user')}</h2>
           <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all">
             <X className="w-5 h-5" />
           </button>
@@ -61,7 +63,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('create_modal.name_label')}</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -69,13 +71,13 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="input-base w-full pl-10 pr-4"
-                placeholder="John Doe"
+                placeholder={t('create_modal.name_placeholder')}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('create_modal.email_label')}</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -83,14 +85,14 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="input-base w-full pl-10 pr-4"
-                placeholder="user@example.com"
+                placeholder={t('create_modal.email_placeholder')}
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('create_modal.password_label')}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -105,7 +107,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('invite.role_label')}</label>
             <RoleSelect
               value={formData.role}
               onChange={(role) => setFormData({ ...formData, role })}
@@ -116,14 +118,14 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
 
         <div className="modal-actions border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl p-6">
           <button onClick={onClose} disabled={saving} className="button-secondary button-center">
-            Cancel
+            {t('create_modal.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all disabled:opacity-50"
           >
-            {saving ? 'Creating...' : 'Create User'}
+            {saving ? t('create_modal.submit_creating') : t('create_modal.submit')}
           </button>
         </div>
       </div>

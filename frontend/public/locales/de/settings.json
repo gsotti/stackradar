@@ -1,0 +1,57 @@
+{
+  "page": {
+    "title": "Admin-Einstellungen",
+    "subtitle": "Konfiguriere plattformweite Einstellungen — diese gelten für alle Organisationen"
+  },
+  "loading": "Lade Einstellungen...",
+  "smtp": {
+    "section_title": "Email-Konfiguration (SMTP)",
+    "host_label": "SMTP Host *",
+    "host_placeholder": "smtp.beispiel.com",
+    "port_label": "SMTP Port *",
+    "port_placeholder": "587",
+    "secure_label": "SSL/TLS verwenden (Sicher)",
+    "username_label": "Benutzername",
+    "username_placeholder": "benutzer@beispiel.com",
+    "password_label": "Passwort",
+    "password_unchanged_placeholder": "•••••••• (unverändert)",
+    "password_placeholder": "Passwort eingeben",
+    "from_email_label": "Absender-Email *",
+    "from_email_placeholder": "alerts@stackradar.io",
+    "from_name_label": "Absender-Name",
+    "from_name_placeholder": "StackRadar Alerts",
+    "save_button": "Konfiguration speichern",
+    "create_button": "Konfiguration erstellen"
+  },
+  "smtp_test": {
+    "title": "Verbindung testen",
+    "description": "Überprüfe deine SMTP-Einstellungen, indem du dir selbst eine Test-Email sendest.",
+    "recipient_label": "Test-Empfänger",
+    "recipient_placeholder": "deine-email@beispiel.com",
+    "send_button": "Test-Email senden",
+    "save_first": "Speichere zuerst die Konfiguration"
+  },
+  "messages": {
+    "load_failed": "SMTP-Konfiguration konnte nicht geladen werden",
+    "fill_required": "Bitte fülle alle erforderlichen Felder aus",
+    "updated": "SMTP-Konfiguration erfolgreich aktualisiert",
+    "created": "SMTP-Konfiguration erfolgreich erstellt",
+    "save_failed": "SMTP-Konfiguration konnte nicht gespeichert werden",
+    "test_email_required": "Bitte gib eine Test-Email-Adresse ein",
+    "test_sent": "Test-Email erfolgreich an {{email}} gesendet",
+    "test_failed": "Test-Email konnte nicht gesendet werden"
+  },
+  "superadmin": {
+    "section_title": "System-Einstellungen",
+    "description": "Konfiguriere globale System-Einstellungen für deine StackRadar Instanz.",
+    "registry_section": "Container Registry",
+    "registry_owner_label": "Container Registry Owner",
+    "registry_owner_help": "Images werden von ghcr.io/{{owner}}/stackradar geladen",
+    "app_section": "Anwendung",
+    "app_url_label": "App URL",
+    "app_url_help": "Wird in Einladungs-Emails verwendet...",
+    "save_button": "Einstellungen speichern",
+    "save_loading": "Speichert...",
+    "saved": "System-Einstellungen erfolgreich gespeichert"
+  }
+}

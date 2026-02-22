@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "save": "Änderungen speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "add": "Hinzufügen",
+    "remove": "Entfernen",
+    "confirm": "Bestätigen",
+    "refresh": "Aktualisieren",
+    "close": "Schließen",
+    "copy": "Kopieren",
+    "copied": "Kopiert!",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "activate": "Aktivieren",
+    "deactivate": "Deaktivieren",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "search": "Suchen",
+    "loading": "Lädt...",
+    "saving": "Speichert...",
+    "sending": "Sendet..."
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "roles": {
+    "superadmin": "Superadmin",
+    "org_admin": "Organisation Admin",
+    "tenant_admin": "Tenant Admin",
+    "editor": "Editor",
+    "viewer": "Viewer",
+    "no_global_role": "Keine globale Rolle"
+  },
+  "confirm_dialog": {
+    "default_confirm": "Bestätigen",
+    "default_cancel": "Abbrechen",
+    "cannot_be_undone": "Diese Aktion kann nicht rückgängig gemacht werden."
+  },
+  "errors": {
+    "load_failed": "Daten konnten nicht geladen werden",
+    "save_failed": "Speichern fehlgeschlagen",
+    "delete_failed": "Löschen fehlgeschlagen",
+    "unknown_error": "Ein unerwarteter Fehler ist aufgetreten",
+    "fill_required": "Bitte fülle alle erforderlichen Felder aus"
+  },
+  "pagination": {
+    "showing": "Zeige {{from}}-{{to}} von {{total}} Einträgen",
+    "per_page_50": "50 pro Seite",
+    "per_page_100": "100 pro Seite",
+    "per_page_250": "250 pro Seite",
+    "per_page_500": "500 pro Seite"
+  },
+  "time": {
+    "never": "Niemals",
+    "just_now": "Gerade eben",
+    "minutes_abbr": "{{n}}m",
+    "hours_abbr": "{{n}}h",
+    "created": "Erstellt {{date}}"
+  },
+  "meta": {
+    "you": "Du",
+    "unnamed": "Unbenannt",
+    "anonymous": "Anonym",
+    "no_description": "Keine Beschreibung vorhanden.",
+    "unknown": "Unbekannt",
+    "default": "Standard"
+  },
+  "theme": {
+    "light_mode": "Heller Modus",
+    "dark_mode": "Dunkler Modus",
+    "switch_to_light": "Zu hellem Modus wechseln",
+    "switch_to_dark": "Zu dunklem Modus wechseln"
+  }
+}

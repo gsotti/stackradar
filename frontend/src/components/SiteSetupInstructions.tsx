@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Terminal, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { Site, Environment, System } from '../types';
 
@@ -10,6 +11,7 @@ interface SiteSetupInstructionsProps {
 }
 
 export default function SiteSetupInstructions({ site, onClose, embedded = false }: SiteSetupInstructionsProps) {
+  const { t } = useTranslation(['sites', 'common']);
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [systems, setSystems] = useState<System[]>([]);
   const [selectedEnv, setSelectedEnv] = useState<string>('');
@@ -72,6 +74,8 @@ export default function SiteSetupInstructions({ site, onClose, embedded = false 
     setCopied({ ...copied, [key]: true });
     setTimeout(() => setCopied((prev) => ({ ...prev, [key]: false })), 2000);
   };
+
+  const getCopiedText = (key: string) => copied[key] ? t('common:actions.copied') : t('common:actions.copy');
 
   const getEnvName = () => {
     const env = environments.find(e => e.id === parseInt(selectedEnv));
@@ -145,7 +149,7 @@ services:
       <div className="space-y-8">
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
           <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-            Deploy the collectors on your Docker host to start collecting logs and metrics.
+            {t('setup.docker_intro')}
           </p>
         </div>
 
@@ -153,14 +157,14 @@ services:
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Target Environment
+              {t('setup.target_environment_label')}
             </label>
             <select
               value={selectedEnv}
               onChange={(e) => setSelectedEnv(e.target.value)}
               className="input-base w-full"
             >
-              <option value="">Select Environment</option>
+              <option value="">{t('setup.select_environment')}</option>
               {environments.map((env) => (
                 <option key={env.id} value={env.id}>{env.name}</option>
               ))}
@@ -168,14 +172,14 @@ services:
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Target System (for Log Filter)
+              {t('setup.target_system_logs_label')}
             </label>
             <select
               value={selectedSystem}
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="input-base w-full"
             >
-              <option value="">Select System</option>
+              <option value="">{t('setup.select_system')}</option>
               {systems.map((sys) => (
                 <option key={sys.id} value={sys.name}>{sys.name}</option>
               ))}
@@ -188,22 +192,22 @@ services:
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                1. Docker Log Collector
+                {t('setup.docker_log_title')}
               </h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Collects real-time logs from all or specific containers on your host.
+              {t('setup.docker_log_description')}
             </p>
             
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Docker Run Command</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('setup.docker_run_command')}</span>
                 <button
                   onClick={() => copyToClipboard(logCollectorCmd, 'log-cmd')}
                   className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                 >
                   <Copy className="w-4 h-4" />
-                  {copied['log-cmd'] ? 'Copied!' : 'Copy'}
+                  {getCopiedText('log-cmd')}
                 </button>
               </div>
               <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -212,9 +216,9 @@ services:
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment:</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.deployment_heading')}</h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                Run the command above on your Docker host. The collector will automatically discover all running containers and stream their logs.
+                {t('setup.docker_run_description')}
               </p>
               <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
                 # Verify logs after starting
@@ -229,22 +233,22 @@ services:
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                2. Docker Stats Collector
+                {t('setup.docker_stats_title')}
               </h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Collects resource usage metrics (CPU, Memory, Network) from your containers.
+              {t('setup.docker_stats_description')}
             </p>
             
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Docker Run Command</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('setup.docker_run_command')}</span>
                 <button
                   onClick={() => copyToClipboard(statsCollectorCmd, 'stats-cmd')}
                   className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                 >
                   <Copy className="w-4 h-4" />
-                  {copied['stats-cmd'] ? 'Copied!' : 'Copy'}
+                  {getCopiedText('stats-cmd')}
                 </button>
               </div>
               <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -253,9 +257,9 @@ services:
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment:</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.deployment_heading')}</h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                This collector gathers performance data from the Docker engine every 60 seconds.
+                {t('setup.docker_stats_note')}
               </p>
               <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
                 # Verify metrics collection
@@ -270,11 +274,11 @@ services:
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                Alternative: Docker Compose
+                {t('setup.docker_compose_title')}
               </h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Run both collectors together using a compose file. This is the recommended way for production.
+              {t('setup.docker_compose_description')}
             </p>
             
             <div>
@@ -285,7 +289,7 @@ services:
                   className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                 >
                   <Copy className="w-4 h-4" />
-                  {copied['compose'] ? 'Copied!' : 'Copy'}
+                  {getCopiedText('compose')}
                 </button>
               </div>
               <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -293,7 +297,7 @@ services:
               </pre>
             </div>
             <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment:</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.deployment_heading')}</h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                 Save the snippet above as <code className="text-blue-600 dark:text-blue-400">docker-compose.yml</code> and start both services:
               </p>
@@ -411,7 +415,7 @@ releases:
       <div className="space-y-8">
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
           <p className="text-sm text-purple-800 dark:text-purple-200 font-medium">
-            Monitor your Kubernetes cluster with two specialized collectors.
+            {t('setup.kubernetes_intro')}
           </p>
         </div>
 
@@ -419,14 +423,14 @@ releases:
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Target Environment
+              {t('setup.target_environment_label')}
             </label>
             <select
               value={selectedEnv}
               onChange={(e) => setSelectedEnv(e.target.value)}
               className="input-base w-full"
             >
-              <option value="">Select Environment</option>
+              <option value="">{t('setup.select_environment')}</option>
               {environments.map((env) => (
                 <option key={env.id} value={env.id}>{env.name}</option>
               ))}
@@ -434,14 +438,14 @@ releases:
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Target System (for Log Collector)
+              {t('setup.target_system_collector_label')}
             </label>
             <select
               value={selectedSystem}
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="input-base w-full"
             >
-              <option value="">Select System</option>
+              <option value="">{t('setup.select_system')}</option>
               {systems.map((sys) => (
                 <option key={sys.id} value={sys.name}>{sys.name}</option>
               ))}
@@ -473,22 +477,22 @@ releases:
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  1. Cluster Stats Collector
+                  {t('setup.k8s_stats_title')}
                 </h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Collects cluster-wide metrics like node status, pod counts, and resource usage.
+                {t('setup.k8s_stats_description')}
               </p>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('setup.k8s_config_secret')}</span>
                   <button
                     onClick={() => copyToClipboard(statsConfigYaml, 'k8s-stats-conf')}
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                   >
                     <Copy className="w-4 h-4" />
-                    {copied['k8s-stats-conf'] ? 'Copied!' : 'Copy'}
+                    {getCopiedText('k8s-stats-conf')}
                   </button>
                 </div>
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -497,7 +501,7 @@ releases:
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.k8s_deployment_steps')}</h4>
                 <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
                   <li>Create the <code className="text-blue-600 dark:text-blue-400">stackradar-system</code> namespace if it doesn't exist.</li>
                   <li>Apply the configuration secret shown above.</li>
@@ -517,22 +521,22 @@ releases:
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  2. Pod Log Collector
+                  {t('setup.k8s_logs_title')}
                 </h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Streams real-time logs from specific pods in your cluster.
+                {t('setup.k8s_logs_description')}
               </p>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration Secret</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('setup.k8s_config_secret')}</span>
                   <button
                     onClick={() => copyToClipboard(logsConfigYaml, 'k8s-logs-conf')}
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                   >
                     <Copy className="w-4 h-4" />
-                    {copied['k8s-logs-conf'] ? 'Copied!' : 'Copy'}
+                    {getCopiedText('k8s-logs-conf')}
                   </button>
                 </div>
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -542,13 +546,13 @@ releases:
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Target Environment Variables</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('setup.k8s_env_vars')}</span>
                   <button
                     onClick={() => copyToClipboard(logCollectorEnv, 'k8s-logs-env')}
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                   >
                     <Copy className="w-4 h-4" />
-                    {copied['k8s-logs-env'] ? 'Copied!' : 'Copy'}
+                    {getCopiedText('k8s-logs-env')}
                   </button>
                 </div>
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -557,7 +561,7 @@ releases:
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deployment Steps:</h4>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.k8s_deployment_steps')}</h4>
                 <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
                   <li>Apply the configuration secret shown above.</li>
                   <li>In <code className="text-blue-600 dark:text-blue-400">collector-k8s/log-collector/deployment.yaml</code>, update the environment variables to target your pod.</li>
@@ -585,10 +589,10 @@ releases:
             {/* Helm Stats Collector */}
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                1. Cluster Stats Collector
+                {t('setup.k8s_stats_title')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Collects cluster-wide metrics like node status, pod counts, and resource usage.
+                {t('setup.k8s_stats_description')}
               </p>
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -598,7 +602,7 @@ releases:
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                   >
                     <Copy className="w-4 h-4" />
-                    {copied['helm-stats-cmd'] ? 'Copied!' : 'Copy'}
+                    {getCopiedText('helm-stats-cmd')}
                   </button>
                 </div>
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -612,10 +616,10 @@ releases:
             {/* Helm Logs Collector */}
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                2. Pod Log Collector
+                {t('setup.k8s_logs_title')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Streams real-time logs from specific pods in your cluster.
+                {t('setup.k8s_logs_description')}
               </p>
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -625,7 +629,7 @@ releases:
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                   >
                     <Copy className="w-4 h-4" />
-                    {copied['helm-logs-cmd'] ? 'Copied!' : 'Copy'}
+                    {getCopiedText('helm-logs-cmd')}
                   </button>
                 </div>
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -660,7 +664,7 @@ releases:
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
                   >
                     <Copy className="w-4 h-4" />
-                    {copied['helmfile-yaml'] ? 'Copied!' : 'Copy'}
+                    {getCopiedText('helmfile-yaml')}
                   </button>
                 </div>
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -736,7 +740,7 @@ sendLog(log).catch(console.error);`;
       <div className="space-y-6">
         <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            Use the HTTP API to send logs from any platform. You can send individual logs or bulk updates.
+            {t('setup.generic_intro')}
           </p>
         </div>
 
@@ -744,14 +748,14 @@ sendLog(log).catch(console.error);`;
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Target Environment
+              {t('setup.target_environment_label')}
             </label>
             <select
               value={selectedEnv}
               onChange={(e) => setSelectedEnv(e.target.value)}
               className="input-base w-full"
             >
-              <option value="">Select Environment</option>
+              <option value="">{t('setup.select_environment')}</option>
               {environments.map((env) => (
                 <option key={env.id} value={env.id}>{env.name}</option>
               ))}
@@ -759,14 +763,14 @@ sendLog(log).catch(console.error);`;
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Target System
+              {t('setup.target_system_label')}
             </label>
             <select
               value={selectedSystem}
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="input-base w-full"
             >
-              <option value="">Select System</option>
+              <option value="">{t('setup.select_system')}</option>
               {systems.map((sys) => (
                 <option key={sys.id} value={sys.name}>{sys.name}</option>
               ))}
@@ -778,14 +782,14 @@ sendLog(log).catch(console.error);`;
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Terminal className="w-4 h-4" /> cURL
+              <Terminal className="w-4 h-4" /> {t('setup.tab_curl')}
             </h3>
             <button
               onClick={() => copyToClipboard(curlSnippet, 'curl')}
               className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
             >
               <Copy className="w-4 h-4" />
-              {copied['curl'] ? 'Copied!' : 'Copy'}
+              {getCopiedText('curl')}
             </button>
           </div>
           <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -797,14 +801,14 @@ sendLog(log).catch(console.error);`;
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              JavaScript (Fetch)
+              {t('setup.tab_js')}
             </h3>
             <button
               onClick={() => copyToClipboard(jsSnippet, 'js')}
               className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
             >
               <Copy className="w-4 h-4" />
-              {copied['js'] ? 'Copied!' : 'Copy'}
+              {getCopiedText('js')}
             </button>
           </div>
           <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -816,14 +820,14 @@ sendLog(log).catch(console.error);`;
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              TypeScript / Node.js
+              {t('setup.tab_ts')}
             </h3>
             <button
               onClick={() => copyToClipboard(tsSnippet, 'ts')}
               className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
             >
               <Copy className="w-4 h-4" />
-              {copied['ts'] ? 'Copied!' : 'Copy'}
+              {getCopiedText('ts')}
             </button>
           </div>
           <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
@@ -843,8 +847,8 @@ sendLog(log).catch(console.error);`;
               <Terminal className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Setup Instructions</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Configure {site.name} for log collection</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('setup.title')}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('setup.subtitle', { siteName: site.name })}</p>
             </div>
           </div>
           {onClose && (
@@ -867,7 +871,7 @@ sendLog(log).catch(console.error);`;
             onClick={onClose}
             className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-semibold hover:opacity-90 transition-opacity"
           >
-            Close
+            {t('common:actions.close')}
           </button>
         </div>
       )}

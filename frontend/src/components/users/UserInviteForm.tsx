@@ -1,5 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { X, Mail, Send, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { TenantRoleName, SmtpConfig } from '../../types';
@@ -11,6 +12,7 @@ interface UserInviteFormProps {
 }
 
 export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProps) {
+  const { t } = useTranslation('users');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<TenantRoleName>('viewer');
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,7 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
     e.preventDefault();
 
     if (!email) {
-      showError('Please enter an email address');
+      showError(t('messages.invite_email_required'));
       return;
     }
 
@@ -46,10 +48,10 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
         role
       });
 
-      showSuccess('Invitation sent successfully! An email has been sent to the user.');
+      showSuccess(t('messages.invite_sent'));
       onClose(true);
     } catch (error: any) {
-      showError(error.message || 'Failed to send invitation');
+      showError(error.message || t('messages.invite_failed'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
               <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Invite User
+              {t('invite.title')}
             </h2>
           </div>
           <button
@@ -82,10 +84,10 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
               <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
-                  SMTP Not Configured
+                  {t('invite.smtp_warning_title')}
                 </p>
                 <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                  Email sending is currently disabled. You must configure SMTP in Admin Settings before you can send invitations.
+                  {t('invite.smtp_warning_text')}
                 </p>
               </div>
             </div>
@@ -93,25 +95,25 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email Address *
+              {t('invite.email_label')}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-base w-full"
-              placeholder="user@example.com"
+              placeholder={t('invite.email_placeholder')}
               required
               disabled={loading}
             />
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              An invitation link will be sent to this email address
+              {t('invite.email_help')}
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Role *
+              {t('invite.role_label')}
             </label>
             <RoleSelect
               value={role}
@@ -128,7 +130,7 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
               disabled={loading}
               className="button-secondary button-center"
             >
-              Cancel
+              {t('invite.cancel')}
             </button>
             <button
               type="submit"
@@ -136,7 +138,7 @@ export default function UserInviteForm({ tenantId, onClose }: UserInviteFormProp
               className="button-primary button-center"
             >
               <Send className="w-4 h-4" />
-              {loading ? 'Sending...' : 'Send Invitation'}
+              {loading ? t('invite.submit_sending') : t('invite.submit')}
             </button>
           </div>
         </form>

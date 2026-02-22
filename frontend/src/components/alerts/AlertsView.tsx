@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bell, Mail, Clock } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import AlertRuleList from './AlertRuleList';
 import NotificationChannelList from './NotificationChannelList';
 import AlertHistoryList from './AlertHistoryList';
@@ -12,6 +13,7 @@ interface AlertsViewProps {
 type SubTab = 'rules' | 'channels' | 'history';
 
 export default function AlertsView({ siteId }: AlertsViewProps) {
+  const { t } = useTranslation('alerts');
   const [searchParams, setSearchParams] = useSearchParams();
   const activeSubTab = (searchParams.get('subtab') as SubTab) || 'rules';
 
@@ -22,9 +24,9 @@ export default function AlertsView({ siteId }: AlertsViewProps) {
   };
 
   const tabs = [
-    { id: 'rules' as const, label: 'Alert Rules', icon: Bell },
-    { id: 'channels' as const, label: 'Notification Channels', icon: Mail },
-    { id: 'history' as const, label: 'Alert History', icon: Clock },
+    { id: 'rules' as const, label: t('tabs.rules'), icon: Bell },
+    { id: 'channels' as const, label: t('tabs.channels'), icon: Mail },
+    { id: 'history' as const, label: t('tabs.history'), icon: Clock },
   ];
 
   return (

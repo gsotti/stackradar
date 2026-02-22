@@ -1,0 +1,60 @@
+{
+  "page": {
+    "title": "Dashboard Overview",
+    "subtitle": "Real-time monitoring and analytics"
+  },
+  "actions": {
+    "refresh": "Refresh"
+  },
+  "empty": {
+    "no_data": "No data yet",
+    "no_data_description": "Start ingesting logs or configure uptime monitors to see data here.",
+    "wrong_tenant": "Try switching to a different tenant."
+  },
+  "uptime_summary": {
+    "endpoints": "Endpoints",
+    "uptime_label": "Uptime",
+    "avg_response": "Avg Response",
+    "last_30_checks": "Last 30 checks",
+    "across_all_monitors": "Across all monitors",
+    "sites": "Sites",
+    "being_monitored": "Being monitored",
+    "main_label": "Main",
+    "paused_label": "Paused",
+    "uptime_percent": "uptime",
+    "ms_avg": "ms avg"
+  },
+  "stats": {
+    "total_logs": "Total Logs (24h)",
+    "total_logs_subtitle": "Last 24 hours",
+    "active_systems": "Active Systems",
+    "active_systems_subtitle": "All systems operational",
+    "online_label": "Online",
+    "errors_24h": "Errors (24h)",
+    "error_rate": "error rate",
+    "log_sources": "Log Sources",
+    "log_sources_subtitle": "Unique sources",
+    "tracked_label": "Tracked",
+    "uptime_monitors": "Uptime Monitors",
+    "up": "Up",
+    "down": "Down",
+    "degraded": "Degraded"
+  },
+  "charts": {
+    "activity_timeline": "Activity Timeline",
+    "activity_timeline_subtitle": "Logs per hour (last 24h)",
+    "realtime_label": "Real-time",
+    "log_distribution": "Log Distribution",
+    "log_distribution_subtitle": "By severity level",
+    "breakdown_label": "Breakdown",
+    "top_sources": "Top Log Sources",
+    "top_sources_subtitle": "Most active sources in the last 24 hours",
+    "top_10_label": "Top 10"
+  },
+  "systems_table": {
+    "connected_systems": "Connected Systems",
+    "total_label": "Total",
+    "active_label": "Active"
+  },
+  "loading": "Loading dashboard..."
+}

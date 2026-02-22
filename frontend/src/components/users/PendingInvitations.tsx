@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, X, Copy, Check, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { Invitation, SmtpConfig } from '../../types';
@@ -12,6 +13,8 @@ interface PendingInvitationsProps {
 }
 
 export default function PendingInvitations({ tenantId, invitations, onUpdate }: PendingInvitationsProps) {
+  const { t } = useTranslation('users');
+  const { t: tc } = useTranslation('common');
   const { showError, showSuccess } = useNotification();
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
@@ -33,20 +36,20 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
   const handleCancelInvitation = async (invitationId: number, email: string) => {
     try {
       await api.delete(`/invitations/${invitationId}`);
-      showSuccess('Invitation cancelled successfully');
+      showSuccess(t('messages.invitation_cancelled'));
       onUpdate();
     } catch (error: any) {
-      showError(error.message || 'Failed to cancel invitation');
+      showError(error.message || t('messages.invitation_cancel_failed'));
     }
   };
 
   const handleResendInvitation = async (invitationId: number, email: string) => {
     try {
       await api.post(`/invitations/${invitationId}/resend`, {});
-      showSuccess(`Invitation resent to ${email}`);
+      showSuccess(t('messages.invitation_resent', { email }));
       onUpdate(); // Refresh the list
     } catch (error: any) {
-      showError(error.message || 'Failed to resend invitation');
+      showError(error.message || t('messages.invitation_resend_failed'));
     }
   };
 
@@ -55,21 +58,21 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
     try {
       await navigator.clipboard.writeText(url);
       setCopiedId(invitationId);
-      showSuccess('Invitation link copied to clipboard');
+      showSuccess(t('messages.link_copied'));
       setTimeout(() => setCopiedId(null), 2000);
     } catch (error) {
-      showError('Failed to copy link');
+      showError(t('messages.link_copy_failed'));
     }
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'tenant_admin':
-        return 'Tenant Admin';
+        return t('role_select.tenant_admin');
       case 'editor':
-        return 'Editor';
+        return t('role_select.editor');
       case 'viewer':
-        return 'Viewer';
+        return t('role_select.viewer');
       default:
         return role;
     }
@@ -101,7 +104,7 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
       <div className="flex items-center gap-2">
         <Clock className="w-5 h-5 text-amber-500" />
         <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-          Pending Invitations
+          {t('pending_invitations.title')}
         </h3>
         <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-full">
           {invitations.length}
@@ -149,14 +152,14 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                     </div>
                     <div className="space-y-0.5">
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Invited by {invitation.invited_by_name || 'Unknown'}
+                        {t('pending_invitations.invited_by', { name: invitation.invited_by_name || tc('meta.unknown') })}
                       </p>
                       <p className={`text-xs font-medium ${
                         expired
                           ? 'text-red-600 dark:text-red-400'
                           : 'text-gray-500 dark:text-gray-400'
                       }`}>
-                        {expired ? 'Expired' : 'Expires'} {new Date(invitation.expires_at).toLocaleDateString()}
+                        {expired ? t('pending_invitations.expired_label') : t('pending_invitations.expires_label')} {new Date(invitation.expires_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -169,7 +172,7 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                       <button
                         onClick={() => copyInvitationLink(invitation.token, invitation.id)}
                         className="p-2 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all"
-                        title="Copy invitation link"
+                        title={t('pending_invitations.copy_link_title')}
                       >
                         {copied ? (
                           <Check className="w-4 h-4 text-green-600" />
@@ -185,7 +188,7 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                             ? 'text-gray-300 cursor-not-allowed'
                             : 'text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-600 dark:hover:text-green-400'
                         }`}
-                        title={smtpConfigured === false ? "SMTP not configured" : "Resend invitation"}
+                        title={smtpConfigured === false ? t('pending_invitations.smtp_disabled_title') : t('pending_invitations.resend_title')}
                       >
                         <RefreshCw className="w-4 h-4" />
                       </button>
@@ -194,7 +197,7 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                   <button
                     onClick={() => setCancelTarget(invitation)}
                     className="p-2 text-neutral-400 hover:text-accent-danger hover:bg-accent-danger/10 rounded-lg transition-colors"
-                    title="Cancel invitation"
+                    title={t('pending_invitations.cancel_title')}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -207,9 +210,9 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
 
       <ConfirmDialog
         isOpen={!!cancelTarget}
-        title="Cancel invitation?"
-        description={cancelTarget ? `Cancel the invitation to ${cancelTarget.email}.` : undefined}
-        confirmLabel="Cancel Invitation"
+        title={t('cancel_invite_confirm.title')}
+        description={cancelTarget ? t('cancel_invite_confirm.description', { email: cancelTarget.email }) : undefined}
+        confirmLabel={t('cancel_invite_confirm.label')}
         variant="danger"
         onCancel={() => setCancelTarget(null)}
         onConfirm={() => {

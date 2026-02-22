@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Activity, Search, X, RefreshCw, ChevronDown, Clock, Calendar, Plus, Minus, Zap } from 'lucide-react';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { formatInLocalTime } from '../utils/dateUtils';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
@@ -14,6 +15,8 @@ interface LogsResponse {
 }
 
 export default function LogsLivePage() {
+  const { t } = useTranslation('logs');
+  const { t: tc } = useTranslation('common');
   const { selectedSystemId, selectedTenant, selectedSite, selectedEnvironment, selectedSystem, setSelectedSystem } = useApp();
   const [liveLogs, setLiveLogs] = useState<LogEntry[]>([]);
   const [liveSearchTerm, setLiveSearchTerm] = useState('');
@@ -340,13 +343,13 @@ export default function LogsLivePage() {
         {isLoadingOlder && (
           <div className="flex items-center justify-center py-4 text-blue-400 gap-2">
             <RefreshCw className="w-4 h-4 animate-spin" />
-            <span className="text-xs uppercase tracking-widest font-bold">Loading older logs...</span>
+            <span className="text-xs uppercase tracking-widest font-bold">{t('live.loading_older')}</span>
           </div>
         )}
 
         {!hasMoreLogs && liveLogs.length > 0 && (
           <div className="text-center py-4 text-gray-600 text-xs uppercase tracking-widest">
-            Beginning of log history
+            {t('live.beginning_of_history')}
           </div>
         )}
 
@@ -381,8 +384,8 @@ export default function LogsLivePage() {
           <div className="flex flex-col items-center justify-center h-full text-neutral-500 dark:text-gray-600 space-y-4 opacity-50">
             <Activity className="w-12 h-12" />
             <div className="text-center">
-              <p className="text-sm">Listening for incoming logs...</p>
-              <p className="text-[10px] uppercase tracking-widest mt-1">Buffer is empty</p>
+              <p className="text-sm">{t('live.listening')}</p>
+              <p className="text-[10px] uppercase tracking-widest mt-1">{t('live.buffer_empty')}</p>
             </div>
           </div>
         )}
@@ -401,7 +404,7 @@ export default function LogsLivePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-400" />
             <input
               type="text"
-              placeholder="Grep logs..."
+              placeholder={t('live.grep_placeholder')}
               value={liveSearchTerm}
               onChange={(e) => setLiveSearchTerm(e.target.value)}
               className="input-base w-full h-full pl-10 pr-4 text-sm"
@@ -421,7 +424,7 @@ export default function LogsLivePage() {
           <div className="relative flex items-center gap-2 h-10" ref={popoverRef}>
             {showTimePopover && (
               <div className="absolute bottom-full right-0 mb-2 w-96 bg-white dark:bg-gray-900 border border-neutral-200 dark:border-gray-800 rounded-xl shadow-2xl p-6 animate-fadeIn z-50">
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-4">Seek to date or time</h3>
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-4">{t('live.seek_placeholder')}</h3>
 
                 <div className="flex flex-col gap-4 mb-4">
                   <div className="relative">
@@ -447,13 +450,13 @@ export default function LogsLivePage() {
                     }}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-3 rounded-lg transition-all uppercase tracking-wider shadow-lg active:scale-95"
                   >
-                    Seek To
+                    {t('live.seek_button')}
                   </button>
                 </div>
 
                 {firstLogTimestamp && (
                   <p className="text-[10px] text-neutral-500 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
-                    Searchable logs begin on {formatInLocalTime(firstLogTimestamp, 'dd.MM.yyyy')} at {formatInLocalTime(firstLogTimestamp, 'HH:mm')}
+                    {t('live.searchable_from', { date: formatInLocalTime(firstLogTimestamp, 'dd.MM.yyyy'), time: formatInLocalTime(firstLogTimestamp, 'HH:mm') })}
                   </p>
                 )}
 
@@ -465,7 +468,7 @@ export default function LogsLivePage() {
                     }}
                     className="text-[10px] text-neutral-500 dark:text-gray-400 hover:text-neutral-700 dark:hover:text-white uppercase tracking-widest font-bold"
                   >
-                    Reset to Live
+                    {t('live.reset_to_live')}
                   </button>
                   <button
                     onClick={() => setShowTimePopover(false)}
@@ -481,7 +484,7 @@ export default function LogsLivePage() {
                 setShowTimePopover(!showTimePopover);
               }}
               className={`h-full px-4 rounded-md transition-all ${showTimePopover || startTime ? 'bg-blue-600 text-white' : 'bg-neutral-100 text-neutral-500 hover:text-neutral-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-white'}`}
-              title="Seek back in time"
+              title={t('live.seek_back')}
             >
               <Clock className="w-4 h-4" />
             </button>
@@ -491,14 +494,14 @@ export default function LogsLivePage() {
             <button
               onClick={() => updateLogFontSize(logFontSize - 1)}
               className="p-2 hover:bg-neutral-200 dark:hover:bg-gray-700 rounded transition-colors text-neutral-500 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white"
-              title="Decrease text size"
+              title={t('live.decrease_text_size')}
             >
               <Minus className="w-4 h-4" />
             </button>
             <button
               onClick={() => updateLogFontSize(logFontSize + 1)}
               className="p-2 hover:bg-neutral-200 dark:hover:bg-gray-700 rounded transition-colors text-neutral-500 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white"
-              title="Increase text size"
+              title={t('live.increase_text_size')}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -514,7 +517,7 @@ export default function LogsLivePage() {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-2xl animate-bounce border border-blue-400/20"
           >
             <ChevronDown className="w-3 h-3" />
-            New Logs Below
+            {t('live.new_logs_below')}
           </button>
         </div>
       )}

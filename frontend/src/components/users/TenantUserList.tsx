@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, Shield, Edit2, UserX } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../utils/api';
@@ -18,6 +19,8 @@ interface TenantUserListProps {
 }
 
 export default function TenantUserList({ tenantId, users, onUpdate, isModalBlocked = false, onModalOpen, onModalClose }: TenantUserListProps) {
+  const { t } = useTranslation('users');
+  const { t: tc } = useTranslation('common');
   const { user: currentUser } = useAuth();
   const { showError, showSuccess } = useNotification();
   const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
@@ -29,10 +32,10 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
   const handleRoleChange = async (userId: number, data: { role: TenantRoleName; name?: string }) => {
     try {
       await api.put(`/tenants/${tenantId}/users/${userId}`, data);
-      showSuccess('User updated successfully');
+      showSuccess(t('messages.user_updated'));
       onUpdate();
     } catch (error: any) {
-      showError(error.message || 'Failed to update user');
+      showError(error.message || t('messages.user_update_failed'));
       throw error; // Re-throw so modal knows it failed
     }
   };
@@ -40,10 +43,10 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
   const handleRemoveUser = async (userId: number, userName: string) => {
      try {
        await api.delete(`/tenants/${tenantId}/users/${userId}`);
-       showSuccess('User removed from tenant successfully');
+       showSuccess(t('messages.user_removed'));
        onUpdate();
      } catch (error: any) {
-       showError(error.message || 'Failed to remove user');
+       showError(error.message || t('messages.user_remove_failed'));
      }
    };
 
@@ -53,21 +56,21 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-bold uppercase tracking-wider rounded-lg border border-purple-200 dark:border-purple-800">
             <Shield className="w-3 h-3" />
-            Admin
+            {t('tenant_list.role_admin')}
           </span>
         );
       case 'editor':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-lg border border-blue-200 dark:border-blue-800">
             <Edit2 className="w-3 h-3" />
-            Editor
+            {t('tenant_list.role_editor')}
           </span>
         );
       case 'viewer':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-bold uppercase tracking-wider rounded-lg border border-gray-200 dark:border-gray-600">
             <UserX className="w-3 h-3" />
-            Viewer
+            {t('tenant_list.role_viewer')}
           </span>
         );
     }
@@ -77,9 +80,9 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
     return (
       <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
         <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3 opacity-50" />
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No users found</h3>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t('tenant_list.empty_title')}</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Start by inviting users to this tenant
+          {t('tenant_list.empty_description')}
         </p>
       </div>
     );
@@ -115,11 +118,11 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-neutral-900 dark:text-white truncate">
-                      {user.name || 'Unnamed User'}
+                      {user.name || t('available_list.unnamed_user')}
                     </h3>
                     {isCurrentUser && (
                       <span className="px-2 py-0.5 bg-accent-success/10 text-accent-success text-[10px] font-bold uppercase tracking-wider rounded-full">
-                        You
+                        {t('list.you_badge')}
                       </span>
                     )}
                   </div>
@@ -144,7 +147,7 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
                   }}
                   disabled={isCurrentUser}
                   className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  title={isCurrentUser ? 'Cannot edit yourself' : 'Edit user'}
+                  title={isCurrentUser ? t('tenant_list.cannot_edit_self') : t('tenant_list.edit_user_title')}
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
@@ -152,7 +155,7 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
                   onClick={() => setRemoveTarget(user)}
                   className="px-3 py-1.5 text-xs font-semibold text-accent-danger bg-accent-danger/10 dark:bg-accent-danger/20 hover:bg-accent-danger/20 dark:hover:bg-accent-danger/30 rounded-lg transition-colors"
                 >
-                  Remove
+                  {t('tenant_list.remove_button')}
                 </button>
               </div>
             </div>
@@ -174,9 +177,9 @@ export default function TenantUserList({ tenantId, users, onUpdate, isModalBlock
 
       <ConfirmDialog
         isOpen={!!removeTarget}
-        title="Remove user?"
-        description={removeTarget ? `Remove ${removeTarget.name || removeTarget.email} from this tenant.` : undefined}
-        confirmLabel="Remove"
+        title={t('remove_confirm.title')}
+        description={removeTarget ? t('remove_confirm.description', { name: removeTarget.name || removeTarget.email }) : undefined}
+        confirmLabel={t('remove_confirm.label')}
         variant="danger"
         onCancel={() => setRemoveTarget(null)}
         onConfirm={() => {

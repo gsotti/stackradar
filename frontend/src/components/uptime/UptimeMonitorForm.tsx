@@ -1,13 +1,14 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { UptimeMonitor, HttpMethod, CreateUptimeMonitorRequest } from '../../types';
 
 const intervalOptions = [
-  { value: 60, label: '1 minute' },
-  { value: 300, label: '5 minutes' },
-  { value: 900, label: '15 minutes' },
-  { value: 1800, label: '30 minutes' },
-  { value: 3600, label: '1 hour' },
+  { value: 60, labelKey: 'form.interval_1m' },
+  { value: 300, labelKey: 'form.interval_5m' },
+  { value: 900, labelKey: 'form.interval_15m' },
+  { value: 1800, labelKey: 'form.interval_30m' },
+  { value: 3600, labelKey: 'form.interval_1h' },
 ];
 
 const methodOptions: HttpMethod[] = ['GET', 'HEAD', 'POST'];
@@ -20,6 +21,8 @@ interface UptimeMonitorFormProps {
 }
 
 export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading }: UptimeMonitorFormProps) {
+  const { t } = useTranslation('uptime');
+  const { t: tc } = useTranslation('common');
   const [form, setForm] = useState({
     name: '',
     url: '',
@@ -54,7 +57,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {monitor ? 'Edit Monitor' : 'Add Monitor'}
+            {monitor ? t('form.title_edit') : t('form.title_create')}
           </h2>
           <button
             onClick={onCancel}
@@ -67,13 +70,13 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Name *
+              {t('form.name_label')}
             </label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="API Health Check"
+              placeholder={t('form.name_placeholder')}
               className="input-base w-full"
               required
             />
@@ -81,13 +84,13 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              URL *
+              {t('form.url_label')}
             </label>
             <input
               type="url"
               value={form.url}
               onChange={(e) => setForm({ ...form, url: e.target.value })}
-              placeholder="https://api.example.com/health"
+              placeholder={t('form.url_placeholder')}
               className="input-base w-full"
               required
             />
@@ -96,7 +99,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                HTTP Method
+                {t('form.method_label')}
               </label>
               <select
                 value={form.method}
@@ -111,7 +114,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Check Interval
+                {t('form.interval_label')}
               </label>
               <select
                 value={form.interval_seconds}
@@ -119,7 +122,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
                 className="input-base w-full"
               >
                 {intervalOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
                 ))}
               </select>
             </div>
@@ -128,7 +131,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Expected Status
+                {t('form.expected_status_label')}
               </label>
               <input
                 type="number"
@@ -142,7 +145,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Timeout (seconds)
+                {t('form.timeout_label')}
               </label>
               <input
                 type="number"
@@ -164,7 +167,7 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <label htmlFor="is_main" className="text-sm text-gray-700 dark:text-gray-300">
-              Main monitor (shows status on site overview)
+              {t('form.is_main_label')}
             </label>
           </div>
 
@@ -174,14 +177,14 @@ export default function UptimeMonitorForm({ monitor, onSubmit, onCancel, loading
               onClick={onCancel}
               className="button-secondary button-center"
             >
-              Cancel
+              {t('form.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="button-primary button-center"
             >
-              {loading ? 'Saving...' : monitor ? 'Update' : 'Create'}
+              {loading ? t('form.submit_saving') : monitor ? t('form.submit_update') : t('form.submit_create')}
             </button>
           </div>
         </form>

@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "logs": "Logs",
+    "sites": "Sites",
+    "environments": "Environments",
+    "systems": "Systeme",
+    "tenants": "Tenants",
+    "users": "Benutzer",
+    "settings": "Einstellungen",
+    "superadmin": "Superadmin"
+  },
+  "context": {
+    "section_heading": "Kontext",
+    "title": "Kontext",
+    "tenant_label": "Tenant",
+    "site_label": "Site",
+    "site": "Site",
+    "environment_label": "Environment",
+    "environment": "Environment"
+  },
+  "selectors": {
+    "allTenants": "Alle Tenants",
+    "allSites": "Alle Sites",
+    "allEnvironments": "Alle Environments"
+  },
+  "toggle": {
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus",
+    "collapse": "Einklappen",
+    "expand": "Ausklappen"
+  },
+  "actions": {
+    "collapse": "Einklappen",
+    "expand_sidebar": "Sidebar ausklappen",
+    "collapse_sidebar": "Sidebar einklappen",
+    "logout": "Abmelden"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "page": {
+    "title": "Dashboard Übersicht",
+    "subtitle": "Echtzeit-Monitoring und Analytics"
+  },
+  "actions": {
+    "refresh": "Aktualisieren"
+  },
+  "empty": {
+    "no_data": "Noch keine Daten",
+    "no_data_description": "Starte mit der Log-Erfassung oder konfiguriere Uptime Monitore, um hier Daten zu sehen.",
+    "wrong_tenant": "Versuche zu einem anderen Tenant zu wechseln."
+  },
+  "uptime_summary": {
+    "endpoints": "Endpoints",
+    "uptime_label": "Uptime",
+    "avg_response": "Ø Antwortzeit",
+    "last_30_checks": "Letzte 30 Checks",
+    "across_all_monitors": "Über alle Monitore",
+    "sites": "Sites",
+    "being_monitored": "Werden überwacht",
+    "main_label": "Main",
+    "paused_label": "Pausiert",
+    "uptime_percent": "uptime",
+    "ms_avg": "ms Ø"
+  },
+  "stats": {
+    "total_logs": "Gesamt Logs (24h)",
+    "total_logs_subtitle": "Letzte 24 Stunden",
+    "active_systems": "Aktive Systeme",
+    "active_systems_subtitle": "Alle Systeme betriebsbereit",
+    "online_label": "Online",
+    "errors_24h": "Fehler (24h)",
+    "error_rate": "Fehlerrate",
+    "log_sources": "Log-Quellen",
+    "log_sources_subtitle": "Eindeutige Quellen",
+    "tracked_label": "Erfasst",
+    "uptime_monitors": "Uptime Monitore",
+    "up": "Erreichbar",
+    "down": "Nicht erreichbar",
+    "degraded": "Beeinträchtigt"
+  },
+  "charts": {
+    "activity_timeline": "Aktivitätsverlauf",
+    "activity_timeline_subtitle": "Logs pro Stunde (letzte 24h)",
+    "realtime_label": "Echtzeit",
+    "log_distribution": "Log-Verteilung",
+    "log_distribution_subtitle": "Nach Schweregrad",
+    "breakdown_label": "Aufschlüsselung",
+    "top_sources": "Top Log-Quellen",
+    "top_sources_subtitle": "Aktivste Quellen in den letzten 24 Stunden",
+    "top_10_label": "Top 10"
+  },
+  "systems_table": {
+    "connected_systems": "Verbundene Systeme",
+    "total_label": "Gesamt",
+    "active_label": "Aktiv"
+  },
+  "loading": "Lade Dashboard..."
+}

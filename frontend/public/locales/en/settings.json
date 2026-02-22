@@ -1,0 +1,57 @@
+{
+  "page": {
+    "title": "Admin Settings",
+    "subtitle": "Configure platform-wide settings — these apply to all organizations"
+  },
+  "loading": "Loading settings...",
+  "smtp": {
+    "section_title": "Email Configuration (SMTP)",
+    "host_label": "SMTP Host *",
+    "host_placeholder": "smtp.example.com",
+    "port_label": "SMTP Port *",
+    "port_placeholder": "587",
+    "secure_label": "Use SSL/TLS (Secure)",
+    "username_label": "Username",
+    "username_placeholder": "user@example.com",
+    "password_label": "Password",
+    "password_unchanged_placeholder": "•••••••• (unchanged)",
+    "password_placeholder": "Enter password",
+    "from_email_label": "From Email *",
+    "from_email_placeholder": "alerts@stackradar.io",
+    "from_name_label": "From Name",
+    "from_name_placeholder": "StackRadar Alerts",
+    "save_button": "Save Configuration",
+    "create_button": "Create Configuration"
+  },
+  "smtp_test": {
+    "title": "Test Connection",
+    "description": "Verify your SMTP settings by sending a test email to yourself.",
+    "recipient_label": "Test Recipient",
+    "recipient_placeholder": "your-email@example.com",
+    "send_button": "Send Test Email",
+    "save_first": "Save configuration before testing"
+  },
+  "messages": {
+    "load_failed": "Failed to load SMTP configuration",
+    "fill_required": "Please fill in all required fields",
+    "updated": "SMTP configuration updated successfully",
+    "created": "SMTP configuration created successfully",
+    "save_failed": "Failed to save SMTP configuration",
+    "test_email_required": "Please enter a test email address",
+    "test_sent": "Test email sent successfully to {{email}}",
+    "test_failed": "Failed to send test email"
+  },
+  "superadmin": {
+    "section_title": "System Settings",
+    "description": "Configure global system settings for your StackRadar instance.",
+    "registry_section": "Container Registry",
+    "registry_owner_label": "Container Registry Owner",
+    "registry_owner_help": "Images will be pulled from ghcr.io/{{owner}}/stackradar",
+    "app_section": "Application",
+    "app_url_label": "App URL",
+    "app_url_help": "Used in invitation emails...",
+    "save_button": "Save Settings",
+    "save_loading": "Saving...",
+    "saved": "System settings saved successfully"
+  }
+}

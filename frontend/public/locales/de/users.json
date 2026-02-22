@@ -1,0 +1,159 @@
+{
+  "page": {
+    "title": "Benutzerverwaltung",
+    "subtitle": "Verwalte Plattform-Benutzer, Rollen und Freigaben",
+    "org_title": "Benutzer",
+    "org_subtitle": "Verwalte Benutzer in deiner Organisation"
+  },
+  "tabs": {
+    "all_users": "Alle Benutzer",
+    "pending_approval": "Ausstehende Freigabe"
+  },
+  "list": {
+    "empty_title": "Keine Benutzer gefunden",
+    "empty_approved": "Alle Benutzeraccounts wurden freigegeben.",
+    "empty_start": "Beginne damit, Teammitglieder zu deiner Plattform hinzuzufügen.",
+    "empty_no_users": "Noch keine Benutzer",
+    "empty_create_first": "Erstelle deinen ersten Benutzer, um loszulegen",
+    "empty_search_hint": "Versuche deine Suchbegriffe anzupassen",
+    "search_placeholder": "Nach Name oder Email suchen...",
+    "waiting_approval": "Wartet auf Freigabe",
+    "approve_button": "Benutzer freigeben",
+    "you_badge": "Du",
+    "status_active": "Aktiv",
+    "status_inactive": "Inaktiv"
+  },
+  "actions": {
+    "add_user": "Benutzer hinzufügen",
+    "create_user": "Benutzer erstellen",
+    "edit": "Bearbeiten",
+    "disable": "Deaktivieren",
+    "enable": "Aktivieren",
+    "delete": "Löschen"
+  },
+  "create_modal": {
+    "title": "Neuen Benutzer erstellen",
+    "name_label": "Vollständiger Name",
+    "name_placeholder": "Max Mustermann",
+    "email_label": "Email-Adresse *",
+    "email_placeholder": "max@beispiel.com",
+    "password_label": "Passwort *",
+    "global_role_label": "Globale Rolle",
+    "auto_approve_label": "Account automatisch freigeben",
+    "cancel": "Abbrechen",
+    "submit": "Benutzer erstellen",
+    "submit_creating": "Erstelle..."
+  },
+  "edit_modal": {
+    "title": "Benutzer bearbeiten",
+    "name_label": "Vollständiger Name",
+    "name_placeholder": "Max Mustermann",
+    "email_label": "Email",
+    "password_label": "Neues Passwort (leer lassen, um aktuelles zu behalten)",
+    "global_role_label": "Globale Rolle",
+    "active_label": "Aktiv",
+    "cancel": "Abbrechen",
+    "submit": "Änderungen speichern",
+    "submit_saving": "Speichert..."
+  },
+  "delete_confirm": {
+    "title": "Benutzer löschen?",
+    "description": "{{name}} löschen.",
+    "label": "Löschen"
+  },
+  "invite": {
+    "title": "Benutzer einladen",
+    "smtp_warning_title": "SMTP nicht konfiguriert",
+    "smtp_warning_text": "Email-Versand ist derzeit deaktiviert. Du musst SMTP in den Admin-Einstellungen konfigurieren, bevor du Einladungen versenden kannst.",
+    "email_label": "Email-Adresse *",
+    "email_placeholder": "benutzer@beispiel.com",
+    "email_help": "Ein Einladungslink wird an diese Email-Adresse gesendet",
+    "role_label": "Rolle *",
+    "cancel": "Abbrechen",
+    "submit": "Einladung senden",
+    "submit_sending": "Sende..."
+  },
+  "available_list": {
+    "title": "Organisations-Mitglieder",
+    "description": "Diese Benutzer sind in deiner Organisation, aber noch nicht zu diesem Tenant hinzugefügt.",
+    "unnamed_user": "Unbenannter Benutzer",
+    "add_button": "Zu Tenant hinzufügen",
+    "modal_title": "Mitglied hinzufügen",
+    "role_label": "Rolle",
+    "cancel": "Abbrechen",
+    "submit": "Zu Tenant hinzufügen",
+    "submit_adding": "Füge hinzu..."
+  },
+  "tenant_list": {
+    "empty_title": "Keine Benutzer gefunden",
+    "empty_description": "Beginne damit, Benutzer zu diesem Tenant einzuladen",
+    "role_admin": "Admin",
+    "role_editor": "Editor",
+    "role_viewer": "Viewer",
+    "cannot_edit_self": "Du kannst dich nicht selbst bearbeiten",
+    "edit_user_title": "Benutzer bearbeiten",
+    "remove_button": "Entfernen"
+  },
+  "pending_invitations": {
+    "title": "Ausstehende Einladungen",
+    "invited_by": "Eingeladen von {{name}}",
+    "expires_label": "Läuft ab",
+    "expired_label": "Abgelaufen",
+    "copy_link_title": "Einladungslink kopieren",
+    "resend_title": "Einladung erneut senden",
+    "smtp_disabled_title": "SMTP nicht konfiguriert",
+    "cancel_title": "Einladung abbrechen"
+  },
+  "role_select": {
+    "tenant_admin": "Tenant Admin",
+    "editor": "Editor",
+    "viewer": "Viewer",
+    "tenant_admin_description": "Vollzugriff und Benutzerverwaltung",
+    "editor_description": "Kann Ressourcen erstellen und bearbeiten",
+    "viewer_description": "Nur-Lese-Zugriff"
+  },
+  "messages": {
+    "approve_failed": "Benutzer konnte nicht freigegeben werden:",
+    "delete_failed_prefix": "Benutzer konnte nicht gelöscht werden:",
+    "email_password_required": "Email und Passwort sind erforderlich",
+    "create_failed_prefix": "Benutzer konnte nicht erstellt werden:",
+    "update_failed_prefix": "Benutzer konnte nicht aktualisiert werden:",
+    "email_required": "Email ist erforderlich",
+    "password_min_length": "Passwort muss mindestens 8 Zeichen lang sein",
+    "create_failed": "Benutzer konnte nicht erstellt werden",
+    "invite_email_required": "Bitte gib eine Email-Adresse ein",
+    "invite_sent": "Einladung erfolgreich gesendet! Eine Email wurde an den Benutzer verschickt.",
+    "invite_failed": "Einladung konnte nicht gesendet werden",
+    "add_to_tenant_success": "Benutzer erfolgreich zu Tenant hinzugefügt",
+    "add_to_tenant_failed": "Benutzer konnte nicht hinzugefügt werden",
+    "user_updated": "Benutzer erfolgreich aktualisiert",
+    "user_update_failed": "Benutzer konnte nicht aktualisiert werden",
+    "user_removed": "Benutzer erfolgreich von Tenant entfernt",
+    "user_remove_failed": "Benutzer konnte nicht entfernt werden",
+    "invitation_cancelled": "Einladung erfolgreich abgebrochen",
+    "invitation_cancel_failed": "Einladung konnte nicht abgebrochen werden",
+    "invitation_resent": "Einladung erneut an {{email}} gesendet",
+    "invitation_resend_failed": "Einladung konnte nicht erneut gesendet werden",
+    "link_copied": "Einladungslink in Zwischenablage kopiert",
+    "link_copy_failed": "Link konnte nicht kopiert werden",
+    "no_changes": "Keine Änderungen zum Speichern",
+    "org_user_created": "Benutzer erfolgreich erstellt",
+    "org_user_updated": "Benutzer erfolgreich aktualisiert",
+    "org_user_deleted": "Benutzer erfolgreich gelöscht"
+  },
+  "remove_confirm": {
+    "title": "Benutzer entfernen?",
+    "description": "{{name}} von diesem Tenant entfernen.",
+    "label": "Entfernen"
+  },
+  "cancel_invite_confirm": {
+    "title": "Einladung abbrechen?",
+    "description": "Die Einladung an {{email}} abbrechen.",
+    "label": "Einladung abbrechen"
+  },
+  "org_delete_confirm": {
+    "title": "Benutzer löschen",
+    "description": "Bist du sicher, dass du {{name}} löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "label": "Benutzer löschen"
+  }
+}

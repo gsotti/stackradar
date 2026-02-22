@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { formatInLocalTime } from '../utils/dateUtils';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
@@ -13,6 +14,8 @@ interface LogsResponse {
 }
 
 export default function LogsTablePage() {
+  const { t } = useTranslation('logs');
+  const { t: tc } = useTranslation('common');
   const {
     selectedSystemId,
     selectedTenant,
@@ -125,11 +128,11 @@ export default function LogsTablePage() {
                 <thead>
                   <tr className="bg-neutral-100 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
                     <th className="w-10 px-4 py-3"></th>
-                    <th className="px-4 py-3 text-left text-label">Time</th>
-                    <th className="px-4 py-3 text-left text-label">Level</th>
-                    <th className="px-4 py-3 text-left text-label">Source</th>
-                    <th className="px-4 py-3 text-left text-label">System</th>
-                    <th className="px-4 py-3 text-left text-label">Message</th>
+                    <th className="px-4 py-3 text-left text-label">{t('table.column_time')}</th>
+                    <th className="px-4 py-3 text-left text-label">{t('table.column_level')}</th>
+                    <th className="px-4 py-3 text-left text-label">{t('table.column_source')}</th>
+                    <th className="px-4 py-3 text-left text-label">{t('table.column_system')}</th>
+                    <th className="px-4 py-3 text-left text-label">{t('table.column_message')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700/50">
@@ -173,38 +176,38 @@ export default function LogsTablePage() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                               <div className="space-y-3">
                                 <div>
-                                  <h4 className="text-label mb-2">Raw Message</h4>
+                                  <h4 className="text-label mb-2">{t('table.raw_message')}</h4>
                                   <div className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg font-mono text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap break-all">
                                     {log.message}
                                   </div>
                                 </div>
                                 <div className="flex gap-6">
                                   <div>
-                                    <h4 className="text-label mb-1">Precise Timestamp</h4>
+                                    <h4 className="text-label mb-1">{t('table.precise_timestamp')}</h4>
                                     <p className="text-xs font-mono text-neutral-700 dark:text-neutral-300">{log.timestamp}</p>
                                   </div>
                                   <div>
-                                    <h4 className="text-label mb-1">Entry ID</h4>
+                                    <h4 className="text-label mb-1">{t('table.entry_id')}</h4>
                                     <p className="text-xs font-mono text-neutral-700 dark:text-neutral-300">#{log.id}</p>
                                   </div>
                                 </div>
                               </div>
                               <div>
-                                <h4 className="text-label mb-2">Metadata / Context</h4>
+                                <h4 className="text-label mb-2">{t('table.metadata_context')}</h4>
                                 {log.metadata ? (
                                   <pre className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg font-mono text-xs text-primary-600 dark:text-primary-400 overflow-x-auto">
                                     {JSON.stringify(log.metadata, null, 2)}
                                   </pre>
                                 ) : (
-                                  <p className="text-xs italic text-neutral-400 dark:text-neutral-600 p-3 border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No metadata available</p>
+                                  <p className="text-xs italic text-neutral-400 dark:text-neutral-600 p-3 border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">{t('table.no_metadata')}</p>
                                 )}
                                 <div className="mt-3 grid grid-cols-2 gap-3">
                                   <div className="p-2.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg">
-                                    <p className="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mb-1">Tenant</p>
-                                    <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-300">{log.tenant || 'default'}</p>
+                                    <p className="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mb-1">{t('table.tenant_label')}</p>
+                                    <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-300">{log.tenant || tc('meta.default')}</p>
                                   </div>
                                   <div className="p-2.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg">
-                                    <p className="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mb-1">Site</p>
+                                    <p className="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mb-1">{t('table.site_label')}</p>
                                     <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-300">{log.site || '-'}</p>
                                   </div>
                                 </div>
@@ -222,8 +225,8 @@ export default function LogsTablePage() {
                           <div className="w-16 h-16 bg-neutral-200 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-3">
                             <Search className="w-8 h-8 text-neutral-400 dark:text-neutral-600" />
                           </div>
-                          <h3 className="text-heading-4 mb-1">No logs found</h3>
-                          <p className="text-body-secondary text-sm">Try adjusting your search terms or filters.</p>
+                          <h3 className="text-heading-4 mb-1">{t('empty.title')}</h3>
+                          <p className="text-body-secondary text-sm">{t('empty.description')}</p>
                         </div>
                       </td>
                     </tr>
@@ -234,7 +237,7 @@ export default function LogsTablePage() {
 
             <div className="bg-neutral-100 dark:bg-neutral-800/50 border-t border-neutral-200 dark:border-neutral-700 p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
-                Showing <span className="text-neutral-900 dark:text-white font-semibold">{Math.min(total, filters.offset + 1)}-{Math.min(total, filters.offset + filters.limit)}</span> of <span className="text-neutral-900 dark:text-white font-semibold">{total.toLocaleString()}</span> entries
+                {tc('pagination.showing', { from: Math.min(total, filters.offset + 1), to: Math.min(total, filters.offset + filters.limit), total: total.toLocaleString() })}
               </div>
               <div className="flex items-center gap-2">
                 <select
@@ -242,10 +245,10 @@ export default function LogsTablePage() {
                   onChange={(e) => setFilters({ ...filters, limit: parseInt(e.target.value), offset: 0 })}
                   className="input-base text-sm"
                 >
-                  <option value="50">50 per page</option>
-                  <option value="100">100 per page</option>
-                  <option value="250">250 per page</option>
-                  <option value="500">500 per page</option>
+                  <option value="50">{tc('pagination.per_page_50')}</option>
+                  <option value="100">{tc('pagination.per_page_100')}</option>
+                  <option value="250">{tc('pagination.per_page_250')}</option>
+                  <option value="500">{tc('pagination.per_page_500')}</option>
                 </select>
                 <div className="flex gap-1">
                   <button
@@ -253,14 +256,14 @@ export default function LogsTablePage() {
                     disabled={filters.offset === 0 || loading}
                     className="button-secondary button-sm disabled:opacity-50"
                   >
-                    Previous
+                    {tc('actions.previous')}
                   </button>
                   <button
                     onClick={() => setFilters({ ...filters, offset: filters.offset + filters.limit })}
                     disabled={filters.offset + filters.limit >= total || loading}
                     className="button-secondary button-sm disabled:opacity-50"
                   >
-                    Next
+                    {tc('actions.next')}
                   </button>
                 </div>
               </div>
@@ -279,7 +282,7 @@ export default function LogsTablePage() {
               onChange={(e) => setFilters({ ...filters, level: e.target.value, offset: 0 })}
               className="input-base text-sm"
             >
-              <option value="">All Levels</option>
+              <option value="">{t('filters.all_levels')}</option>
               <option value="DEBUG">DEBUG</option>
               <option value="INFO">INFO</option>
               <option value="WARNING">WARNING</option>
@@ -292,7 +295,7 @@ export default function LogsTablePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 group-focus-within:text-primary-500 transition-colors" />
             <input
               type="text"
-              placeholder="Search in log messages..."
+              placeholder={t('filters.search_placeholder')}
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value, offset: 0 })}
               className="input-base w-full pl-9"
@@ -303,7 +306,7 @@ export default function LogsTablePage() {
             <button
               onClick={() => fetchLogs()}
               className={`p-2 text-neutral-600 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-all ${loading ? 'animate-spin' : ''}`}
-              title="Refresh logs"
+              title={t('filters.refresh_title')}
             >
               <RefreshCw className="w-5 h-5" />
             </button>

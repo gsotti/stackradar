@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -16,12 +17,13 @@ export default function ConfirmDialog({
   isOpen,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   variant = 'default',
   onConfirm,
   onCancel
 }: ConfirmDialogProps) {
+  const { t } = useTranslation('common');
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -51,14 +53,14 @@ export default function ConfirmDialog({
           <p className="pt-4 text-sm text-neutral-600 dark:text-neutral-400">{description}</p>
         )}
         {variant === 'danger' && !hasUndoCopy && (
-          <p className="pt-2 text-sm text-neutral-600 dark:text-neutral-400">This action cannot be undone.</p>
+          <p className="pt-2 text-sm text-neutral-600 dark:text-neutral-400">{t('confirm_dialog.cannot_be_undone')}</p>
         )}
         <div className="modal-actions">
           <button type="button" onClick={onCancel} className="button-secondary button-center">
-            {cancelLabel}
+            {cancelLabel || t('confirm_dialog.default_cancel')}
           </button>
           <button type="button" onClick={onConfirm} className={`${confirmClass} button-center`}>
-            {confirmLabel}
+            {confirmLabel || t('confirm_dialog.default_confirm')}
           </button>
         </div>
       </div>

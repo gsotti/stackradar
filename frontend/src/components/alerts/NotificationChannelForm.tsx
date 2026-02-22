@@ -1,5 +1,6 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { NotificationChannel, ChannelType } from '../../types';
@@ -12,6 +13,7 @@ interface NotificationChannelFormProps {
 }
 
 export default function NotificationChannelForm({ siteId, channel, smtpConfigured = true, onClose }: NotificationChannelFormProps) {
+  const { t } = useTranslation('alerts');
   const [formData, setFormData] = useState({
     name: '',
     channel_type: (smtpConfigured ? 'email' : 'webhook') as ChannelType,
@@ -42,17 +44,17 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
     e.preventDefault();
 
     if (!formData.name) {
-      showError('Please fill in all required fields');
+      showError(t('channels_messages.required_fields'));
       return;
     }
 
     if (formData.channel_type === 'email' && !formData.email_recipients) {
-      showError('Email recipients are required for email channels');
+      showError(t('channels_messages.recipients_required'));
       return;
     }
 
     if (formData.channel_type === 'webhook' && !formData.webhook_url) {
-      showError('Webhook URL is required for webhook channels');
+      showError(t('channels_messages.webhook_url_required'));
       return;
     }
 
@@ -76,7 +78,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
           try {
             payload.webhook_headers = JSON.parse(formData.webhook_headers);
           } catch (error) {
-            showError('Invalid JSON format for webhook headers');
+            showError(t('channels_messages.invalid_json_headers'));
             setLoading(false);
             return;
           }
@@ -85,15 +87,15 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
 
       if (channel) {
         await api.put(`/alerts/channels/${channel.id}`, payload);
-        showSuccess('Notification channel updated successfully');
+        showSuccess(t('channels_messages.updated'));
       } else {
         await api.post('/alerts/channels', payload);
-        showSuccess('Notification channel created successfully');
+        showSuccess(t('channels_messages.created'));
       }
 
       onClose(true);
     } catch (error: any) {
-      showError(error.message || 'Failed to save notification channel');
+      showError(error.message || t('channels_messages.save_failed'));
     } finally {
       setLoading(false);
     }
@@ -110,7 +112,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-            {channel ? 'Edit' : 'Create'} Notification Channel
+            {channel ? t('channels_form.title_edit') : t('channels_form.title_create')}
           </h2>
           <button
             onClick={() => onClose(false)}
@@ -124,7 +126,7 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Channel Name *
+                {t('channels_form.name_label')}
               </label>
               <input
                 type="text"
@@ -132,14 +134,14 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                 value={formData.name}
                 onChange={handleChange}
                 className="input-base w-full"
-                placeholder="Internal Support Email"
+                placeholder={t('channels_form.name_placeholder')}
                 required
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Channel Type
+                {t('channels_form.type_label')}
               </label>
               <select
                 name="channel_type"
@@ -148,9 +150,9 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                 className="input-base w-full"
               >
                 <option value="email" disabled={!smtpConfigured}>
-                  Email{!smtpConfigured ? ' (SMTP not configured)' : ''}
+                  {!smtpConfigured ? t('channels_form.type_email_no_smtp') : t('channels_form.type_email')}
                 </option>
-                <option value="webhook">Webhook</option>
+                <option value="webhook">{t('channels_form.type_webhook')}</option>
               </select>
             </div>
           </div>
@@ -158,26 +160,26 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
           {formData.channel_type === 'email' ? (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Recipients *
+                {t('channels_form.recipients_label')}
               </label>
               <textarea
                 name="email_recipients"
                 value={formData.email_recipients}
                 onChange={handleChange}
                 className="input-base w-full"
-                placeholder="user1@example.com, user2@example.com"
+                placeholder={t('channels_form.recipients_placeholder')}
                 rows={3}
                 required
               />
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Comma-separated list of email addresses
+                {t('channels_form.recipients_help')}
               </p>
             </div>
           ) : (
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Webhook URL *
+                  {t('channels_form.webhook_url_label')}
                 </label>
                 <input
                   type="url"
@@ -185,14 +187,14 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                   value={formData.webhook_url}
                   onChange={handleChange}
                   className="input-base w-full"
-                  placeholder="https://hooks.slack.com/services/..."
+                  placeholder={t('channels_form.webhook_url_placeholder')}
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  HTTP Method
+                  {t('channels_form.http_method_label')}
                 </label>
                 <select
                   name="webhook_method"
@@ -200,22 +202,22 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
                   onChange={handleChange}
                   className="input-base w-full"
                 >
-                  <option value="POST">POST</option>
-                  <option value="PUT">PUT</option>
-                  <option value="GET">GET (for testing)</option>
+                  <option value="POST">{t('channels_form.method_post')}</option>
+                  <option value="PUT">{t('channels_form.method_put')}</option>
+                  <option value="GET">{t('channels_form.method_get')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Webhook Headers (JSON)
+                  {t('channels_form.headers_label')}
                 </label>
                 <textarea
                   name="webhook_headers"
                   value={formData.webhook_headers}
                   onChange={handleChange}
                   className="input-base w-full font-mono text-sm"
-                  placeholder='{ "Authorization": "Bearer token" }'
+                  placeholder={t('channels_form.headers_placeholder')}
                   rows={4}
                 />
               </div>
@@ -228,14 +230,14 @@ export default function NotificationChannelForm({ siteId, channel, smtpConfigure
               onClick={() => onClose(false)}
               className="button-secondary button-center"
             >
-              Cancel
+              {t('channels_form.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="button-primary button-center"
             >
-              {loading ? 'Saving...' : channel ? 'Update Channel' : 'Create Channel'}
+              {loading ? t('channels_form.submit_saving') : channel ? t('channels_form.submit_update') : t('channels_form.submit_create')}
             </button>
           </div>
         </form>

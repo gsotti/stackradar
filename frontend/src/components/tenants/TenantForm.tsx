@@ -1,5 +1,6 @@
 import React, { FormEvent, useState } from 'react';
 import { Building2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface TenantFormProps {
   initialData?: {
@@ -19,6 +20,8 @@ export default function TenantForm({
   mode,
   submitLabel
 }: TenantFormProps) {
+  const { t } = useTranslation('tenants');
+  const { t: tc } = useTranslation('common');
   const [form, setForm] = useState(initialData);
   const [submitting, setSubmitting] = useState(false);
 
@@ -39,42 +42,42 @@ export default function TenantForm({
           <Building2 className="w-6 h-6 text-white" />
         </div>
         <h2 className="text-xl font-bold text-primary-600 dark:text-primary-400">
-          {mode === 'create' ? 'Create New Tenant' : 'Edit Tenant'}
+          {mode === 'create' ? t('form.title_create') : t('form.title_edit')}
         </h2>
       </div>
 
       <div>
         <label className="text-label mb-2">
-          Tenant Name <span className="text-accent-danger">*</span>
+          {t('form.name_label')}
         </label>
         <input
           type="text"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           className="input-base w-full"
-          placeholder="e.g., Acme Corporation"
+          placeholder={t('form.name_placeholder')}
           required
           maxLength={255}
         />
         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          This name appears across dashboards and settings.
+          {t('form.name_help')}
         </p>
       </div>
 
       <div>
         <label className="text-label mb-2">
-          Description
+          {t('form.description_label')}
         </label>
         <textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           className="input-base w-full resize-none"
-          placeholder="Brief description of this tenant"
+          placeholder={t('form.description_placeholder')}
           rows={4}
           maxLength={1000}
         />
         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          Optional description to help identify this tenant.
+          {t('form.description_help')}
         </p>
       </div>
 
@@ -84,7 +87,10 @@ export default function TenantForm({
           disabled={submitting}
           className="button-primary flex-1 disabled:opacity-50 justify-center"
         >
-          {submitting ? 'Saving...' : submitLabel || (mode === 'create' ? 'Create Tenant' : 'Save Changes')}
+          {submitting 
+            ? t('form.submit_saving') 
+            : submitLabel || (mode === 'create' ? t('form.submit_create') : t('form.submit_edit'))
+          }
         </button>
         {onCancel && (
           <button
@@ -93,7 +99,7 @@ export default function TenantForm({
             disabled={submitting}
             className="button-secondary flex-1 disabled:opacity-50 justify-center"
           >
-            Cancel
+            {t('form.cancel')}
           </button>
         )}
       </div>

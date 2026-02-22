@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TenantRoleName } from '../../types';
 
 interface RoleSelectProps {
@@ -8,24 +9,26 @@ interface RoleSelectProps {
   disabled?: boolean;
 }
 
-const roleLabels: Record<TenantRoleName, string> = {
-  tenant_admin: 'Tenant Admin',
-  editor: 'Editor',
-  viewer: 'Viewer'
-};
-
-const roleDescriptions: Record<TenantRoleName, string> = {
-  tenant_admin: 'Full access and user management',
-  editor: 'Can create and edit resources',
-  viewer: 'Read-only access'
-};
-
 export default function RoleSelect({
   value,
   onChange,
   allowedRoles = ['tenant_admin', 'editor', 'viewer'],
   disabled = false
 }: RoleSelectProps) {
+  const { t } = useTranslation('users');
+
+  const roleLabels: Record<TenantRoleName, string> = {
+    tenant_admin: t('role_select.tenant_admin'),
+    editor: t('role_select.editor'),
+    viewer: t('role_select.viewer')
+  };
+
+  const roleDescriptions: Record<TenantRoleName, string> = {
+    tenant_admin: t('role_select.tenant_admin_description'),
+    editor: t('role_select.editor_description'),
+    viewer: t('role_select.viewer_description')
+  };
+
   return (
     <div className="w-full">
       <div className="relative">

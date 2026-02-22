@@ -1,5 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Globe, Plus, Edit2, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../contexts/NotificationContext';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
@@ -12,6 +13,8 @@ interface EnvironmentWithDetails extends Environment {
 }
 
 export default function EnvironmentsPage() {
+  const { t } = useTranslation('environments');
+  const { t: tc } = useTranslation('common');
   const [environments, setEnvironments] = useState<EnvironmentWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -58,17 +61,17 @@ export default function EnvironmentsPage() {
           name: form.name,
           display_name: form.display_name || null
         });
-        showSuccess('Environment updated successfully');
+        showSuccess(t('messages.updated'));
       } else {
         await api.post('/environments', form);
-        showSuccess('Environment created successfully');
+        showSuccess(t('messages.created'));
       }
       setShowForm(false);
       setEditingEnv(null);
       setForm({ site_id: '', name: '', display_name: '' });
       loadEnvironments();
     } catch (error: any) {
-      showError(error.message || 'Failed to save environment');
+      showError(error.message || t('messages.save_failed'));
     }
   };
 
@@ -81,10 +84,10 @@ export default function EnvironmentsPage() {
   const handleDelete = async (id: number) => {
      try {
        await api.delete(`/environments/${id}`);
-       showSuccess('Environment deleted successfully');
+       showSuccess(t('messages.deleted'));
        loadEnvironments();
      } catch (error: any) {
-       showError(error.message || 'Failed to delete environment');
+       showError(error.message || t('messages.delete_failed'));
      }
    };
 
@@ -100,8 +103,8 @@ export default function EnvironmentsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-heading-2">Environments</h1>
-          <p className="text-body-secondary mt-2">Manage environment configurations for your sites</p>
+          <h1 className="text-heading-2">{t('page.title')}</h1>
+          <p className="text-body-secondary mt-2">{t('page.subtitle')}</p>
         </div>
         <button
           onClick={() => {
@@ -112,7 +115,7 @@ export default function EnvironmentsPage() {
           className="button-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Create Environment
+          {t('actions.create')}
         </button>
       </div>
 
@@ -120,19 +123,19 @@ export default function EnvironmentsPage() {
         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="card w-full max-w-md">
             <h2 className="text-heading-3 mb-6">
-              {editingEnv ? 'Edit Environment' : 'Create Environment'}
+              {editingEnv ? t('form.title_edit') : t('form.title_create')}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {!editingEnv && (
                 <div>
-                  <label className="block text-label mb-2">Site</label>
+                  <label className="block text-label mb-2">{t('form.site_label')}</label>
                   <select
                     value={form.site_id}
                     onChange={(e) => setForm({ ...form, site_id: e.target.value })}
                     className="input-base w-full"
                     required
                   >
-                    <option value="">Select a site</option>
+                    <option value="">{t('form.site_placeholder')}</option>
                     {sites.map((site) => (
                       <option key={site.id} value={site.id}>{site.name}</option>
                     ))}
@@ -140,24 +143,24 @@ export default function EnvironmentsPage() {
                 </div>
               )}
               <div>
-                <label className="block text-label mb-2">Identifier (Name)</label>
+                <label className="block text-label mb-2">{t('form.name_label')}</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="input-base w-full"
-                  placeholder="prod, staging, dev"
+                  placeholder={t('form.name_placeholder')}
                   required
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">Display Name (Optional)</label>
+                <label className="block text-label mb-2">{t('form.display_name_label')}</label>
                 <input
                   type="text"
                   value={form.display_name}
                   onChange={(e) => setForm({ ...form, display_name: e.target.value })}
                   className="input-base w-full"
-                  placeholder="Production, Staging Cluster"
+                  placeholder={t('form.display_name_placeholder')}
                 />
               </div>
               <div className="modal-actions">
@@ -165,7 +168,7 @@ export default function EnvironmentsPage() {
                   type="submit"
                   className="button-primary button-center"
                 >
-                  {editingEnv ? 'Save Changes' : 'Create Environment'}
+                  {editingEnv ? t('form.submit_save') : t('form.submit_create')}
                 </button>
                 <button
                   type="button"
@@ -175,7 +178,7 @@ export default function EnvironmentsPage() {
                   }}
                   className="button-secondary button-center"
                 >
-                  Cancel
+                  {t('form.cancel')}
                 </button>
               </div>
             </form>
@@ -228,15 +231,15 @@ export default function EnvironmentsPage() {
       {environments.length === 0 && (
         <div className="text-center py-12 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
           <Globe className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
-          <p className="text-neutral-500 dark:text-neutral-400">No environments found. Create one to get started.</p>
+          <p className="text-neutral-500 dark:text-neutral-400">{t('empty.title')} {t('empty.description')}</p>
         </div>
       )}
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete environment?"
-        description="This action cannot be undone."
-        confirmLabel="Delete"
+        title={t('confirm.delete_title')}
+        description={tc('confirm_dialog.cannot_be_undone')}
+        confirmLabel={t('confirm.delete_label')}
         variant="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {

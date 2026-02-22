@@ -1,5 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { X, Shield } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { User } from '../../types';
@@ -10,6 +11,8 @@ interface OrgAdminFormProps {
 }
 
 export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
+  const { t } = useTranslation('superadmin');
+  const { t: tc } = useTranslation('common');
   const [formData, setFormData] = useState({
     name: admin?.name || '',
     email: admin?.email || '',
@@ -23,12 +26,12 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
     e.preventDefault();
 
     if (!formData.email) {
-      showError('Email is required');
+      showError(t('messages.org_admin_email_required'));
       return;
     }
 
     if (!admin && !formData.password) {
-      showError('Password is required for new admins');
+      showError(t('messages.org_admin_password_required'));
       return;
     }
 
@@ -47,15 +50,15 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
 
       if (admin) {
         await api.put(`/superadmin/org-admins/${admin.id}`, payload);
-        showSuccess('Organization admin updated successfully');
+        showSuccess(t('messages.org_admin_updated'));
       } else {
         await api.post('/superadmin/org-admins', payload);
-        showSuccess('Organization admin created successfully');
+        showSuccess(t('messages.org_admin_created'));
       }
 
       onClose(true);
     } catch (error: any) {
-      showError(error.message || 'Failed to save organization admin');
+      showError(error.message || t('messages.org_admin_save_failed'));
     } finally {
       setLoading(false);
     }
@@ -71,7 +74,7 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
               <Shield className="w-5 h-5 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-              Set Organization Admin
+              {t('org_admin_form.title')}
             </h2>
           </div>
           <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">
@@ -80,29 +83,29 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('org_admin_form.name_label')}</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
-              placeholder="John Doe"
+              placeholder={t('org_admin_form.name_placeholder')}
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Email Address *</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('org_admin_form.email_label')}</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500 shadow-sm"
-              placeholder="john@example.com"
+              placeholder={t('org_admin_form.email_placeholder')}
               required
             />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              Password {admin && <span className="font-normal text-xs text-gray-400">(leave blank to keep current)</span>}
+              {t('org_admin_form.password_label')} {admin && <span className="font-normal text-xs text-gray-400">{t('org_admin_form.password_keep_current')}</span>}
             </label>
             <input
               type="password"
@@ -124,7 +127,7 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
               </div>
-              <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-green-600 transition-colors">Active Account</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-green-600 transition-colors">{t('org_admin_form.active_label')}</span>
             </label>
           </div>
           <div className="pt-4 flex gap-3">
@@ -133,14 +136,14 @@ export default function OrgAdminForm({ admin, onClose }: OrgAdminFormProps) {
               disabled={loading}
               className="button-primary flex-1"
             >
-              {loading ? 'Saving...' : admin ? 'Update Admin' : 'Create Admin'}
+              {loading ? t('org_admin_form.submit_saving') : admin ? t('org_admin_form.submit_update') : t('org_admin_form.submit_create')}
             </button>
             <button
               type="button"
               onClick={() => onClose(false)}
               className="button-secondary flex-1"
             >
-              Cancel
+              {t('org_admin_form.cancel')}
             </button>
           </div>
         </form>

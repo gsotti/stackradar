@@ -1,0 +1,85 @@
+{
+  "status": {
+    "up": "Up",
+    "down": "Down",
+    "degraded": "Degraded",
+    "unknown": "Unknown",
+    "operational": "Operational",
+    "pending": "Pending"
+  },
+  "status_help": {
+    "up": "Expected status code returned.",
+    "down": "Request failed or timed out.",
+    "degraded": "Response received but status code did not match expected.",
+    "pending": "No recent check data yet."
+  },
+  "monitors": {
+    "loading": "Loading monitors...",
+    "add_button": "Add Monitor",
+    "main_badge": "Main",
+    "paused_badge": "Paused",
+    "uptime_label": "uptime",
+    "ms_avg_label": "ms avg",
+    "check_now": "Check Now",
+    "checking": "Checking...",
+    "counts": {
+      "up_one": "{{count}} up",
+      "up_other": "{{count}} up",
+      "down_one": "{{count}} down",
+      "down_other": "{{count}} down",
+      "degraded_one": "{{count}} degraded",
+      "degraded_other": "{{count}} degraded"
+    }
+  },
+  "empty": {
+    "title": "No Monitors Yet",
+    "description_site": "No uptime monitors have been configured for this site.",
+    "description_action": "Monitor your endpoints to track uptime and get alerts when they go down.",
+    "create_first": "Create First Monitor",
+    "overview_description": "Switch to the Monitors tab to set up uptime checks for this site."
+  },
+  "form": {
+    "title_edit": "Edit Monitor",
+    "title_create": "Add Monitor",
+    "name_label": "Name *",
+    "name_placeholder": "API Health Check",
+    "url_label": "URL *",
+    "url_placeholder": "https://api.example.com/health",
+    "method_label": "HTTP Method",
+    "interval_label": "Check Interval",
+    "interval_1m": "1 minute",
+    "interval_5m": "5 minutes",
+    "interval_15m": "15 minutes",
+    "interval_30m": "30 minutes",
+    "interval_1h": "1 hour",
+    "expected_status_label": "Expected Status",
+    "timeout_label": "Timeout (seconds)",
+    "is_main_label": "Main monitor (shows status on site overview)",
+    "cancel": "Cancel",
+    "submit_saving": "Saving...",
+    "submit_update": "Update",
+    "submit_create": "Create"
+  },
+  "confirm": {
+    "delete_title": "Delete monitor?",
+    "delete_description": "Delete '{{name}}' and all check history.",
+    "delete_label": "Delete"
+  },
+  "messages": {
+    "created": "Monitor created",
+    "updated": "Monitor updated",
+    "deleted": "Monitor deleted",
+    "create_failed": "Failed to create monitor",
+    "update_failed": "Failed to update monitor",
+    "delete_failed": "Failed to delete monitor",
+    "check_complete": "Check complete: {{status}} ({{ms}}ms)",
+    "check_failed": "Check failed",
+    "load_failed": "Failed to load monitors"
+  },
+  "overview": {
+    "loading": "Loading uptime data...",
+    "refresh": "Refresh",
+    "load_failed": "Failed to load uptime monitors",
+    "no_monitors_title": "No Monitors Configured"
+  }
+}

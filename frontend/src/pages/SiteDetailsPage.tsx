@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, Server, Activity, CheckCircle, AlertTriangle, Bell, BarChart2, Settings, Eye, EyeOff, Copy, Trash2, Terminal, Clock, Box, Radio } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { formatInLocalTime } from '../utils/dateUtils';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +27,8 @@ interface LiveMetricsResponse {
 }
 
 export default function SiteDetailsPage() {
+  const { t } = useTranslation('sites');
+  const { t: tc } = useTranslation('common');
   const { id, tab: activeTab = 'metrics' } = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -72,7 +75,7 @@ export default function SiteDetailsPage() {
         setSummary(s || null);
       }
     } catch (error: any) {
-      showError(error.message || 'Failed to fetch site details');
+      showError(error.message || t('messages.failed_load'));
     } finally {
       setLoading(false);
     }
@@ -84,9 +87,9 @@ export default function SiteDetailsPage() {
     try {
       const updated = await api.put<Site>(`/sites/${id}`, form);
       setSite(updated);
-      showSuccess('Site settings saved');
+      showSuccess(t('messages.settings_saved'));
     } catch (error: any) {
-      showError(error.message || 'Failed to save settings');
+      showError(error.message || t('messages.failed_save_settings'));
     } finally {
       setSaving(false);
     }
@@ -96,26 +99,26 @@ export default function SiteDetailsPage() {
     try {
       const updated = await api.post<Site>(`/sites/${id}/regenerate-token`, {});
       setSite(updated);
-      showSuccess('API token regenerated');
+      showSuccess(t('messages.token_regenerated'));
     } catch (error: any) {
-      showError(error.message || 'Failed to regenerate token');
+      showError(error.message || t('messages.failed_regenerate_token'));
     }
   };
 
   const copyToken = () => {
     if (site?.api_token) {
       navigator.clipboard.writeText(site.api_token);
-      showSuccess('Token copied to clipboard');
+      showSuccess(t('messages.token_copied'));
     }
   };
 
   const handleDelete = async () => {
     try {
       await api.delete(`/sites/${id}`);
-      showSuccess('Site deleted');
+      showSuccess(t('messages.site_deleted'));
       navigate('/sites');
     } catch (error: any) {
-      showError(error.message || 'Failed to delete site');
+      showError(error.message || t('messages.failed_delete'));
     }
   };
 
@@ -174,7 +177,7 @@ export default function SiteDetailsPage() {
       <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
         <div className="text-center">
           <RefreshCw className="w-10 h-10 animate-spin text-primary-500 mx-auto mb-3" />
-          <p className="text-neutral-600 dark:text-neutral-400">Loading site details…</p>
+          <p className="text-neutral-600 dark:text-neutral-400">{t('details.loading')}</p>
         </div>
       </div>
     );
@@ -208,7 +211,7 @@ export default function SiteDetailsPage() {
             onClick={() => setAutoRefresh((v) => !v)}
             className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${autoRefresh ? 'bg-primary-600 text-white border-primary-600' : 'bg-transparent text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-600'}`}
           >
-            {autoRefresh ? 'Auto-refresh: ON' : 'Auto-refresh: OFF'}
+            {autoRefresh ? t('details.auto_refresh_on') : t('details.auto_refresh_off')}
           </button>
         )}
       </div>
@@ -230,7 +233,7 @@ export default function SiteDetailsPage() {
               `}
             >
               <BarChart2 className="w-4 h-4" />
-              Metrics
+              {t('details.tab_metrics')}
             </button>
           )}
           <button
@@ -245,7 +248,7 @@ export default function SiteDetailsPage() {
             `}
           >
             <Radio className="w-4 h-4" />
-            {site?.has_metrics === false ? 'Uptime Overview' : 'Monitors'}
+            {site?.has_metrics === false ? t('details.tab_uptime_overview') : t('details.tab_monitors')}
           </button>
           {!isViewer() && (
             <>
@@ -261,7 +264,7 @@ export default function SiteDetailsPage() {
                 `}
               >
                 <Bell className="w-4 h-4" />
-                Alerts
+                {t('details.tab_alerts')}
               </button>
               <button
                 onClick={() => setActiveTab('setup')}
@@ -275,7 +278,7 @@ export default function SiteDetailsPage() {
                 `}
               >
                 <Terminal className="w-4 h-4" />
-                Setup
+                {t('details.tab_setup')}
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
@@ -289,7 +292,7 @@ export default function SiteDetailsPage() {
                 `}
               >
                 <Settings className="w-4 h-4" />
-                Settings
+                {t('details.tab_settings')}
               </button>
             </>
           )}
@@ -398,16 +401,16 @@ export default function SiteDetailsPage() {
             </div>
           ) : (
             <div className="bg-accent-warning/10 border border-accent-warning/20 text-accent-warning rounded-lg p-4">
-              No {labels.platform.toLowerCase()} metrics available yet for this site.
+              {t('details.no_metrics_yet', { platform: labels.platform.toLowerCase() })}
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-4">
             <div className="card">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">CPU & Memory (Live)</h2>
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">{t('details.cpu_memory_live')}</h2>
                 <button onClick={fetchAll} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
-                  <RefreshCw className="w-4 h-4" /> Refresh
+                  <RefreshCw className="w-4 h-4" /> {t('details.refresh')}
                 </button>
               </div>
               <div className="h-[320px]">
@@ -461,10 +464,10 @@ export default function SiteDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Column - Site Settings Form */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Site Settings</h2>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">{t('settings.title')}</h2>
             <form onSubmit={handleSaveSettings} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Name</label>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t('settings.name_label')}</label>
                 <input
                   type="text"
                   value={form.name}
@@ -474,7 +477,7 @@ export default function SiteDetailsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Description</label>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t('settings.description_label')}</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -484,19 +487,19 @@ export default function SiteDetailsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Site Type</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t('settings.site_type_label')}</label>
                   <select
                     value={form.site_type}
                     onChange={(e) => setForm({ ...form, site_type: e.target.value as any })}
                     className="input-base w-full"
                   >
-                    <option value="docker">Docker Host</option>
-                    <option value="kubernetes">Kubernetes Cluster</option>
-                    <option value="generic">Generic Host</option>
+                    <option value="docker">{t('settings.site_type_docker')}</option>
+                    <option value="kubernetes">{t('settings.site_type_kubernetes')}</option>
+                    <option value="generic">{t('settings.site_type_generic')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Retention (days)</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t('settings.retention_label')}</label>
                   <input
                     type="number"
                     value={form.retention_days}
@@ -514,9 +517,9 @@ export default function SiteDetailsPage() {
                     <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.has_metrics ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Collect infrastructure metrics</span>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('settings.has_metrics_label')}</span>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                      Disable to hide the Metrics tab (e.g. for uptime-only sites)
+                      {t('settings.has_metrics_description')}
                     </p>
                   </div>
                 </label>
@@ -526,7 +529,7 @@ export default function SiteDetailsPage() {
                 disabled={saving}
                 className="button-primary w-full justify-center disabled:opacity-50"
               >
-                {saving ? 'Saving...' : 'Save Settings'}
+                {saving ? t('settings.saving_button') : t('settings.save_button')}
               </button>
             </form>
           </div>
@@ -535,9 +538,9 @@ export default function SiteDetailsPage() {
           <div className="space-y-4">
             {/* API Token */}
             <div className="card">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">API Token</h2>
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">{t('settings.api_token_label')}</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                Use this token to authenticate log ingestion from collectors.
+                {t('settings.api_token_description')}
               </p>
               <div className="flex items-center gap-2 mb-4">
                 <code className={`flex-1 text-sm bg-neutral-50 dark:bg-neutral-900 px-3 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 break-all font-mono ${tokenVisible ? 'text-neutral-900 dark:text-white' : 'text-neutral-400 dark:text-neutral-600 tracking-wider'}`}>
@@ -546,14 +549,14 @@ export default function SiteDetailsPage() {
                 <button
                   onClick={() => setTokenVisible(!tokenVisible)}
                   className="p-2.5 text-neutral-600 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-all"
-                  title={tokenVisible ? 'Hide token' : 'Show token'}
+                  title={tokenVisible ? t('settings.hide_token') : t('settings.show_token')}
                 >
                   {tokenVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
                 <button
                   onClick={copyToken}
                   className="p-2.5 text-neutral-600 dark:text-neutral-400 hover:text-accent-success dark:hover:text-accent-success hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-all"
-                  title="Copy token"
+                  title={t('settings.copy_token')}
                 >
                   <Copy className="w-5 h-5" />
                 </button>
@@ -562,21 +565,21 @@ export default function SiteDetailsPage() {
                 onClick={() => setShowRegenerateTokenModal(true)}
                 className="button-secondary button-center"
               >
-                Regenerate Token
+                {t('settings.regenerate_token')}
               </button>
             </div>
 
             {/* Danger Zone */}
             <div className="card border-l-4 border-l-accent-danger">
-              <h2 className="text-lg font-semibold text-accent-danger mb-2">Danger Zone</h2>
+              <h2 className="text-lg font-semibold text-accent-danger mb-2">{t('danger_zone.title')}</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                Deleting this site will permanently remove all associated environments, systems, logs, and metrics. This action cannot be undone.
+                {t('danger_zone.delete_description')}
               </p>
               <button
                 onClick={() => setShowDeleteSiteModal(true)}
                 className="button-danger button-center"
               >
-                Delete Site
+                {t('danger_zone.delete_button')}
               </button>
             </div>
           </div>
@@ -585,9 +588,9 @@ export default function SiteDetailsPage() {
 
       <ConfirmDialog
         isOpen={showRegenerateTokenModal}
-        title="Regenerate API token?"
-        description="This will invalidate the current token and generate a new one."
-        confirmLabel="Regenerate"
+        title={t('confirm.regenerate_token_title')}
+        description={t('confirm.regenerate_token_description')}
+        confirmLabel={t('confirm.regenerate_token_label')}
         onCancel={() => setShowRegenerateTokenModal(false)}
         onConfirm={() => {
           setShowRegenerateTokenModal(false);
@@ -597,9 +600,9 @@ export default function SiteDetailsPage() {
 
       <ConfirmDialog
         isOpen={showDeleteSiteModal}
-        title="Delete site?"
-        description="This action cannot be undone."
-        confirmLabel="Delete"
+        title={t('confirm.delete_title')}
+        description={tc('confirm_dialog.cannot_be_undone')}
+        confirmLabel={t('confirm.delete_label')}
         variant="danger"
         onCancel={() => setShowDeleteSiteModal(false)}
         onConfirm={() => {

@@ -1,12 +1,12 @@
 import React from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { UptimeStatus } from '../../types';
 
 interface StatusConfig {
   color: string;
   bg: string;
   icon: LucideIcon;
-  label: string;
 }
 
 const statusConfig: Record<UptimeStatus, StatusConfig> = {
@@ -14,25 +14,21 @@ const statusConfig: Record<UptimeStatus, StatusConfig> = {
     color: 'text-green-600 dark:text-green-400',
     bg: 'bg-green-100 dark:bg-green-900/30',
     icon: CheckCircle,
-    label: 'Up',
   },
   down: {
     color: 'text-red-600 dark:text-red-400',
     bg: 'bg-red-100 dark:bg-red-900/30',
     icon: XCircle,
-    label: 'Down',
   },
   degraded: {
     color: 'text-yellow-600 dark:text-yellow-400',
     bg: 'bg-yellow-100 dark:bg-yellow-900/30',
     icon: AlertTriangle,
-    label: 'Degraded',
   },
   unknown: {
     color: 'text-gray-500 dark:text-gray-400',
     bg: 'bg-gray-100 dark:bg-gray-700',
     icon: Clock,
-    label: 'Unknown',
   },
 };
 
@@ -43,6 +39,7 @@ interface UptimeStatusBadgeProps {
 }
 
 export default function UptimeStatusBadge({ status, size = 'md', showLabel = true }: UptimeStatusBadgeProps) {
+  const { t } = useTranslation('uptime');
   const config = statusConfig[status] || statusConfig.unknown;
   const Icon = config.icon;
 
@@ -59,7 +56,7 @@ export default function UptimeStatusBadge({ status, size = 'md', showLabel = tru
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.color}`}>
       <Icon className={sizeClasses[size]} />
-      {config.label}
+      {t(`status.${status}`)}
     </span>
   );
 }
@@ -70,6 +67,7 @@ interface UptimeStatusDotProps {
 }
 
 export function UptimeStatusDot({ status, size = 'md' }: UptimeStatusDotProps) {
+  const { t } = useTranslation('uptime');
   const colorMap: Record<UptimeStatus, string> = {
     up: 'bg-green-500',
     down: 'bg-red-500',
@@ -86,7 +84,7 @@ export function UptimeStatusDot({ status, size = 'md' }: UptimeStatusDotProps) {
   return (
     <span
       className={`inline-block rounded-full ${sizeMap[size]} ${colorMap[status] || colorMap.unknown}`}
-      title={statusConfig[status]?.label || 'Unknown'}
+      title={t(`status.${status}`)}
     />
   );
 }

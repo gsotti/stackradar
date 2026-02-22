@@ -1,0 +1,43 @@
+{
+  "page": {
+    "title": "Environments",
+    "subtitle": "Verwalte Environment-Konfigurationen für deine Sites"
+  },
+  "actions": {
+    "create": "Environment erstellen",
+    "edit": "Environment bearbeiten"
+  },
+  "form": {
+    "title_create": "Environment erstellen",
+    "title_edit": "Environment bearbeiten",
+    "site_label": "Site",
+    "site_placeholder": "Wähle eine Site",
+    "name_label": "Identifier (Name)",
+    "name_placeholder": "prod, staging, dev",
+    "display_name_label": "Anzeigename (Optional)",
+    "display_name_placeholder": "Produktion, Staging Cluster",
+    "submit_save": "Änderungen speichern",
+    "submit_create": "Environment erstellen",
+    "cancel": "Abbrechen"
+  },
+  "card": {
+    "site_label": "Site:",
+    "tenant_label": "Tenant:",
+    "id_label": "ID:"
+  },
+  "empty": {
+    "title": "Keine Environments gefunden",
+    "description": "Erstelle eines, um loszulegen."
+  },
+  "confirm": {
+    "delete_title": "Environment löschen?",
+    "delete_label": "Löschen"
+  },
+  "messages": {
+    "updated": "Environment erfolgreich aktualisiert",
+    "created": "Environment erfolgreich erstellt",
+    "save_failed": "Environment konnte nicht gespeichert werden",
+    "deleted": "Environment erfolgreich gelöscht",
+    "delete_failed": "Environment konnte nicht gelöscht werden"
+  }
+}

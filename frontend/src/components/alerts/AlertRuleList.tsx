@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Power, AlertTriangle, Info, BarChart2, Radio } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { api } from '../../utils/api';
@@ -16,6 +17,8 @@ interface AlertRuleWithChannels extends AlertRule {
 }
 
 export default function AlertRuleList({ siteId }: AlertRuleListProps) {
+  const { t } = useTranslation('alerts');
+  const { t: tc } = useTranslation('common');
   const [rules, setRules] = useState<AlertRuleWithChannels[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -34,7 +37,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
       const data = await api.get<AlertRuleWithChannels[]>(`/alerts/rules?site_id=${siteId}`);
       setRules(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to load alert rules');
+      showError(error.message || tc('errors.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -53,20 +56,20 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
   const handleDelete = async (ruleId: number) => {
      try {
        await api.delete(`/alerts/rules/${ruleId}`);
-       showSuccess('Alert rule deleted successfully');
+       showSuccess(t('rules_messages.deleted'));
        loadRules();
      } catch (error: any) {
-       showError(error.message || 'Failed to delete alert rule');
+       showError(error.message || t('rules_messages.delete_failed'));
      }
    };
 
   const handleToggle = async (rule: AlertRuleWithChannels) => {
     try {
       await api.put(`/alerts/rules/${rule.id}`, { enabled: !rule.enabled });
-      showSuccess(`Alert rule ${rule.enabled ? 'disabled' : 'enabled'}`);
+      showSuccess(t('rules_messages.toggled', { state: rule.enabled ? tc('status.disabled') : tc('status.enabled') }));
       loadRules();
     } catch (error: any) {
-      showError(error.message || 'Failed to toggle alert rule');
+      showError(error.message || t('rules_messages.toggle_failed'));
     }
   };
 
@@ -125,7 +128,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 dark:text-gray-400">Loading alert rules...</div>
+        <div className="text-gray-500 dark:text-gray-400">{t('rules.loading')}</div>
       </div>
     );
   }
@@ -135,14 +138,14 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alert Rules</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('rules.title')}</h3>
           {!isViewer() && (
             <button
               onClick={handleCreate}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              Add Rule
+              {t('rules.add_rule')}
             </button>
           )}
         </div>
@@ -151,7 +154,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
         {rules.length === 0 ? (
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8 text-center border border-dashed border-gray-300 dark:border-gray-700">
             <AlertTriangle className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 dark:text-gray-400">No alert rules defined yet.</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('rules.empty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -171,7 +174,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                       <h4 className="font-bold text-gray-900 dark:text-white truncate">{rule.name}</h4>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-1">
-                      {rule.description || 'No description'}
+                      {rule.description || t('rules.no_description')}
                     </p>
                     
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -182,7 +185,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                       <span className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] font-bold uppercase tracking-wider">
                         {rule.alert_type === 'metric' 
                           ? `${getMetricLabel(rule.metric_type!)} ${rule.threshold_operator} ${rule.threshold_value}`
-                          : 'Uptime Check'}
+                          : t('rules.type_uptime_check')}
                       </span>
                     </div>
                   </div>
@@ -196,14 +199,14 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                             ? 'text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20'
                             : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
-                        title={rule.enabled ? 'Disable' : 'Enable'}
+                        title={rule.enabled ? t('rules.disable_title') : t('rules.enable_title')}
                       >
                         <Power className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEdit(rule)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                        title="Edit"
+                        title={t('rules.edit_title')}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -211,7 +214,7 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                         onClick={() => setDeleteTarget(rule)}
                         className="button-danger button-sm"
                       >
-                        Delete
+                        {t('rules.delete_button')}
                       </button>
                     </div>
                   )}
@@ -221,30 +224,30 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                     {rule.alert_type === 'metric' ? (
                       <>
-                        <span>Window: {rule.time_window_minutes}m</span>
+                        <span>{t('rules.window_label', { n: rule.time_window_minutes })}</span>
                         <span>•</span>
-                        <span>Cooldown: {rule.cooldown_minutes}m</span>
+                        <span>{t('rules.cooldown_label', { n: rule.cooldown_minutes })}</span>
                         {rule.repeat_interval_hours > 1 && (
                           <>
                             <span>•</span>
-                            <span>Repeat: {rule.repeat_interval_hours}h</span>
+                            <span>{t('rules.repeat_label', { n: rule.repeat_interval_hours })}</span>
                           </>
                         )}
                       </>
                     ) : (
                       <>
-                        <span>Threshold: {rule.failure_threshold} failures</span>
+                        <span>{t('rules.failure_threshold_label', { n: rule.failure_threshold })}</span>
                         {rule.repeat_interval_hours > 1 && (
                           <>
                             <span>•</span>
-                            <span>Repeat: {rule.repeat_interval_hours}h</span>
+                            <span>{t('rules.repeat_label', { n: rule.repeat_interval_hours })}</span>
                           </>
                         )}
                       </>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">Channels:</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">{t('rules.channels_label')}</span>
                     <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
                       {rule.channel_ids?.length || 0}
                     </span>
@@ -266,9 +269,9 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete alert rule?"
-        description={deleteTarget ? `Delete "${deleteTarget.name}".` : undefined}
-        confirmLabel="Delete"
+        title={t('rules_confirm.delete_title')}
+        description={deleteTarget ? t('rules_confirm.delete_description', { name: deleteTarget.name }) : undefined}
+        confirmLabel={t('rules_confirm.delete_label')}
         variant="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, RefreshCw, Users, Search, Trash2, X, Edit } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -18,6 +19,8 @@ interface OrgUser {
 }
 
 export default function OrgUsersPage() {
+  const { t } = useTranslation('users');
+  const { t: tc } = useTranslation('common');
   const { user } = useAuth();
   const { showError, showSuccess } = useNotification();
   const [users, setUsers] = useState<OrgUser[]>([]);
@@ -79,7 +82,7 @@ export default function OrgUsersPage() {
         name: formData.name,
         password: formData.password
       });
-      showSuccess('User created successfully');
+      showSuccess(t('messages.org_user_created'));
       setShowCreateModal(false);
       setFormData({ email: '', name: '', password: '', is_active: true });
       fetchUsers();
@@ -100,12 +103,12 @@ export default function OrgUsersPage() {
       if (formData.is_active !== selectedUser.is_active) updateData.is_active = formData.is_active;
 
       if (Object.keys(updateData).length === 0) {
-        showError('No changes to save');
+        showError(t('messages.no_changes'));
         return;
       }
 
       await api.put(`/organizations/${user.organization_id}/users/${selectedUser.id}`, updateData);
-      showSuccess('User updated successfully');
+      showSuccess(t('messages.org_user_updated'));
       setShowEditModal(false);
       setSelectedUser(null);
       setFormData({ email: '', name: '', password: '', is_active: true });
@@ -120,7 +123,7 @@ export default function OrgUsersPage() {
 
     try {
       await api.delete(`/organizations/${user.organization_id}/users/${selectedUser.id}`);
-      showSuccess('User deleted successfully');
+      showSuccess(t('messages.org_user_deleted'));
       setShowDeleteModal(false);
       setShowEditModal(false);
       setSelectedUser(null);
@@ -150,10 +153,10 @@ export default function OrgUsersPage() {
 
   const getRoleBadge = (role: string | null) => {
     if (role === 'superadmin') {
-      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-accent-danger/10 text-accent-danger dark:bg-accent-danger/10 dark:text-accent-danger">Superadmin</span>;
+      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-accent-danger/10 text-accent-danger dark:bg-accent-danger/10 dark:text-accent-danger">{tc('roles.superadmin')}</span>;
     }
     if (role === 'org_admin') {
-      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">Org Admin</span>;
+      return <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">{tc('roles.org_admin')}</span>;
     }
     return null;
   };
@@ -162,15 +165,15 @@ export default function OrgUsersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-heading-2">Users</h1>
-          <p className="text-body-secondary mt-2">Manage users in your organization</p>
+          <h1 className="text-heading-2">{t('page.org_title')}</h1>
+          <p className="text-body-secondary mt-2">{t('page.org_subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={fetchUsers}
             disabled={loading}
             className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all"
-            title="Refresh"
+            title={tc('actions.refresh')}
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -182,7 +185,7 @@ export default function OrgUsersPage() {
             className="button-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Create User
+            {t('actions.create_user')}
           </button>
         </div>
       </div>
@@ -192,7 +195,7 @@ export default function OrgUsersPage() {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <input
           type="text"
-          placeholder="Search by name or email..."
+          placeholder={t('list.search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="input-base w-full pl-9"
@@ -208,10 +211,10 @@ export default function OrgUsersPage() {
             <div className="text-center">
               <Users className="w-16 h-16 text-neutral-400 dark:text-neutral-600 mx-auto mb-3" />
               <h3 className="text-heading-4 mb-2">
-                {searchTerm ? 'No users found' : 'No users yet'}
+                {searchTerm ? t('list.empty_title') : t('list.empty_no_users')}
               </h3>
               <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-                {searchTerm ? 'Try adjusting your search terms' : 'Create your first user to get started'}
+                {searchTerm ? t('list.empty_search_hint') : t('list.empty_create_first')}
               </p>
               {!searchTerm && (
                 <button
@@ -222,7 +225,7 @@ export default function OrgUsersPage() {
                   className="button-primary inline-flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="font-semibold">Create User</span>
+                  <span className="font-semibold">{t('actions.create_user')}</span>
                 </button>
               )}
             </div>
@@ -255,19 +258,19 @@ export default function OrgUsersPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-gray-900 dark:text-white truncate text-sm">
-                          {targetUser.name || 'Unnamed'}
+                          {targetUser.name || tc('meta.unnamed')}
                         </h3>
                         {isSelf && (
-                          <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">You</span>
+                          <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{t('list.you_badge')}</span>
                         )}
                         {getRoleBadge(targetUser.global_role)}
                         {targetUser.is_active ? (
                           <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                            Active
+                            {t('list.status_active')}
                           </span>
                         ) : (
                           <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                            Inactive
+                            {t('list.status_inactive')}
                           </span>
                         )}
                       </div>
@@ -284,7 +287,7 @@ export default function OrgUsersPage() {
                       <button
                         onClick={() => openEditModal(targetUser)}
                         className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all flex-shrink-0"
-                        title="Edit user"
+                        title={t('tenant_list.edit_user_title')}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -302,7 +305,7 @@ export default function OrgUsersPage() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                  Create User
+                  {t('actions.create_user')}
                 </h2>
                 <button
                   onClick={() => setShowCreateModal(false)}
@@ -315,7 +318,7 @@ export default function OrgUsersPage() {
               <form onSubmit={handleCreateUser} className="p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Email *
+                    {t('create_modal.email_label')}
                   </label>
                   <input
                     type="email"
@@ -323,26 +326,26 @@ export default function OrgUsersPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="user@example.com"
+                    placeholder={t('create_modal.email_placeholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Name
+                    {t('create_modal.name_label')}
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="John Doe"
+                    placeholder={t('create_modal.name_placeholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Password *
+                    {t('create_modal.password_label')}
                   </label>
                   <input
                     type="password"
@@ -360,13 +363,13 @@ export default function OrgUsersPage() {
                     onClick={() => setShowCreateModal(false)}
                     className="button-secondary button-center"
                   >
-                    Cancel
+                    {tc('actions.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="button-primary button-center"
                   >
-                    Create User
+                    {t('actions.create_user')}
                   </button>
                 </div>
               </form>
@@ -380,7 +383,7 @@ export default function OrgUsersPage() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                  Edit User
+                  {t('edit_modal.title')}
                 </h2>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -393,7 +396,7 @@ export default function OrgUsersPage() {
               <form onSubmit={handleEditUser} className="p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Email *
+                    {t('edit_modal.email_label')}
                   </label>
                   <input
                     type="email"
@@ -401,26 +404,26 @@ export default function OrgUsersPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="user@example.com"
+                    placeholder={t('edit_modal.email_label')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Name
+                    {t('edit_modal.name_label')}
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="John Doe"
+                    placeholder={t('edit_modal.name_placeholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    New Password (leave blank to keep current)
+                    {t('edit_modal.password_label')}
                   </label>
                   <input
                     type="password"
@@ -432,7 +435,7 @@ export default function OrgUsersPage() {
                 </div>
 
                 <div className="flex items-center justify-between py-2">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Active</label>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('edit_modal.active_label')}</label>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
@@ -456,7 +459,7 @@ export default function OrgUsersPage() {
                     className="flex items-center gap-1.5 px-3 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-semibold text-sm"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    {t('actions.delete')}
                   </button>
                   <div className="flex-1" />
                   <button
@@ -464,13 +467,13 @@ export default function OrgUsersPage() {
                     onClick={() => setShowEditModal(false)}
                     className="button-secondary button-center"
                   >
-                    Cancel
+                    {tc('actions.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="button-primary button-center"
                   >
-                    Save Changes
+                    {tc('actions.save')}
                   </button>
                 </div>
               </form>
@@ -488,11 +491,11 @@ export default function OrgUsersPage() {
                 </div>
 
                 <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">
-                  Delete User
+                  {t('org_delete_confirm.title')}
                 </h2>
 
                 <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
-                  Are you sure you want to delete <span className="font-semibold">{selectedUser.name || selectedUser.email}</span>? This action cannot be undone.
+                  {t('org_delete_confirm.description', { name: selectedUser.name || selectedUser.email })}
                 </p>
 
                 <div className="modal-actions">
@@ -500,13 +503,13 @@ export default function OrgUsersPage() {
                     onClick={() => setShowDeleteModal(false)}
                     className="button-secondary button-center"
                   >
-                    Cancel
+                    {tc('actions.cancel')}
                   </button>
                   <button
                     onClick={handleDeleteUser}
                     className="button-danger button-center"
                   >
-                    Delete User
+                    {t('org_delete_confirm.label')}
                   </button>
                 </div>
               </div>

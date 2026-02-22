@@ -1,0 +1,43 @@
+{
+  "page": {
+    "title": "Environments",
+    "subtitle": "Manage environment configurations for your sites"
+  },
+  "actions": {
+    "create": "Create Environment",
+    "edit": "Edit Environment"
+  },
+  "form": {
+    "title_create": "Create Environment",
+    "title_edit": "Edit Environment",
+    "site_label": "Site",
+    "site_placeholder": "Select a site",
+    "name_label": "Identifier (Name)",
+    "name_placeholder": "prod, staging, dev",
+    "display_name_label": "Display Name (Optional)",
+    "display_name_placeholder": "Production, Staging Cluster",
+    "submit_save": "Save Changes",
+    "submit_create": "Create Environment",
+    "cancel": "Cancel"
+  },
+  "card": {
+    "site_label": "Site:",
+    "tenant_label": "Tenant:",
+    "id_label": "ID:"
+  },
+  "empty": {
+    "title": "No environments found",
+    "description": "Create one to get started."
+  },
+  "confirm": {
+    "delete_title": "Delete environment?",
+    "delete_label": "Delete"
+  },
+  "messages": {
+    "updated": "Environment updated successfully",
+    "created": "Environment created successfully",
+    "save_failed": "Failed to save environment",
+    "deleted": "Environment deleted successfully",
+    "delete_failed": "Failed to delete environment"
+  }
+}

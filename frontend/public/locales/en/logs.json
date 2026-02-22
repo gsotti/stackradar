@@ -1,0 +1,40 @@
+{
+  "table": {
+    "column_time": "Time",
+    "column_level": "Level",
+    "column_source": "Source",
+    "column_system": "System",
+    "column_message": "Message",
+    "raw_message": "Raw Message",
+    "precise_timestamp": "Precise Timestamp",
+    "entry_id": "Entry ID",
+    "metadata_context": "Metadata / Context",
+    "no_metadata": "No metadata available",
+    "tenant_label": "Tenant",
+    "site_label": "Site"
+  },
+  "filters": {
+    "all_levels": "All Levels",
+    "search_placeholder": "Search in log messages...",
+    "refresh_title": "Refresh logs"
+  },
+  "empty": {
+    "title": "No logs found",
+    "description": "Try adjusting your search terms or filters."
+  },
+  "live": {
+    "loading_older": "Loading older logs...",
+    "beginning_of_history": "Beginning of log history",
+    "listening": "Listening for incoming logs...",
+    "buffer_empty": "Buffer is empty",
+    "grep_placeholder": "Grep logs...",
+    "seek_placeholder": "Seek to date or time",
+    "seek_button": "Seek To",
+    "searchable_from": "Searchable logs begin on {{date}} at {{time}}",
+    "reset_to_live": "Reset to Live",
+    "new_logs_below": "New Logs Below",
+    "decrease_text_size": "Decrease text size",
+    "increase_text_size": "Increase text size",
+    "seek_back": "Seek back in time"
+  }
+}
