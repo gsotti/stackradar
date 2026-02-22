@@ -8,7 +8,7 @@ import { api } from '../../utils/api';
 import { AlertHistory, AlertSeverity, AlertState, MetricType } from '../../types';
 
 interface AlertHistoryListProps {
-  siteId: string;
+  siteId: string | number;
 }
 
 interface AlertHistoryWithRule extends AlertHistory {
@@ -31,7 +31,7 @@ export default function AlertHistoryList({ siteId }: AlertHistoryListProps) {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({ site_id: siteId, limit: '50' });
+      const params = new URLSearchParams({ site_id: String(siteId), limit: '50' });
       if (filter !== 'all') {
         params.append('state', filter);
       }

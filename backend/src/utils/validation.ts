@@ -1,3 +1,12 @@
+/**
+ * Parse a value as a positive integer. Returns the number or null if invalid.
+ */
+export function parsePositiveInt(value: string | number | undefined): number | null {
+  if (value === undefined || value === null) return null;
+  const n = typeof value === 'number' ? value : parseInt(String(value), 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export interface PasswordValidationResult {
   valid: boolean;
   message: string;

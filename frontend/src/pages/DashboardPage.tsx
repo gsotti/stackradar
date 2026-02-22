@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FileText, Server, AlertTriangle, Activity, RefreshCw, TrendingUp, TrendingDown, Eye, Radio } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslation } from 'react-i18next';
@@ -110,6 +110,11 @@ export default function DashboardPage() {
     );
   }
 
+  const levelData = useMemo(() =>
+    stats?.logs_by_level ? Object.entries(stats.logs_by_level).map(([name, value]) => ({ name, value })) : [],
+    [stats?.logs_by_level]
+  );
+
   // Custom tooltip component for pie chart
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -137,7 +142,6 @@ export default function DashboardPage() {
     }
     return null;
   };
-  const levelData = stats?.logs_by_level ? Object.entries(stats.logs_by_level).map(([name, value]) => ({ name, value })) : [];
   const totalErrors = (stats?.logs_by_level?.ERROR || 0) + (stats?.logs_by_level?.CRITICAL || 0);
   const errorRate = stats?.total_logs ? ((totalErrors / stats.total_logs) * 100).toFixed(1) : '0';
 

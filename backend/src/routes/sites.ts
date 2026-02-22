@@ -1,14 +1,14 @@
 import { Router, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import db from '../db/database.js';
 import { authMiddleware, editorMiddleware } from '../middleware/auth.js';
 import { AuthRequest, Site, CreateSiteRequest } from '../types/index.js';
 
 const router = Router();
 
-// Generate secure API token
+// Generate secure API token (256 bits of entropy)
 function generateApiToken(): string {
-  return uuidv4().replace(/-/g, '') + uuidv4().replace(/-/g, '');
+  return crypto.randomBytes(32).toString('hex');
 }
 
 interface SiteQueryParams {

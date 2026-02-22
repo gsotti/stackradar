@@ -125,13 +125,17 @@ async function sendEmailNotification(
   const stateColor = alert.state === 'firing' ? '#ef4444' : '#10b981';
   const severityColor = rule.severity === 'critical' ? '#dc2626' : rule.severity === 'warning' ? '#f59e0b' : '#3b82f6';
 
+  // Escape HTML in user-controlled fields to prevent XSS
+  const escapeHtml = (str: string): string =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
   const { html: htmlBody, text: textBody } = renderTemplate('metric-alert', {
     stateColor,
     severityColor,
     headerText: alert.state === 'firing' ? '⚠️ Alert Triggered' : '✅ Alert Resolved',
-    siteName: site.name,
-    ruleName: rule.name,
-    descriptionHtml: rule.description ? `<div class="field"><span class="label">Description:</span><span class="value">${rule.description}</span></div>` : '',
+    siteName: escapeHtml(site.name),
+    ruleName: escapeHtml(rule.name),
+    descriptionHtml: rule.description ? `<div class="field"><span class="label">Description:</span><span class="value">${escapeHtml(rule.description)}</span></div>` : '',
     severityUpper: rule.severity.toUpperCase(),
     statusText: alert.state === 'firing' ? 'FIRING' : 'RESOLVED',
     metricTypeLabel,

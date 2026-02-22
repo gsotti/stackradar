@@ -480,6 +480,17 @@ router.post(
         return;
       }
 
+      // Validate email format
+      if (body.channel_type === 'email' && body.email_recipients) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        for (const email of body.email_recipients) {
+          if (!emailRegex.test(email)) {
+            res.status(400).json({ detail: `Invalid email address: ${email}` });
+            return;
+          }
+        }
+      }
+
       if (body.channel_type === 'webhook' && !body.webhook_url) {
         res.status(400).json({ detail: 'Webhook URL required for webhook channel' });
         return;

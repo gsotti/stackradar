@@ -55,9 +55,42 @@ export default function UptimeOverviewDashboard({ siteId }: UptimeOverviewDashbo
   };
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
+    let isActive = true;
+    const wrappedFetch = async () => {
+      try {
+        const monitorsData = await api.get<UptimeMonitor[]>(`/uptime/monitors?site_id=${siteId}`);
+        if (!isActive) return;
+        setMonitors(monitorsData || []);
+
+        const checksPromises = (monitorsData || []).map(async (m) => {
+          try {
+            const history = await api.get<{ checks: UptimeCheck[] }>(
+              `/uptime/monitors/${m.id}/history?limit=30`
+            );
+            return { id: m.id, checks: history.checks || [] };
+          } catch {
+            return { id: m.id, checks: [] };
+          }
+        });
+
+        const results = await Promise.all(checksPromises);
+        if (!isActive) return;
+        const map: Record<number, UptimeCheck[]> = {};
+        results.forEach((r) => { map[r.id] = r.checks; });
+        setChecksMap(map);
+      } catch {
+        if (isActive) showError(t('overview.load_failed'));
+      } finally {
+        if (isActive) setLoading(false);
+      }
+    };
+
+    wrappedFetch();
+    const interval = setInterval(wrappedFetch, 30000);
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
   }, [siteId]);
 
   // Aggregate stats

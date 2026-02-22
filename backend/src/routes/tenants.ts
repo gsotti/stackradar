@@ -57,7 +57,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response): Promise
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching tenants:', error);
-    res.status(500).json({ error: 'Failed to fetch tenants' });
+    res.status(500).json({ detail: 'Failed to fetch tenants' });
   }
 });
 
@@ -71,14 +71,14 @@ router.get('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthReque
     );
 
     if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Tenant not found' });
+      res.status(404).json({ detail: 'Tenant not found' });
       return;
     }
 
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching tenant:', error);
-    res.status(500).json({ error: 'Failed to fetch tenant' });
+    res.status(500).json({ detail: 'Failed to fetch tenant' });
   }
 });
 
@@ -88,7 +88,7 @@ router.post('/', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, re
     const { name, description } = req.body;
 
     if (!name || name.trim() === '') {
-      res.status(400).json({ error: 'Tenant name is required' });
+      res.status(400).json({ detail: 'Tenant name is required' });
       return;
     }
 
@@ -124,7 +124,7 @@ router.post('/', authMiddleware, orgAdminMiddleware, async (req: AuthRequest, re
     res.status(201).json(result.rows[0]);
   } catch (error: any) {
     console.error('Error creating tenant:', error);
-    res.status(500).json({ error: 'Failed to create tenant' });
+    res.status(500).json({ detail: 'Failed to create tenant' });
   }
 });
 
@@ -135,7 +135,7 @@ router.put('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthReque
     const { name, description } = req.body;
 
     if (!name || name.trim() === '') {
-      res.status(400).json({ error: 'Tenant name is required' });
+      res.status(400).json({ detail: 'Tenant name is required' });
       return;
     }
 
@@ -154,7 +154,7 @@ router.put('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthReque
     // Get current values for audit
     const currentResult = await db.query<Tenant>('SELECT * FROM tenants WHERE id = $1', [id]);
     if (currentResult.rows.length === 0) {
-      res.status(404).json({ error: 'Tenant not found' });
+      res.status(404).json({ detail: 'Tenant not found' });
       return;
     }
     const oldValues = currentResult.rows[0];
@@ -186,7 +186,7 @@ router.put('/:id', authMiddleware, tenantMemberMiddleware, async (req: AuthReque
     res.json(updatedTenant);
   } catch (error: any) {
     console.error('Error updating tenant:', error);
-    res.status(500).json({ error: 'Failed to update tenant' });
+    res.status(500).json({ detail: 'Failed to update tenant' });
   }
 });
 
@@ -211,7 +211,7 @@ router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthReques
     }
 
     if (tenantCheck.rows.length === 0) {
-      res.status(404).json({ error: 'Tenant not found or access denied' });
+      res.status(404).json({ detail: 'Tenant not found or access denied' });
       return;
     }
 
@@ -225,7 +225,7 @@ router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthReques
     );
 
     if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Tenant not found' });
+      res.status(404).json({ detail: 'Tenant not found' });
       return;
     }
 
@@ -245,7 +245,7 @@ router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthReques
     res.json({ message: 'Tenant deleted successfully', tenant: result.rows[0] });
   } catch (error) {
     console.error('Error deleting tenant:', error);
-    res.status(500).json({ error: 'Failed to delete tenant' });
+    res.status(500).json({ detail: 'Failed to delete tenant' });
   }
 });
 

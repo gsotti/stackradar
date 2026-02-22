@@ -29,12 +29,14 @@ async function performHttpCheck(monitor: UptimeMonitor): Promise<CheckResult> {
       const urlObj = new URL(monitor.url);
       const protocol = urlObj.protocol === 'https:' ? https : http;
 
+      const timeout = Math.min(monitor.timeout_ms || 10000, 30000);
+
       const options = {
         hostname: urlObj.hostname,
         port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
         path: urlObj.pathname + urlObj.search,
         method: monitor.method,
-        timeout: monitor.timeout_ms,
+        timeout,
         headers: {
           'User-Agent': 'StackRadar-UptimeMonitor/1.0',
         },
@@ -503,7 +505,16 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
 
           if (atomicResult.rowCount && atomicResult.rowCount > 0) {
             console.log(`🔔 Sending recurring notification for uptime alert "${monitor.name}" (still firing, interval: ${monitorAlertRule.repeat_interval_hours}h)`);
-            await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`, true, newFailures);
+            try {
+              await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`, true, newFailures);
+            } catch (notifError) {
+              // Revert last_notified_at so the notification will be retried next cycle
+              await db.query(
+                'UPDATE alert_history SET last_notified_at = $1 WHERE id = $2',
+                [lastAlert.last_notified_at, lastAlert.id]
+              );
+              console.error(`[Uptime] Failed to send recurring notification, reverted last_notified_at:`, notifError);
+            }
           }
         }
       }

@@ -17,10 +17,13 @@ router.get('/monitors/all', authMiddleware, async (
 
     let query = `
       SELECT m.*,
-        (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time,
+        lc.response_time_ms as last_response_time,
         s.name as site_name
       FROM uptime_monitors m
       INNER JOIN sites s ON s.id = m.site_id
+      LEFT JOIN LATERAL (
+        SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1
+      ) lc ON true
       WHERE s.tenant_id = ANY($1)
     `;
 
@@ -81,8 +84,11 @@ router.get('/monitors', authMiddleware, async (
 
     const result = await db.query<UptimeMonitor>(
       `SELECT m.*,
-        (SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1) as last_response_time
+        lc.response_time_ms as last_response_time
        FROM uptime_monitors m
+       LEFT JOIN LATERAL (
+         SELECT response_time_ms FROM uptime_checks WHERE monitor_id = m.id ORDER BY checked_at DESC LIMIT 1
+       ) lc ON true
        WHERE m.site_id = $1
        ORDER BY m.is_main DESC, m.name ASC`,
       [site_id]

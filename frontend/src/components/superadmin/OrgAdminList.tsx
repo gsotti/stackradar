@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { getGravatarUrl } from '../../utils/md5';
+import { formatInLocalTime } from '../../utils/dateUtils';
 import { User } from '../../types';
 import OrgAdminForm from './OrgAdminForm';
 import ConfirmDialog from '../common/ConfirmDialog';
@@ -152,7 +153,7 @@ export default function OrgAdminList() {
                 <div className="flex items-center gap-4 mb-4 text-xs text-gray-500 dark:text-gray-400">
                   <div className="flex items-center gap-1">
                     <span className="font-semibold">{t('org_admin_list.created_label')}</span>
-                    <span>{new Date(admin.created_at).toLocaleDateString(i18n.language)}</span>
+                    <span>{formatInLocalTime(admin.created_at, 'dd.MM.yyyy')}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="font-semibold">{t('org_admin_list.status_label')}</span>

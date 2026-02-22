@@ -5,6 +5,7 @@ import { api } from '../utils/api';
 import { useNotification } from '../contexts/NotificationContext';
 import { Organization, User } from '../types';
 import { getGravatarUrl } from '../utils/md5';
+import { formatInLocalTime } from '../utils/dateUtils';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 type TabType = 'organizations' | 'settings';
@@ -472,7 +473,7 @@ export default function SuperadminPage() {
                         value={userFormData.email}
                         onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
                         className="input-base w-full"
-                        placeholder="user@example.com"
+                        placeholder={t('create_user_modal.email_placeholder')}
                       />
                     </div>
 
@@ -485,7 +486,7 @@ export default function SuperadminPage() {
                         value={userFormData.name}
                         onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
                         className="input-base w-full"
-                        placeholder="John Doe"
+                        placeholder={t('create_user_modal.name_placeholder')}
                       />
                     </div>
 
@@ -586,7 +587,7 @@ export default function SuperadminPage() {
                     </div>
 
                     <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
-                      {t('orgs.created_label', { date: new Date(org.created_at).toLocaleDateString(i18n.language) })}
+                      {t('orgs.created_label', { date: formatInLocalTime(org.created_at, 'dd.MM.yyyy') })}
                     </div>
 
                     <div className="flex flex-col gap-2">

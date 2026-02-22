@@ -73,7 +73,7 @@ export default function UserEditModal({ user, onSave, onClose }: UserEditModalPr
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="input-base w-full"
-              placeholder="User name"
+              placeholder={t('edit_modal.name_placeholder')}
             />
           </div>
 

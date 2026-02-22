@@ -20,9 +20,9 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
   const [showForm, setShowForm] = useState(false);
   const [editingChannel, setEditingChannel] = useState<NotificationChannel | null>(null);
   const [testingChannelId, setTestingChannelId] = useState<number | null>(null);
-  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean>(true);
   const [deleteTarget, setDeleteTarget] = useState<NotificationChannel | null>(null);
-  const smtpLoaded = smtpConfigured !== null;
+  const [smtpLoaded, setSmtpLoaded] = useState(false);
   const { showError, showSuccess, showInfo } = useNotification();
   const { isViewer } = usePermissions();
 
@@ -37,6 +37,8 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
       setSmtpConfigured(!!config);
     } catch {
       setSmtpConfigured(false);
+    } finally {
+      setSmtpLoaded(true);
     }
   };
 

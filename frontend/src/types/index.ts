@@ -65,6 +65,8 @@ export interface System {
   environment_id: number;
   name: string;
   description: string | null;
+  environment_name?: string;
+  site_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -122,6 +124,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   access_token: string;
   token_type: string;
+  user?: User;
 }
 
 export interface CreateSiteRequest {

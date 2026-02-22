@@ -97,6 +97,8 @@ router.post('/:apiToken/single', ingestLimiter, validateApiToken, async (
 
     const client = await db.connect();
     try {
+      await client.query('BEGIN');
+
       // Get tenant_id from the site
       const tenantId = req.site!.tenant_id;
 
@@ -129,7 +131,11 @@ router.post('/:apiToken/single', ingestLimiter, validateApiToken, async (
         ]
       );
 
+      await client.query('COMMIT');
       res.json({ message: 'Log ingested', id: result.rows[0].id });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
     } finally {
       client.release();
     }

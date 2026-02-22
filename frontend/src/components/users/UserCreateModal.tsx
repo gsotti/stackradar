@@ -104,7 +104,7 @@ export default function UserCreateModal({ tenantId, onSave, onClose }: UserCreat
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="input-base w-full pl-10 pr-4"
-            placeholder="Minimum 8 characters"
+            placeholder={t('create_modal.password_placeholder')}
             required
           />
         </div>

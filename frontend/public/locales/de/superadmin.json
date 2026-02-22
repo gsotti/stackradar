@@ -78,7 +78,9 @@
   "create_user_modal": {
     "title": "Benutzer erstellen",
     "email_label": "Email *",
+    "email_placeholder": "benutzer@beispiel.de",
     "name_label": "Name",
+    "name_placeholder": "Max Mustermann",
     "password_label": "Passwort *",
     "password_placeholder": "Passwort eingeben",
     "cancel": "Abbrechen",

@@ -66,9 +66,12 @@ export default function Sidebar() {
 
   // Fetch tenants from API
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchTenants = async () => {
       try {
-        const tenantsData = await api.get<Tenant[]>('/tenants');
+        const tenantsData = await api.get<Tenant[]>('/tenants', { signal: controller.signal });
+        if (controller.signal.aborted) return;
         setTenants(tenantsData);
 
         // Auto-select tenant if user has exactly one and none is selected
@@ -76,6 +79,7 @@ export default function Sidebar() {
           setSelectedTenant(String(tenantsData[0].id));
         }
       } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
         console.error('Error fetching tenants:', error);
       }
     };
@@ -83,15 +87,20 @@ export default function Sidebar() {
     if (user) {
       fetchTenants();
     }
+
+    return () => controller.abort();
   }, [user, selectedTenant, setSelectedTenant]);
 
   // Fetch sites based on selected tenant
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchSites = async () => {
       try {
         const params = new URLSearchParams();
         if (selectedTenant) params.append('tenant_id', selectedTenant);
-        const sitesData = await api.get<Site[]>(`/sites?${params}`);
+        const sitesData = await api.get<Site[]>(`/sites?${params}`, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         setSites(Array.isArray(sitesData) ? sitesData : []);
 
         // Clear site selection if current site is not in the new list
@@ -105,6 +114,7 @@ export default function Sidebar() {
           setSelectedSite('');
         }
       } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
         console.error('Error fetching sites:', error);
         setSites([]);
       }
@@ -113,15 +123,20 @@ export default function Sidebar() {
     if (user) {
       fetchSites();
     }
+
+    return () => controller.abort();
   }, [user, selectedTenant, selectedSite, setSelectedSite]);
 
   // Fetch environments based on selected site (or all if no site selected)
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchEnvironments = async () => {
       try {
         const params = new URLSearchParams();
         if (selectedSite) params.append('site_id', selectedSite);
-        const environmentsData = await api.get<Environment[]>(`/environments?${params}`);
+        const environmentsData = await api.get<Environment[]>(`/environments?${params}`, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         setEnvironments(Array.isArray(environmentsData) ? environmentsData : []);
 
         // Clear environment selection if current environment is not in the new list
@@ -135,6 +150,7 @@ export default function Sidebar() {
           setSelectedEnvironment('');
         }
       } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
         console.error('Error fetching environments:', error);
         setEnvironments([]);
       }
@@ -143,6 +159,8 @@ export default function Sidebar() {
     if (user) {
       fetchEnvironments();
     }
+
+    return () => controller.abort();
   }, [user, selectedSite, selectedEnvironment, setSelectedEnvironment]);
 
 

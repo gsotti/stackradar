@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../contexts/NotificationContext';
 import { api } from '../../utils/api';
 import { Invitation, SmtpConfig } from '../../types';
+import { formatInLocalTime } from '../../utils/dateUtils';
 import ConfirmDialog from '../common/ConfirmDialog';
 
 interface PendingInvitationsProps {
@@ -159,7 +160,7 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                           ? 'text-red-600 dark:text-red-400'
                           : 'text-gray-500 dark:text-gray-400'
                       }`}>
-                        {expired ? t('pending_invitations.expired_label') : t('pending_invitations.expires_label')} {new Date(invitation.expires_at).toLocaleDateString(i18n.language)}
+                        {expired ? t('pending_invitations.expired_label') : t('pending_invitations.expires_label')} {formatInLocalTime(invitation.expires_at, 'dd.MM.yyyy')}
                       </p>
                     </div>
                   </div>

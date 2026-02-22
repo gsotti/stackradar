@@ -51,7 +51,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response): Promise
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching systems:', error);
-    res.status(500).json({ error: 'Failed to fetch systems' });
+    res.status(500).json({ detail: 'Failed to fetch systems' });
   }
 });
 
@@ -76,14 +76,14 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Prom
     );
 
     if (result.rows.length === 0) {
-      res.status(404).json({ error: 'System not found' });
+      res.status(404).json({ detail: 'System not found' });
       return;
     }
 
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching system:', error);
-    res.status(500).json({ error: 'Failed to fetch system' });
+    res.status(500).json({ detail: 'Failed to fetch system' });
   }
 });
 
@@ -95,7 +95,7 @@ router.post('/', authMiddleware, editorMiddleware, async (req: AuthRequest, res:
     // Validate required fields
     if (!environment_id || !name) {
       res.status(400).json({
-        error: 'Missing required fields: environment_id and name are required'
+        detail: 'Missing required fields: environment_id and name are required'
       });
       return;
     }
@@ -109,7 +109,7 @@ router.post('/', authMiddleware, editorMiddleware, async (req: AuthRequest, res:
     );
 
     if (environmentCheck.rows.length === 0) {
-      res.status(404).json({ error: 'Environment not found' });
+      res.status(404).json({ detail: 'Environment not found' });
       return;
     }
 
@@ -127,18 +127,18 @@ router.post('/', authMiddleware, editorMiddleware, async (req: AuthRequest, res:
     // Handle duplicate system (same environment_id, name)
     if (error.code === '23505') {
       res.status(409).json({
-        error: 'A system with this name already exists for this environment'
+        detail: 'A system with this name already exists for this environment'
       });
       return;
     }
 
     // Handle foreign key violation
     if (error.code === '23503') {
-      res.status(404).json({ error: 'Environment not found' });
+      res.status(404).json({ detail: 'Environment not found' });
       return;
     }
 
-    res.status(500).json({ error: 'Failed to create system' });
+    res.status(500).json({ detail: 'Failed to create system' });
   }
 });
 
@@ -151,7 +151,7 @@ router.put('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, re
     // Validate required fields
     if (!environment_id || !name) {
       res.status(400).json({
-        error: 'Missing required fields: environment_id and name are required'
+        detail: 'Missing required fields: environment_id and name are required'
       });
       return;
     }
@@ -165,7 +165,7 @@ router.put('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, re
       [id, req.userTenantIds || []]
     );
     if (sysCheck.rows.length === 0) {
-      res.status(404).json({ error: 'System not found' });
+      res.status(404).json({ detail: 'System not found' });
       return;
     }
 
@@ -177,7 +177,7 @@ router.put('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, re
       [environment_id, req.userTenantIds || []]
     );
     if (envCheck.rows.length === 0) {
-      res.status(404).json({ error: 'Environment not found' });
+      res.status(404).json({ detail: 'Environment not found' });
       return;
     }
 
@@ -190,7 +190,7 @@ router.put('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, re
     );
 
     if (result.rows.length === 0) {
-      res.status(404).json({ error: 'System not found' });
+      res.status(404).json({ detail: 'System not found' });
       return;
     }
 
@@ -201,18 +201,18 @@ router.put('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest, re
     // Handle duplicate system
     if (error.code === '23505') {
       res.status(409).json({
-        error: 'A system with this name already exists for this environment'
+        detail: 'A system with this name already exists for this environment'
       });
       return;
     }
 
     // Handle foreign key violation
     if (error.code === '23503') {
-      res.status(404).json({ error: 'Environment not found' });
+      res.status(404).json({ detail: 'Environment not found' });
       return;
     }
 
-    res.status(500).json({ error: 'Failed to update system' });
+    res.status(500).json({ detail: 'Failed to update system' });
   }
 });
 
@@ -233,14 +233,14 @@ router.delete('/:id', authMiddleware, editorMiddleware, async (req: AuthRequest,
     );
 
     if (result.rows.length === 0) {
-      res.status(404).json({ error: 'System not found' });
+      res.status(404).json({ detail: 'System not found' });
       return;
     }
 
     res.json({ message: 'System deleted successfully', system: result.rows[0] });
   } catch (error) {
     console.error('Error deleting system:', error);
-    res.status(500).json({ error: 'Failed to delete system' });
+    res.status(500).json({ detail: 'Failed to delete system' });
   }
 });
 

@@ -242,6 +242,34 @@ router.get('/stats', authMiddleware, async (
   try {
     const { system_id, hours = '24', tenant_id, environment_id } = req.query;
 
+    // Validate query params are positive integers
+    const parsedHours = parseInt(String(hours), 10);
+    if (isNaN(parsedHours) || parsedHours <= 0) {
+      res.status(400).json({ detail: 'hours must be a positive integer' });
+      return;
+    }
+    if (system_id !== undefined) {
+      const parsed = parseInt(String(system_id), 10);
+      if (isNaN(parsed) || parsed <= 0) {
+        res.status(400).json({ detail: 'system_id must be a positive integer' });
+        return;
+      }
+    }
+    if (tenant_id !== undefined) {
+      const parsed = parseInt(String(tenant_id), 10);
+      if (isNaN(parsed) || parsed <= 0) {
+        res.status(400).json({ detail: 'tenant_id must be a positive integer' });
+        return;
+      }
+    }
+    if (environment_id !== undefined) {
+      const parsed = parseInt(String(environment_id), 10);
+      if (isNaN(parsed) || parsed <= 0) {
+        res.status(400).json({ detail: 'environment_id must be a positive integer' });
+        return;
+      }
+    }
+
     // Get all system IDs limited to the user's tenant mappings
     const tenantIds = req.userTenantIds || [];
     const userSystemsResult = await db.query<Pick<System, 'id'>>(
@@ -269,7 +297,7 @@ router.get('/stats', authMiddleware, async (
     }
 
     const filterSystemIds = system_id ? [Number(system_id)] : userSystemIds;
-    const since = new Date(Date.now() - parseInt(hours) * 60 * 60 * 1000).toISOString();
+    const since = new Date(Date.now() - parsedHours * 60 * 60 * 1000).toISOString();
 
     // Build filter conditions
     const params: any[] = [filterSystemIds, since];
@@ -315,7 +343,7 @@ router.get('/stats', authMiddleware, async (
 
     // Logs per hour (last N hours)
     const logs_per_hour = [];
-    const hoursToShow = Math.min(parseInt(hours), 24);
+    const hoursToShow = Math.min(parsedHours, 24);
 
     for (let i = hoursToShow - 1; i >= 0; i--) {
       const hourStart = new Date(Date.now() - (i + 1) * 60 * 60 * 1000);

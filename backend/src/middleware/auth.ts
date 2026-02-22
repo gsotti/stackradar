@@ -89,7 +89,8 @@ export async function authMiddleware(
     }
   } catch (e) {
     console.error('authMiddleware: failed to load user tenant mappings', e);
-    req.userTenantIds = [];
+    res.status(503).json({ detail: 'Service temporarily unavailable' });
+    return;
   }
 
   next();

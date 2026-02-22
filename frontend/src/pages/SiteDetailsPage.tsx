@@ -47,7 +47,7 @@ export default function SiteDetailsPage() {
       navigate(`/sites/${id}/${tab}`);
     }
   };
-  const [form, setForm] = useState({ name: '', description: '', retention_days: 30, site_type: 'kubernetes' as const, has_metrics: true });
+  const [form, setForm] = useState<{ name: string; description: string; retention_days: number; site_type: Site['site_type']; has_metrics: boolean }>({ name: '', description: '', retention_days: 30, site_type: 'kubernetes', has_metrics: true });
   const [tokenVisible, setTokenVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showRegenerateTokenModal, setShowRegenerateTokenModal] = useState(false);
@@ -135,7 +135,7 @@ export default function SiteDetailsPage() {
         }
       }, 10000);
     }
-    return () => interval && clearInterval(interval);
+    return () => { if (interval) clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, autoRefresh]);
 

@@ -171,7 +171,7 @@ function scheduleCleanupJobOnce() {
 
 // Alert Evaluation Cron Job (runs every 5 minutes)
 function scheduleAlertJobOnce() {
-  const job = new CronJob('* * * * *', async () => {
+  const job = new CronJob('*/5 * * * *', async () => {
     console.log('Running alert evaluation...');
     try {
       await evaluateAllAlerts();

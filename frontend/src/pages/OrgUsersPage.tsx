@@ -5,6 +5,7 @@ import { api } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { getGravatarUrl } from '../utils/md5';
+import { formatInLocalTime } from '../utils/dateUtils';
 
 interface OrgUser {
   id: number;
@@ -64,7 +65,7 @@ export default function OrgUsersPage() {
     try {
       setLoading(true);
       const data = await api.get<OrgUser[]>(`/organizations/${user.organization_id}/users`);
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error: any) {
       showError(error.response?.data?.detail || t('messages.fetch_failed'));
     } finally {
@@ -280,7 +281,7 @@ export default function OrgUsersPage() {
                     </div>
 
                     <span className="text-xs text-gray-400 whitespace-nowrap hidden sm:block flex-shrink-0">
-                      {new Date(targetUser.created_at).toLocaleDateString(i18n.language)}
+                      {formatInLocalTime(targetUser.created_at, 'dd.MM.yyyy')}
                     </span>
 
                     {modifiable && (
