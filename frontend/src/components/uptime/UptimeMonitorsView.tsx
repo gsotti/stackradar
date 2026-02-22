@@ -332,9 +332,10 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                     </button>
                     <button
                       onClick={() => setDeleteTarget(monitor)}
-                      className="button-danger button-sm"
+                      className="px-2 py-1.5 text-neutral-400 hover:text-accent-danger hover:bg-accent-danger/10 rounded-md transition-colors"
+                      title={tc('actions.delete')}
                     >
-                      {tc('actions.delete')}
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
                 )}

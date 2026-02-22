@@ -211,19 +211,19 @@ export default function SitesPage() {
                   </div>
                 </label>
               </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="button-primary flex-1"
-                >
-                  {t('actions.create_site')}
-                </button>
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="button-secondary flex-1"
+                  className="button-secondary button-center"
                 >
                   {tc('actions.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="button-primary button-center"
+                >
+                  {t('actions.create_site')}
                 </button>
               </div>
             </form>

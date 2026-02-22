@@ -563,7 +563,7 @@ export default function SiteDetailsPage() {
               </div>
               <button
                 onClick={() => setShowRegenerateTokenModal(true)}
-                className="button-secondary button-center"
+                className="button-secondary w-full justify-center"
               >
                 {t('settings.regenerate_token')}
               </button>
@@ -577,7 +577,7 @@ export default function SiteDetailsPage() {
               </p>
               <button
                 onClick={() => setShowDeleteSiteModal(true)}
-                className="button-danger button-center"
+                className="button-danger w-full justify-center"
               >
                 {t('danger_zone.delete_button')}
               </button>

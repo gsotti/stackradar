@@ -153,17 +153,17 @@ export default function SystemsPage() {
               </div>
               <div className="modal-actions">
                 <button
-                  type="submit"
-                  className="button-primary button-center"
-                >
-                  {editingSystem ? tc('actions.save') : 'Create System'}
-                </button>
-                <button
                   type="button"
                   onClick={() => setShowForm(false)}
                   className="button-secondary button-center"
                 >
                   {tc('actions.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="button-primary button-center"
+                >
+                  {editingSystem ? tc('actions.save') : 'Create System'}
                 </button>
               </div>
             </form>

@@ -212,9 +212,10 @@ export default function AlertRuleList({ siteId }: AlertRuleListProps) {
                       </button>
                       <button
                         onClick={() => setDeleteTarget(rule)}
-                        className="button-danger button-sm"
+                        className="p-2 text-gray-400 hover:text-accent-danger hover:bg-accent-danger/10 rounded-lg transition-colors"
+                        title={t('rules.delete_button')}
                       >
-                        {t('rules.delete_button')}
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   )}

@@ -234,11 +234,11 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2">
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="button-primary flex items-center gap-2 disabled:opacity-50"
+                  className="button-primary w-full justify-center gap-2 disabled:opacity-50"
                 >
                   {saving ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

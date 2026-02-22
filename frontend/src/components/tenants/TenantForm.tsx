@@ -81,27 +81,27 @@ export default function TenantForm({
         </p>
       </div>
 
-      <div className="flex gap-3 pt-4">
+      <div className="modal-actions">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="button-secondary button-center disabled:opacity-50"
+          >
+            {t('form.cancel')}
+          </button>
+        )}
         <button
           type="submit"
           disabled={submitting}
-          className="button-primary flex-1 disabled:opacity-50 justify-center"
+          className={`button-primary disabled:opacity-50 ${onCancel ? 'button-center' : 'w-full justify-center'}`}
         >
           {submitting 
             ? t('form.submit_saving') 
             : submitLabel || (mode === 'create' ? t('form.submit_create') : t('form.submit_edit'))
           }
         </button>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={submitting}
-            className="button-secondary flex-1 disabled:opacity-50 justify-center"
-          >
-            {t('form.cancel')}
-          </button>
-        )}
       </div>
     </form>
   );

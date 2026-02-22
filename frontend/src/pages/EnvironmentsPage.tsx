@@ -165,12 +165,6 @@ export default function EnvironmentsPage() {
               </div>
               <div className="modal-actions">
                 <button
-                  type="submit"
-                  className="button-primary button-center"
-                >
-                  {editingEnv ? t('form.submit_save') : t('form.submit_create')}
-                </button>
-                <button
                   type="button"
                   onClick={() => {
                     setShowForm(false);
@@ -179,6 +173,12 @@ export default function EnvironmentsPage() {
                   className="button-secondary button-center"
                 >
                   {t('form.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="button-primary button-center"
+                >
+                  {editingEnv ? t('form.submit_save') : t('form.submit_create')}
                 </button>
               </div>
             </form>

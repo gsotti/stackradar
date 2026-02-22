@@ -212,9 +212,10 @@ export default function NotificationChannelList({ siteId }: NotificationChannelL
                       </button>
                       <button
                         onClick={() => setDeleteTarget(channel)}
-                        className="button-danger button-sm"
+                        className="p-2 text-gray-400 hover:text-accent-danger hover:bg-accent-danger/10 rounded-lg transition-colors"
+                        title={t('channels.delete_button')}
                       >
-                        {t('channels.delete_button')}
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   )}
