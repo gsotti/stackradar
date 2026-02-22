@@ -28,7 +28,8 @@
       "Bash(corepack:*)",
       "Bash(PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\" corepack enable:*)",
       "Bash(PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\" yarn:*)",
-      "Bash(export PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\")"
+      "Bash(export PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\")",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

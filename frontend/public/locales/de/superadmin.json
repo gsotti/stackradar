@@ -111,6 +111,26 @@
     "org_admin_password_required": "Passwort ist für neue Admins erforderlich",
     "org_admin_updated": "Organisations-Admin erfolgreich aktualisiert",
     "org_admin_created": "Organisations-Admin erfolgreich erstellt",
-    "org_admin_save_failed": "Organisations-Admin konnte nicht gespeichert werden"
+    "org_admin_save_failed": "Organisations-Admin konnte nicht gespeichert werden",
+    "load_orgs_failed": "Organisationen konnten nicht geladen werden",
+    "load_settings_failed": "System-Einstellungen konnten nicht geladen werden",
+    "save_settings_failed": "System-Einstellungen konnten nicht gespeichert werden",
+    "create_org_failed": "Organisation konnte nicht erstellt werden",
+    "update_org_failed": "Organisation konnte nicht aktualisiert werden",
+    "delete_org_failed": "Organisation konnte nicht gelöscht werden",
+    "load_users_failed": "Organisations-Benutzer konnten nicht geladen werden",
+    "promote_failed": "Benutzer konnte nicht befördert werden",
+    "create_user_failed": "Benutzer konnte nicht erstellt werden",
+    "demote_failed": "Admin-Rolle konnte nicht entfernt werden"
+  },
+  "system_settings": {
+    "title": "System-Einstellungen",
+    "description": "Konfiguriere globale System-Einstellungen für deine StackRadar-Instanz.",
+    "container_registry": "Container Registry",
+    "registry_owner_label": "Container Registry Besitzer",
+    "registry_help": "Images werden von hier geladen",
+    "application": "Anwendung",
+    "app_url_label": "App URL",
+    "app_url_help": "Wird in Einladungs-Emails verwendet, um den richtigen Link zu generieren. Fällt auf die APP_URL Umgebungsvariable zurück, wenn leer."
   }
 }

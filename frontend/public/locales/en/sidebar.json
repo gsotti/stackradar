@@ -28,7 +28,11 @@
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "switchToEnglish": "Switch to English",
+    "switchToGerman": "Auf Deutsch wechseln",
+    "english": "English",
+    "german": "Deutsch"
   },
   "actions": {
     "collapse": "Collapse",

@@ -62,6 +62,10 @@
   "time": {
     "never": "Niemals",
     "just_now": "Gerade eben",
+    "seconds_ago": "{{n}}s her",
+    "minutes_ago": "{{n}}m her",
+    "hours_ago": "{{n}}h her",
+    "days_ago": "{{n}}T her",
     "minutes_abbr": "{{n}}m",
     "hours_abbr": "{{n}}h",
     "created": "Erstellt {{date}}"

@@ -9,7 +9,7 @@ import OrgAdminForm from './OrgAdminForm';
 import ConfirmDialog from '../common/ConfirmDialog';
 
 export default function OrgAdminList() {
-  const { t } = useTranslation('superadmin');
+  const { t, i18n } = useTranslation('superadmin');
   const { t: tc } = useTranslation('common');
   const [orgAdmins, setOrgAdmins] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,7 +152,7 @@ export default function OrgAdminList() {
                 <div className="flex items-center gap-4 mb-4 text-xs text-gray-500 dark:text-gray-400">
                   <div className="flex items-center gap-1">
                     <span className="font-semibold">{t('org_admin_list.created_label')}</span>
-                    <span>{new Date(admin.created_at).toLocaleDateString()}</span>
+                    <span>{new Date(admin.created_at).toLocaleDateString(i18n.language)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="font-semibold">{t('org_admin_list.status_label')}</span>

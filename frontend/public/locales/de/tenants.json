@@ -45,9 +45,13 @@
     "id_label": "Tenant-ID:",
     "active_users_label": "Aktive Benutzer",
     "pending_invitations_label": "Ausstehende Einladungen",
-    "members_title": "Tenant-Mitglieder"
+    "members_title": "Tenant-Mitglieder",
+    "create_user": "Benutzer erstellen",
+    "invite_user": "Benutzer einladen",
+    "view_only": "Nur Ansicht"
   },
   "danger_zone": {
+    "title": "Gefahrenzone",
     "delete_description": "Das Löschen dieses Tenants entfernt dauerhaft alle zugehörigen Benutzer, Sites, Environments, Systeme und Logs. Diese Aktion kann nicht rückgängig gemacht werden.",
     "delete_button": "Tenant löschen"
   },
@@ -61,6 +65,7 @@
     "deleted": "Tenant erfolgreich gelöscht",
     "created": "Tenant erfolgreich erstellt",
     "create_failed": "Tenant konnte nicht erstellt werden",
-    "fetch_failed": "Tenants konnten nicht abgerufen werden"
+    "fetch_failed": "Tenants konnten nicht abgerufen werden",
+    "user_created": "Benutzer erfolgreich erstellt"
   }
 }

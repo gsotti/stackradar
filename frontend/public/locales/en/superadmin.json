@@ -111,6 +111,26 @@
     "org_admin_password_required": "Password is required for new admins",
     "org_admin_updated": "Organization admin updated successfully",
     "org_admin_created": "Organization admin created successfully",
-    "org_admin_save_failed": "Failed to save organization admin"
+    "org_admin_save_failed": "Failed to save organization admin",
+    "load_orgs_failed": "Failed to load organizations",
+    "load_settings_failed": "Failed to load system settings",
+    "save_settings_failed": "Failed to save system settings",
+    "create_org_failed": "Failed to create organization",
+    "update_org_failed": "Failed to update organization",
+    "delete_org_failed": "Failed to delete organization",
+    "load_users_failed": "Failed to load organization users",
+    "promote_failed": "Failed to promote user",
+    "create_user_failed": "Failed to create user",
+    "demote_failed": "Failed to remove admin role"
+  },
+  "system_settings": {
+    "title": "System Settings",
+    "description": "Configure global system settings for your StackRadar instance.",
+    "container_registry": "Container Registry",
+    "registry_owner_label": "Container Registry Owner",
+    "registry_help": "Images will be pulled from",
+    "application": "Application",
+    "app_url_label": "App URL",
+    "app_url_help": "Used in invitation emails to generate the correct link. Falls back to the APP_URL environment variable if left empty."
   }
 }

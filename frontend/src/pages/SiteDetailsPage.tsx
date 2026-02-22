@@ -166,10 +166,10 @@ export default function SiteDetailsPage() {
   const isDocker = site?.site_type === 'docker';
   const isK8s = site?.site_type === 'kubernetes';
   const labels = {
-    containers: isDocker ? 'Containers' : 'Pods',
-    hosts: isDocker ? 'Host' : 'Nodes',
-    deployments: isDocker ? 'Running' : 'Deployments',
-    platform: isDocker ? 'Docker' : isK8s ? 'Kubernetes' : 'Infrastructure'
+    containers: isDocker ? t('details.label_containers') : t('details.label_pods'),
+    hosts: isDocker ? t('details.label_host') : t('details.label_nodes'),
+    deployments: isDocker ? t('details.label_running') : t('details.label_deployments'),
+    platform: isDocker ? 'Docker' : isK8s ? 'Kubernetes' : t('details.label_infrastructure')
   };
 
   if (loading) {
@@ -197,12 +197,12 @@ export default function SiteDetailsPage() {
             <h1 className="text-heading-3 text-neutral-900 dark:text-white">{site?.name || `Site #${id}`}</h1>
             <p className="text-body-secondary text-sm">
               {activeTab === 'metrics'
-                ? `${labels.platform} metrics - live CPU/Memory (last 30 minutes)`
+                ? t('details.subtitle_metrics', { platform: labels.platform })
                 : activeTab === 'monitors'
                 ? site?.has_metrics === false
-                  ? 'Uptime overview across all configured monitors'
-                  : 'Uptime monitors for this site'
-                : 'Alert management and monitoring'}
+                  ? t('details.subtitle_uptime_overview')
+                  : t('details.subtitle_monitors')
+                : t('details.subtitle_alerts')}
             </p>
           </div>
         </div>
@@ -306,14 +306,14 @@ export default function SiteDetailsPage() {
           <div className="card-compact flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Box className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">Type:</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">{t('details.type_label')}</span>
               <span className="text-sm font-medium text-neutral-900 dark:text-white">{labels.platform}</span>
             </div>
             <div className="w-px h-4 bg-neutral-300 dark:bg-neutral-600" />
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">Retention:</span>
-              <span className="text-sm font-medium text-neutral-900 dark:text-white">{site?.retention_days} days</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">{t('details.retention_label')}</span>
+              <span className="text-sm font-medium text-neutral-900 dark:text-white">{t('details.retention_days', { count: site?.retention_days })}</span>
             </div>
             {site?.description && (
               <>
@@ -329,8 +329,8 @@ export default function SiteDetailsPage() {
               {/* CPU usage */}
               <div className="card-compact border-t-4 border-t-primary-500">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">CPU Usage</div>
-                  <div className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">CPU</div>
+                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{t('details.cpu_usage_label')}</div>
+                  <div className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">{t('details.cpu_badge')}</div>
                 </div>
                 <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{safePercent(summary.cpu_usage_percent, 1)}%</div>
               </div>
@@ -338,8 +338,8 @@ export default function SiteDetailsPage() {
               {/* Memory usage */}
               <div className="card-compact border-t-4 border-t-accent-info">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Memory Usage</div>
-                  <div className="text-xs px-2 py-0.5 rounded-full bg-accent-info/10 text-accent-info">Memory</div>
+                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{t('details.memory_usage_label')}</div>
+                  <div className="text-xs px-2 py-0.5 rounded-full bg-accent-info/10 text-accent-info">{t('details.memory_badge')}</div>
                 </div>
                 <div className="text-2xl font-bold text-accent-info">{safePercent(summary.memory_usage_percent, 1)}%</div>
               </div>
@@ -352,25 +352,25 @@ export default function SiteDetailsPage() {
                 </div>
                 <div className="text-2xl font-bold text-accent-success">{safeNumber(summary.pod_running)}/{safeNumber(summary.pod_count)}</div>
                 <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                  {isDocker ? `Stopped: ${safeNumber(summary.pod_failed)}` : `Pending: ${safeNumber(summary.pod_pending)} · Failed: ${safeNumber(summary.pod_failed)}`}
+                  {isDocker ? `${t('details.stopped_label')} ${safeNumber(summary.pod_failed)}` : `${t('details.pending_label')} ${safeNumber(summary.pod_pending)} · ${t('details.failed_label')} ${safeNumber(summary.pod_failed)}`}
                 </div>
               </div>
 
               {/* Nodes/Host */}
               <div className="card-compact border-t-4 border-t-accent-warning">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{isDocker ? 'Status' : 'Ready / Total'}</div>
+                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{isDocker ? t('details.status_label') : t('details.ready_total')}</div>
                   <div className="text-xs px-2 py-0.5 rounded-full bg-accent-warning/10 text-accent-warning">{labels.hosts}</div>
                 </div>
                 <div className="text-2xl font-bold text-accent-warning">
-                  {isDocker ? (safeNumber(summary.node_count) > 0 ? 'Online' : 'Offline') : `${safeNumber(summary.node_ready)}/${safeNumber(summary.node_count)}`}
+                  {isDocker ? (safeNumber(summary.node_count) > 0 ? t('details.online') : t('details.offline')) : `${safeNumber(summary.node_ready)}/${safeNumber(summary.node_count)}`}
                 </div>
               </div>
 
               {/* Deployments/Running */}
               <div className="card-compact border-t-4 border-t-primary-600">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{isDocker ? 'Containers' : 'Ready / Total'}</div>
+                  <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{isDocker ? t('details.label_containers') : t('details.ready_total')}</div>
                   <div className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">{labels.deployments}</div>
                 </div>
                 <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
@@ -382,8 +382,8 @@ export default function SiteDetailsPage() {
               {!isDocker ? (
                 <div className="card-compact border-t-4 border-t-accent-danger">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Services</div>
-                    <div className="text-xs px-2 py-0.5 rounded-full bg-accent-danger/10 text-accent-danger">Services/PVCs</div>
+                    <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{t('details.services_label')}</div>
+                    <div className="text-xs px-2 py-0.5 rounded-full bg-accent-danger/10 text-accent-danger">{t('details.services_pvcs_label')}</div>
                   </div>
                   <div className="text-2xl font-bold text-accent-danger">{safeNumber(summary.service_count)}</div>
                   <div className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">PVCs: <span className="font-semibold text-neutral-900 dark:text-white">{safeNumber(summary.pvc_bound)}/{safeNumber(summary.pvc_count)}</span></div>
@@ -391,11 +391,11 @@ export default function SiteDetailsPage() {
               ) : (
                 <div className="card-compact border-t-4 border-t-accent-info">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Total Containers</div>
-                    <div className="text-xs px-2 py-0.5 rounded-full bg-accent-info/10 text-accent-info">Network</div>
+                    <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{t('details.total_containers')}</div>
+                    <div className="text-xs px-2 py-0.5 rounded-full bg-accent-info/10 text-accent-info">{t('details.network_label')}</div>
                   </div>
                   <div className="text-2xl font-bold text-accent-info">{safeNumber(summary.pod_count)}</div>
-                  <div className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Running: <span className="font-semibold text-neutral-900 dark:text-white">{safeNumber(summary.pod_running)}</span></div>
+                  <div className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{t('details.label_running')}: <span className="font-semibold text-neutral-900 dark:text-white">{safeNumber(summary.pod_running)}</span></div>
                 </div>
               )}
             </div>
@@ -430,7 +430,7 @@ export default function SiteDetailsPage() {
                     />
                     <Tooltip
                       labelFormatter={(l) => formatInLocalTime(l, 'dd.MM.yyyy HH:mm:ss')}
-                      formatter={(v: any, _n: any, item: any) => [`${Number(v).toFixed(1)}%`, item?.dataKey === 'cpu_usage_percent' ? 'CPU' : 'Memory']}
+                      formatter={(v: any, _n: any, item: any) => [`${Number(v).toFixed(1)}%`, item?.dataKey === 'cpu_usage_percent' ? t('details.cpu_badge') : t('details.memory_badge')]}
                       cursor={{
                         // subtle hover overlay tuned per theme
                         fill: typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
@@ -446,8 +446,8 @@ export default function SiteDetailsPage() {
                       }}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="cpu_usage_percent" name="CPU" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="memory_usage_percent" name="Memory" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="cpu_usage_percent" name={t('details.cpu_badge')} stroke="#3b82f6" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="memory_usage_percent" name={t('details.memory_badge')} stroke="#8b5cf6" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

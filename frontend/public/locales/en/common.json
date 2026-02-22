@@ -62,6 +62,10 @@
   "time": {
     "never": "Never",
     "just_now": "Just now",
+    "seconds_ago": "{{n}}s ago",
+    "minutes_ago": "{{n}}m ago",
+    "hours_ago": "{{n}}h ago",
+    "days_ago": "{{n}}d ago",
     "minutes_abbr": "{{n}}m",
     "hours_abbr": "{{n}}h",
     "created": "Created {{date}}"

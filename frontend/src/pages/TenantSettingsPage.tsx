@@ -17,7 +17,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 type TabType = 'settings' | 'users';
 
 export default function TenantSettingsPage() {
-  const { t } = useTranslation('tenants');
+  const { t, i18n } = useTranslation('tenants');
   const { t: tc } = useTranslation('common');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -65,7 +65,7 @@ export default function TenantSettingsPage() {
       const data = await api.get<Tenant>(`/tenants/${id}`);
       setTenant(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to fetch tenant');
+      showError(error.message || tc('errors.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ export default function TenantSettingsPage() {
       setUsers(usersData);
       setInvitations(invitationsData);
     } catch (error: any) {
-      showError(error.message || 'Failed to load users');
+      showError(error.message || tc('errors.load_failed'));
     } finally {
       setUsersLoading(false);
     }
@@ -119,7 +119,7 @@ export default function TenantSettingsPage() {
 
   const handleCreateUser = async (data: { email: string; password: string; name: string; role: TenantRoleName }) => {
     await api.post(`/tenants/${id}/users`, data);
-    showSuccess('User created successfully');
+    showSuccess(t('messages.user_created'));
     loadUsersData();
   };
 
@@ -185,14 +185,14 @@ export default function TenantSettingsPage() {
               className="button-primary flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" />
-              {tc('actions.create')} User
+              {t('settings.create_user')}
             </button>
             <button
               onClick={() => setShowInviteForm(true)}
               className="button-primary flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" />
-              Invite User
+              {t('settings.invite_user')}
             </button>
           </div>
         )}
@@ -249,7 +249,7 @@ export default function TenantSettingsPage() {
                 description: tenant.description || ''
               }}
               onSubmit={handleUpdateTenant}
-              submitLabel={canManage ? tc('actions.save') : 'View Only'}
+              submitLabel={canManage ? tc('actions.save') : t('settings.view_only')}
             />
           </div>
 
@@ -259,7 +259,7 @@ export default function TenantSettingsPage() {
               <div className="card border-l-4 border-l-accent-danger">
                 <h2 className="text-lg font-semibold text-accent-danger mb-2 flex items-center gap-2">
                   <Trash2 className="w-5 h-5" />
-                  Danger Zone
+                  {t('danger_zone.title')}
                 </h2>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
                   {t('danger_zone.delete_description')}
@@ -282,7 +282,7 @@ export default function TenantSettingsPage() {
                   <div>
                     <dt className="text-blue-700 dark:text-blue-400 font-medium">{t('settings.created_label')}</dt>
                     <dd className="text-blue-900 dark:text-blue-200">
-                      {new Date(tenant.created_at).toLocaleDateString('en-US', {
+                      {new Date(tenant.created_at).toLocaleDateString(i18n.language, {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -292,7 +292,7 @@ export default function TenantSettingsPage() {
                   <div>
                     <dt className="text-blue-700 dark:text-blue-400 font-medium">{t('settings.updated_label')}</dt>
                     <dd className="text-blue-900 dark:text-blue-200">
-                      {new Date(tenant.updated_at).toLocaleDateString('en-US', {
+                      {new Date(tenant.updated_at).toLocaleDateString(i18n.language, {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'

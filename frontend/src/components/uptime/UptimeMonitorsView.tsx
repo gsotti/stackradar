@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Zap, Clock, RefreshCw, Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatInLocalTime, parseAsUTC } from '../../utils/dateUtils';
+import { formatInLocalTime } from '../../utils/dateUtils';
+import { formatTimeAgo } from '../../utils/timeFormat';
 import { api } from '../../utils/api';
 import { useNotification } from '../../contexts/NotificationContext';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -33,17 +34,6 @@ const intervalLabels: Record<number, string> = {
   3600: '1h',
 };
 
-function formatTimeAgo(date: string | null | undefined, t: any) {
-  if (!date) return t('common:time.never');
-  const parsedDate = parseAsUTC(date);
-  if (!parsedDate) return date;
-  const seconds = Math.floor((Date.now() - parsedDate.getTime()) / 1000);
-  if (seconds < 0) return t('common:time.just_now');
-  if (seconds < 60) return `${seconds}s ago`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
-}
 
 interface UptimeMonitorsViewProps {
   siteId: string | number;
@@ -309,7 +299,7 @@ export default function UptimeMonitorsView({ siteId }: UptimeMonitorsViewProps) 
                     )}
                   </div>
                   <span className="text-neutral-500 dark:text-neutral-400">
-                    {formatTimeAgo(monitor.last_checked_at, tc)}
+                    {formatTimeAgo(monitor.last_checked_at)}
                   </span>
                 </div>
 

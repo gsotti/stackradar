@@ -35,7 +35,7 @@ export default function EnvironmentsPage() {
       const data = await api.get<Site[]>('/sites');
       setSites(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to load sites');
+      showError(error.message || t('messages.load_sites_failed'));
     }
   };
 
@@ -47,7 +47,7 @@ export default function EnvironmentsPage() {
       const data = await api.get<EnvironmentWithDetails[]>(`/environments?${params}`);
       setEnvironments(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to load environments');
+      showError(error.message || t('messages.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -215,11 +215,11 @@ export default function EnvironmentsPage() {
               <p className="text-body-secondary text-xs">ID: {env.name}</p>
               <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700/50 flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-label text-xs">Site:</span>
+                  <span className="text-label text-xs">{t('card.site_label')}</span>
                   <span className="text-body text-sm truncate">{env.site_name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-label text-xs">Tenant:</span>
+                  <span className="text-label text-xs">{t('card.tenant_label')}</span>
                   <span className="text-body text-sm truncate">{env.tenant_name}</span>
                 </div>
               </div>

@@ -292,7 +292,7 @@ export default function Sidebar() {
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 rounded-lg transition-all text-sm font-medium"
-              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={darkMode ? t('common:theme.switch_to_light') : t('common:theme.switch_to_dark')}
             >
               {darkMode ? (
                 <>
@@ -313,11 +313,11 @@ export default function Sidebar() {
             <button
               onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 rounded-lg transition-all text-sm font-medium"
-              title={language === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
+              title={language === 'de' ? t('toggle.switchToEnglish') : t('toggle.switchToGerman')}
             >
               <Languages className="w-4 h-4" />
               {!sidebarCollapsed && (
-                <span>{language === 'de' ? 'English' : 'Deutsch'}</span>
+                <span>{language === 'de' ? t('toggle.english') : t('toggle.german')}</span>
               )}
             </button>
           </div>
@@ -327,7 +327,7 @@ export default function Sidebar() {
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 rounded-lg transition-all text-sm font-medium"
-              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={sidebarCollapsed ? t('actions.expand_sidebar') : t('actions.collapse_sidebar')}
             >
               {sidebarCollapsed ? (
                 <ChevronRight className="w-4 h-4" />
@@ -357,10 +357,10 @@ export default function Sidebar() {
               {!sidebarCollapsed && (
                 <>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate text-neutral-900 dark:text-white">{user?.name || 'User'}</p>
+                    <p className="text-xs font-medium truncate text-neutral-900 dark:text-white">{user?.name || t('common:meta.unknown')}</p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{user?.email}</p>
                   </div>
-                  <button onClick={logout} className="text-neutral-600 dark:text-neutral-300 hover:text-accent-danger dark:hover:text-accent-danger transition-colors p-1.5 rounded hover:bg-accent-danger/10 dark:hover:bg-accent-danger/20" title="Logout">
+                  <button onClick={logout} className="text-neutral-600 dark:text-neutral-300 hover:text-accent-danger dark:hover:text-accent-danger transition-colors p-1.5 rounded hover:bg-accent-danger/10 dark:hover:bg-accent-danger/20" title={t('actions.logout')}>
                     <LogOut className="w-4 h-4" />
                   </button>
                 </>
@@ -369,9 +369,9 @@ export default function Sidebar() {
                 <button
                   onClick={logout}
                   className="hidden lg:group-hover:block absolute left-full ml-2 px-2.5 py-1.5 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs rounded-md whitespace-nowrap z-50 shadow-lg font-medium"
-                  title="Logout"
+                  title={t('actions.logout')}
                 >
-                  Logout
+                  {t('actions.logout')}
                 </button>
               )}
             </div>

@@ -13,7 +13,7 @@ interface PendingInvitationsProps {
 }
 
 export default function PendingInvitations({ tenantId, invitations, onUpdate }: PendingInvitationsProps) {
-  const { t } = useTranslation('users');
+  const { t, i18n } = useTranslation('users');
   const { t: tc } = useTranslation('common');
   const { showError, showSuccess } = useNotification();
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -159,7 +159,7 @@ export default function PendingInvitations({ tenantId, invitations, onUpdate }: 
                           ? 'text-red-600 dark:text-red-400'
                           : 'text-gray-500 dark:text-gray-400'
                       }`}>
-                        {expired ? t('pending_invitations.expired_label') : t('pending_invitations.expires_label')} {new Date(invitation.expires_at).toLocaleDateString()}
+                        {expired ? t('pending_invitations.expired_label') : t('pending_invitations.expires_label')} {new Date(invitation.expires_at).toLocaleDateString(i18n.language)}
                       </p>
                     </div>
                   </div>

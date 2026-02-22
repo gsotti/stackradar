@@ -95,14 +95,14 @@ export default function SystemsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-heading-2">{t('page.title')}</h1>
-          <p className="text-body-secondary mt-2">Manage your systems across environments</p>
+          <p className="text-body-secondary mt-2">{t('systems.subtitle')}</p>
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
           className="button-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add System
+          {t('systems.add')}
         </button>
       </div>
 
@@ -111,18 +111,18 @@ export default function SystemsPage() {
         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="card w-full max-w-md">
             <h2 className="text-heading-3 mb-6">
-              {editingSystem ? 'Edit System' : 'Add New System'}
+              {editingSystem ? t('systems.form_title_edit') : t('systems.form_title_create')}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-label mb-2">Environment</label>
+                <label className="block text-label mb-2">{t('systems.environment_label')}</label>
                 <select
                   value={form.environment_id}
                   onChange={(e) => setForm({ ...form, environment_id: e.target.value })}
                   className="input-base w-full"
                   required
                 >
-                  <option value="">Select an environment</option>
+                  <option value="">{t('systems.environment_placeholder')}</option>
                   {environments.map(env => (
                     <option key={env.id} value={env.id}>
                       {env.name}
@@ -131,23 +131,23 @@ export default function SystemsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-label mb-2">Identifier (Name)</label>
+                <label className="block text-label mb-2">{t('systems.name_label')}</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="input-base w-full"
-                  placeholder="api-gateway"
+                  placeholder={t('systems.name_placeholder')}
                   required
                 />
               </div>
               <div>
-                <label className="block text-label mb-2">Description</label>
+                <label className="block text-label mb-2">{t('systems.description_label')}</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="input-base w-full"
-                  placeholder="Main entry point for API requests"
+                  placeholder={t('systems.description_placeholder')}
                   rows={3}
                 />
               </div>
@@ -163,7 +163,7 @@ export default function SystemsPage() {
                   type="submit"
                   className="button-primary button-center"
                 >
-                  {editingSystem ? tc('actions.save') : 'Create System'}
+                  {editingSystem ? tc('actions.save') : t('systems.create')}
                 </button>
               </div>
             </form>
@@ -206,11 +206,11 @@ export default function SystemsPage() {
               </p>
               <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700/50 flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-label text-xs">Env:</span>
+                  <span className="text-label text-xs">{t('systems.env_label')}</span>
                   <span className="text-body text-sm truncate">{system.environment_name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-label text-xs">Site:</span>
+                  <span className="text-label text-xs">{t('systems.site_label')}</span>
                   <span className="text-body text-sm truncate">{system.site_name}</span>
                 </div>
               </div>
@@ -222,23 +222,23 @@ export default function SystemsPage() {
       {!loading && systems.length === 0 && (
         <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
           <Package className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
-          <h3 className="text-heading-4 mb-2">No systems found</h3>
+          <h3 className="text-heading-4 mb-2">{t('systems.empty_title')}</h3>
           <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-8">
-            Create your first system to start collecting logs and monitoring health.
+            {t('systems.empty_description')}
           </p>
           <button
             onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
             className="button-primary inline-flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
-            Create First System
+            {t('systems.create_first')}
           </button>
         </div>
       )}
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete system?"
+        title={t('systems.confirm_delete_title')}
         description={tc('confirm_dialog.cannot_be_undone')}
         confirmLabel={tc('actions.delete')}
         variant="danger"

@@ -42,7 +42,8 @@
     "auto_approve_label": "Auto-approve account",
     "cancel": "Cancel",
     "submit": "Create User",
-    "submit_creating": "Creating..."
+    "submit_creating": "Creating...",
+    "password_placeholder": "Enter password"
   },
   "edit_modal": {
     "title": "Edit User",
@@ -54,7 +55,8 @@
     "active_label": "Active",
     "cancel": "Cancel",
     "submit": "Save Changes",
-    "submit_saving": "Saving..."
+    "submit_saving": "Saving...",
+    "password_placeholder": "Enter new password (optional)"
   },
   "delete_confirm": {
     "title": "Delete user?",
@@ -137,9 +139,12 @@
     "link_copied": "Invitation link copied to clipboard",
     "link_copy_failed": "Failed to copy link",
     "no_changes": "No changes to save",
+    "fetch_failed": "Failed to fetch users",
+    "delete_failed": "Failed to delete user",
     "org_user_created": "User created successfully",
     "org_user_updated": "User updated successfully",
-    "org_user_deleted": "User deleted successfully"
+    "org_user_deleted": "User deleted successfully",
+    "toggle_failed": "Failed to {{action}} user: {{error}}"
   },
   "remove_confirm": {
     "title": "Remove user?",
@@ -155,5 +160,11 @@
     "title": "Delete User",
     "description": "Are you sure you want to delete {{name}}? This action cannot be undone.",
     "label": "Delete User"
+  },
+  "toggle_confirm": {
+    "deactivate_title": "Deactivate user?",
+    "deactivate_description": "Are you sure you want to deactivate {{name}}? They will no longer be able to log in.",
+    "activate_title": "Activate user?",
+    "activate_description": "Are you sure you want to reactivate {{name}}? They will be able to log in again."
   }
 }

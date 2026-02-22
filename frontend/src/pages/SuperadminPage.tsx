@@ -24,7 +24,7 @@ interface OrgUser extends User {
 }
 
 export default function SuperadminPage() {
-  const { t } = useTranslation('superadmin');
+  const { t, i18n } = useTranslation('superadmin');
   const { t: tc } = useTranslation('common');
   const [activeTab, setActiveTab] = useState<TabType>('organizations');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -63,7 +63,7 @@ export default function SuperadminPage() {
       const data = await api.get<Organization[]>('/organizations');
       setOrganizations(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to load organizations');
+      showError(error.message || t('messages.load_orgs_failed'));
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export default function SuperadminPage() {
       if (data.registry_owner !== undefined) setRegistryOwner(data.registry_owner);
       if (data.app_url !== undefined) setAppUrl(data.app_url);
     } catch (error: any) {
-      showError(error.message || 'Failed to load system settings');
+      showError(error.message || t('messages.load_settings_failed'));
     } finally {
       setSettingsLoading(false);
     }
@@ -89,7 +89,7 @@ export default function SuperadminPage() {
       await api.put('/superadmin/settings', { registry_owner: registryOwner, app_url: appUrl });
       showSuccess(t('messages.settings_saved'));
     } catch (error: any) {
-      showError(error.message || 'Failed to save system settings');
+      showError(error.message || t('messages.save_settings_failed'));
     } finally {
       setSettingsSaving(false);
     }
@@ -105,7 +105,7 @@ export default function SuperadminPage() {
       setFormData({ name: '', description: '' });
       loadOrganizations();
     } catch (error: any) {
-      showError(error.message || 'Failed to create organization');
+      showError(error.message || t('messages.create_org_failed'));
     } finally {
       setSubmitting(false);
     }
@@ -123,7 +123,7 @@ export default function SuperadminPage() {
       setFormData({ name: '', description: '' });
       loadOrganizations();
     } catch (error: any) {
-      showError(error.message || 'Failed to update organization');
+      showError(error.message || t('messages.update_org_failed'));
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +135,7 @@ export default function SuperadminPage() {
        showSuccess(t('messages.org_deleted'));
        loadOrganizations();
      } catch (error: any) {
-       showError(error.message || 'Failed to delete organization');
+       showError(error.message || t('messages.delete_org_failed'));
      }
    };
 
@@ -159,7 +159,7 @@ export default function SuperadminPage() {
       const data = await api.get<OrgUser[]>(`/organizations/${orgId}/users`);
       setOrgUsers(data);
     } catch (error: any) {
-      showError(error.message || 'Failed to load organization users');
+      showError(error.message || t('messages.load_users_failed'));
     } finally {
       setLoadingUsers(false);
     }
@@ -177,7 +177,7 @@ export default function SuperadminPage() {
        showSuccess(t('messages.admin_promoted'));
        await loadOrgUsers(viewingOrg.id);
      } catch (error: any) {
-       showError(error.message || 'Failed to promote user');
+       showError(error.message || t('messages.promote_failed'));
      }
    };
 
@@ -196,7 +196,7 @@ export default function SuperadminPage() {
       setUserFormData({ email: '', name: '', password: '' });
       await loadOrgUsers(viewingOrg.id);
     } catch (error: any) {
-      showError(error.message || 'Failed to create user');
+      showError(error.message || t('messages.create_user_failed'));
     }
   };
 
@@ -207,7 +207,7 @@ export default function SuperadminPage() {
        showSuccess(t('messages.admin_removed'));
        await loadOrgUsers(viewingOrg.id);
      } catch (error: any) {
-       showError(error.message || 'Failed to remove admin role');
+       showError(error.message || t('messages.demote_failed'));
      }
    };
 
@@ -586,7 +586,7 @@ export default function SuperadminPage() {
                     </div>
 
                     <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
-                      {t('orgs.created_label', { date: new Date(org.created_at).toLocaleDateString() })}
+                      {t('orgs.created_label', { date: new Date(org.created_at).toLocaleDateString(i18n.language) })}
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -630,9 +630,9 @@ export default function SuperadminPage() {
             ) : (
               <div className="card">
                 <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-                  <h2 className="text-xl font-bold text-neutral-900 dark:text-white">System Settings</h2>
+                  <h2 className="text-xl font-bold text-neutral-900 dark:text-white">{t('system_settings.title')}</h2>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                    Configure global system settings for your StackRadar instance.
+                    {t('system_settings.description')}
                   </p>
                 </div>
 
@@ -640,12 +640,12 @@ export default function SuperadminPage() {
                   {/* Container Registry Section */}
                   <div>
                     <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-4">
-                      Container Registry
+                      {t('system_settings.container_registry')}
                     </h3>
 
                     <div>
                       <label className="text-label mb-2">
-                        Container Registry Owner
+                        {t('system_settings.registry_owner_label')}
                       </label>
                       <input
                         type="text"
@@ -656,7 +656,7 @@ export default function SuperadminPage() {
                         required
                       />
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                        Images will be pulled from{' '}
+                        {t('system_settings.registry_help')}{' '}
                         <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-blue-600 dark:text-blue-400 font-mono">
                           ghcr.io/{registryOwner || '<owner>'}/stackradar
                         </code>
@@ -667,12 +667,12 @@ export default function SuperadminPage() {
                   {/* Application Section */}
                   <div>
                     <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-4">
-                      Application
+                      {t('system_settings.application')}
                     </h3>
 
                     <div>
                       <label className="text-label mb-2">
-                        App URL
+                        {t('system_settings.app_url_label')}
                       </label>
                       <input
                         type="url"
@@ -682,7 +682,7 @@ export default function SuperadminPage() {
                         placeholder="https://stackradar.example.com"
                       />
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                        Used in invitation emails to generate the correct link. Falls back to the <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-mono">APP_URL</code> environment variable if left empty.
+                        {t('system_settings.app_url_help')}
                       </p>
                     </div>
                   </div>

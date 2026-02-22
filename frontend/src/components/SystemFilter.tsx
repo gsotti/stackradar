@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
 import { System } from '../types';
@@ -8,6 +9,7 @@ interface SystemFilterProps {
 }
 
 export default function SystemFilter({ className = '' }: SystemFilterProps) {
+  const { t } = useTranslation('sites');
   const {
     selectedTenant,
     selectedSite,
@@ -74,7 +76,7 @@ export default function SystemFilter({ className = '' }: SystemFilterProps) {
         disabled={loading}
         className={`input-base w-full ${className}`}
       >
-        <option value="">All Systems</option>
+        <option value="">{t('systems.all')}</option>
         {options.map((system) => (
           <option key={system.id} value={system.id}>
             {system.name}{!selectedEnvironment && system.environment_name ? ` (${system.environment_name})` : ''}

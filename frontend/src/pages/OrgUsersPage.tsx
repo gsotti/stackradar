@@ -19,7 +19,7 @@ interface OrgUser {
 }
 
 export default function OrgUsersPage() {
-  const { t } = useTranslation('users');
+  const { t, i18n } = useTranslation('users');
   const { t: tc } = useTranslation('common');
   const { user } = useAuth();
   const { showError, showSuccess } = useNotification();
@@ -66,7 +66,7 @@ export default function OrgUsersPage() {
       const data = await api.get<OrgUser[]>(`/organizations/${user.organization_id}/users`);
       setUsers(data);
     } catch (error: any) {
-      showError(error.response?.data?.detail || 'Failed to fetch users');
+      showError(error.response?.data?.detail || t('messages.fetch_failed'));
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export default function OrgUsersPage() {
       setFormData({ email: '', name: '', password: '', is_active: true });
       fetchUsers();
     } catch (error: any) {
-      showError(error.response?.data?.detail || 'Failed to create user');
+      showError(error.response?.data?.detail || t('messages.create_failed'));
     }
   };
 
@@ -114,7 +114,7 @@ export default function OrgUsersPage() {
       setFormData({ email: '', name: '', password: '', is_active: true });
       fetchUsers();
     } catch (error: any) {
-      showError(error.response?.data?.detail || 'Failed to update user');
+      showError(error.response?.data?.detail || t('messages.user_update_failed'));
     }
   };
 
@@ -129,7 +129,7 @@ export default function OrgUsersPage() {
       setSelectedUser(null);
       fetchUsers();
     } catch (error: any) {
-      showError(error.response?.data?.detail || 'Failed to delete user');
+      showError(error.response?.data?.detail || t('messages.delete_failed'));
     }
   };
 
@@ -280,7 +280,7 @@ export default function OrgUsersPage() {
                     </div>
 
                     <span className="text-xs text-gray-400 whitespace-nowrap hidden sm:block flex-shrink-0">
-                      {new Date(targetUser.created_at).toLocaleDateString()}
+                      {new Date(targetUser.created_at).toLocaleDateString(i18n.language)}
                     </span>
 
                     {modifiable && (
@@ -353,7 +353,7 @@ export default function OrgUsersPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Enter password"
+                    placeholder={t('create_modal.password_placeholder')}
                   />
                 </div>
 
@@ -430,7 +430,7 @@ export default function OrgUsersPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Enter new password (optional)"
+                    placeholder={t('edit_modal.password_placeholder')}
                   />
                 </div>
 

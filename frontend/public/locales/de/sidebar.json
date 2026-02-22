@@ -28,7 +28,11 @@
     "lightMode": "Heller Modus",
     "darkMode": "Dunkler Modus",
     "collapse": "Einklappen",
-    "expand": "Ausklappen"
+    "expand": "Ausklappen",
+    "switchToEnglish": "Zu Englisch wechseln",
+    "switchToGerman": "Auf Deutsch wechseln",
+    "english": "English",
+    "german": "Deutsch"
   },
   "actions": {
     "collapse": "Einklappen",

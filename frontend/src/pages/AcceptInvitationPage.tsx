@@ -89,11 +89,11 @@ export default function AcceptInvitationPage() {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'tenant_admin':
-        return 'Tenant Administrator';
+        return t('invitation.role_tenant_admin');
       case 'editor':
-        return 'Editor';
+        return t('invitation.role_editor');
       case 'viewer':
-        return 'Viewer';
+        return t('invitation.role_viewer');
       default:
         return role;
     }

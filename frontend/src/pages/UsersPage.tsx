@@ -23,6 +23,7 @@ export default function UsersPage() {
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', global_role: null as string | null, auto_approve: true });
   const [editForm, setEditForm] = useState({ name: '', email: '', password: '', global_role: null as string | null });
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [toggleTarget, setToggleTarget] = useState<User | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -67,7 +68,10 @@ export default function UsersPage() {
       await api.post(`/admin/users/${userId}/${isActive ? 'deactivate' : 'activate'}`, {});
       await loadUsers();
     } catch (error: any) {
-      showError(`Failed to ${isActive ? 'deactivate' : 'activate'} user: ` + error.message);
+      showError(t('messages.toggle_failed', {
+        action: isActive ? tc('actions.deactivate').toLowerCase() : tc('actions.activate').toLowerCase(),
+        error: error.message
+      }));
     }
   };
 
@@ -282,7 +286,7 @@ export default function UsersPage() {
                       {t('actions.edit')}
                     </button>
                     <button
-                      onClick={() => toggleUserActive(user.id, user.is_active)}
+                      onClick={() => setToggleTarget(user)}
                       className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg transition-all font-semibold text-xs ${
                         user.is_active
                           ? 'bg-neutral-100 dark:bg-neutral-800 hover:bg-accent-warning/10 dark:hover:bg-accent-warning/10 text-neutral-700 dark:text-neutral-300 hover:text-accent-warning dark:hover:text-accent-warning'
@@ -482,6 +486,20 @@ export default function UsersPage() {
           if (!deleteTarget) return;
           deleteUser(deleteTarget.id);
           setDeleteTarget(null);
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={!!toggleTarget}
+        title={toggleTarget?.is_active ? t('toggle_confirm.deactivate_title') : t('toggle_confirm.activate_title')}
+        description={toggleTarget ? t(toggleTarget.is_active ? 'toggle_confirm.deactivate_description' : 'toggle_confirm.activate_description', { name: toggleTarget.name || toggleTarget.email }) : undefined}
+        confirmLabel={toggleTarget?.is_active ? tc('actions.deactivate') : tc('actions.activate')}
+        variant={toggleTarget?.is_active ? 'danger' : 'default'}
+        onCancel={() => setToggleTarget(null)}
+        onConfirm={() => {
+          if (!toggleTarget) return;
+          toggleUserActive(toggleTarget.id, toggleTarget.is_active);
+          setToggleTarget(null);
         }}
       />
     </div>

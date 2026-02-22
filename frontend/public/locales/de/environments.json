@@ -38,6 +38,8 @@
     "created": "Environment erfolgreich erstellt",
     "save_failed": "Environment konnte nicht gespeichert werden",
     "deleted": "Environment erfolgreich gelöscht",
-    "delete_failed": "Environment konnte nicht gelöscht werden"
+    "delete_failed": "Environment konnte nicht gelöscht werden",
+    "load_sites_failed": "Sites konnten nicht geladen werden",
+    "load_failed": "Environments konnten nicht geladen werden"
   }
 }

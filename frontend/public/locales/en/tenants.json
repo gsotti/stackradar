@@ -45,9 +45,13 @@
     "id_label": "Tenant ID:",
     "active_users_label": "Active Users",
     "pending_invitations_label": "Pending Invitations",
-    "members_title": "Tenant Members"
+    "members_title": "Tenant Members",
+    "create_user": "Create User",
+    "invite_user": "Invite User",
+    "view_only": "View Only"
   },
   "danger_zone": {
+    "title": "Danger Zone",
     "delete_description": "Deleting this tenant will permanently remove all associated users, sites, environments, systems, and logs. This action cannot be undone.",
     "delete_button": "Delete Tenant"
   },
@@ -61,6 +65,7 @@
     "deleted": "Tenant deleted successfully",
     "created": "Tenant created successfully",
     "create_failed": "Failed to create tenant",
-    "fetch_failed": "Failed to fetch tenants"
+    "fetch_failed": "Failed to fetch tenants",
+    "user_created": "User created successfully"
   }
 }

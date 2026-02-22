@@ -94,7 +94,7 @@ export default function SitesPage() {
 
     try {
       await api.post('/sites', { ...form, tenant_id: selectedTenant });
-      showSuccess('Site created successfully');
+      showSuccess(t('messages.created'));
       setShowForm(false);
       setForm({ name: '', description: '', retention_days: 30, site_type: 'kubernetes', has_metrics: true });
       fetchSites();
@@ -105,10 +105,10 @@ export default function SitesPage() {
 
   const getSiteTypeLabel = (type: string) => {
     switch (type) {
-      case 'docker': return 'Docker';
-      case 'kubernetes': return 'Kubernetes';
-      case 'generic': return 'Generic';
-      default: return 'Kubernetes';
+      case 'docker': return t('form.site_type_docker');
+      case 'kubernetes': return t('form.site_type_kubernetes');
+      case 'generic': return t('form.site_type_generic');
+      default: return t('form.site_type_kubernetes');
     }
   };
 

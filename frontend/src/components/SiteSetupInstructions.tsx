@@ -299,7 +299,7 @@ services:
             <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.deployment_heading')}</h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                Save the snippet above as <code className="text-blue-600 dark:text-blue-400">docker-compose.yml</code> and start both services:
+                {t('setup.docker_compose_save_hint')}
               </p>
               <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
                 docker-compose up -d
@@ -503,9 +503,9 @@ releases:
               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.k8s_deployment_steps')}</h4>
                 <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
-                  <li>Create the <code className="text-blue-600 dark:text-blue-400">stackradar-system</code> namespace if it doesn't exist.</li>
-                  <li>Apply the configuration secret shown above.</li>
-                  <li>Deploy the stats collector from the <code className="text-blue-600 dark:text-blue-400">collector-k8s/stats-collector</code> directory.</li>
+                  <li>{t('setup.k8s_step_create_namespace')}</li>
+                  <li>{t('setup.k8s_step_apply_secret')}</li>
+                  <li>{t('setup.k8s_step_deploy_stats')}</li>
                 </ol>
                 <div className="mt-4">
                   <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
@@ -563,9 +563,9 @@ releases:
               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('setup.k8s_deployment_steps')}</h4>
                 <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-decimal ml-4">
-                  <li>Apply the configuration secret shown above.</li>
-                  <li>In <code className="text-blue-600 dark:text-blue-400">collector-k8s/log-collector/deployment.yaml</code>, update the environment variables to target your pod.</li>
-                  <li>Deploy the log collector:</li>
+                  <li>{t('setup.k8s_step_apply_secret')}</li>
+                  <li>{t('setup.k8s_step_update_env_vars')}</li>
+                  <li>{t('setup.k8s_step_deploy_logs')}</li>
                 </ol>
                 <div className="mt-4">
                   <code className="text-xs bg-gray-900 text-green-400 p-2 rounded block">
@@ -582,7 +582,7 @@ releases:
           <div className="space-y-6">
             <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
               <p className="text-sm text-purple-800 dark:text-purple-200">
-                Charts are published to the OCI registry. No repository <code className="font-mono">helm repo add</code> needed.
+                {t('setup.helm_oci_note')}
               </p>
             </div>
 
@@ -596,7 +596,7 @@ releases:
               </p>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Helm Install Command</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('setup.helm_install_command')}</span>
                   <button
                     onClick={() => copyToClipboard(helmStatsCmd, 'helm-stats-cmd')}
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
@@ -623,7 +623,7 @@ releases:
               </p>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Helm Install Command</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('setup.helm_install_command')}</span>
                   <button
                     onClick={() => copyToClipboard(helmLogsCmd, 'helm-logs-cmd')}
                     className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
@@ -645,7 +645,7 @@ releases:
           <div className="space-y-6">
             <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
               <p className="text-sm text-purple-800 dark:text-purple-200">
-                Install helmfile from <a href="https://helmfile.readthedocs.io" target="_blank" rel="noopener noreferrer" className="underline font-medium">https://helmfile.readthedocs.io</a>, then run <code className="font-mono">helmfile apply</code>.
+                {t('setup.helmfile_intro')}
               </p>
             </div>
 
@@ -654,7 +654,7 @@ releases:
                 helmfile.yaml
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Save this file as <code className="text-blue-600 dark:text-blue-400">helmfile.yaml</code> and run <code className="text-blue-600 dark:text-blue-400">helmfile apply</code> to deploy both collectors.
+                {t('setup.helmfile_save_hint')}
               </p>
               <div>
                 <div className="flex items-center justify-between mb-2">
