@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Settings, Building2, Users, RefreshCw, Plus, Pencil, Trash2, X, ArrowLeft, UserCog } from 'lucide-react';
+import { Shield, Settings, Building2, Users, RefreshCw, Plus, Pencil, Trash2, X, ArrowLeft, UserCog, User as UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useNotification } from '../contexts/NotificationContext';
@@ -8,7 +8,7 @@ import { getGravatarUrl } from '../utils/md5';
 import { formatInLocalTime } from '../utils/dateUtils';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
-type TabType = 'organizations' | 'settings';
+type TabType = 'organizations' | 'settings' | 'profile';
 
 interface OrganizationFormData {
   name: string;
@@ -43,6 +43,13 @@ export default function SuperadminPage() {
   const [registryOwner, setRegistryOwner] = useState('gsotti');
   const [appUrl, setAppUrl] = useState('');
 
+  // Profile state
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [profilePassword, setProfilePassword] = useState('');
+
   // Organization detail view state
   const [viewingOrg, setViewingOrg] = useState<Organization | null>(null);
   const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
@@ -55,6 +62,8 @@ export default function SuperadminPage() {
       loadOrganizations();
     } else if (activeTab === 'settings') {
       loadSettings();
+    } else if (activeTab === 'profile') {
+      loadProfile();
     }
   }, [activeTab]);
 
@@ -93,6 +102,42 @@ export default function SuperadminPage() {
       showError(error.message || t('messages.save_settings_failed'));
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  const loadProfile = async () => {
+    setProfileLoading(true);
+    try {
+      const data = await api.get<User>('/superadmin/profile');
+      setProfileEmail(data.email);
+      setProfileName(data.name || '');
+      setProfilePassword(''); // Always empty for security
+    } catch (error: any) {
+      showError(error.message || t('profile.profile_update_failed'));
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileSaving(true);
+    try {
+      const updateData: any = {
+        email: profileEmail,
+        name: profileName || null
+      };
+      // Only include password if it's not empty
+      if (profilePassword.trim()) {
+        updateData.password = profilePassword;
+      }
+      await api.put('/superadmin/profile', updateData);
+      showSuccess(t('profile.profile_updated'));
+      setProfilePassword(''); // Clear password field after successful update
+    } catch (error: any) {
+      showError(error.message || t('profile.profile_update_failed'));
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -265,6 +310,17 @@ export default function SuperadminPage() {
           >
             <Settings className="w-4 h-4" />
             {t('tabs.system_settings')}
+          </button>
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+              activeTab === 'profile'
+                ? 'bg-white dark:bg-neutral-700 text-purple-600 dark:text-purple-400 shadow-sm border border-neutral-200 dark:border-neutral-600'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-300'
+            }`}
+          >
+            <UserIcon className="w-4 h-4" />
+            {t('tabs.profile')}
           </button>
         </div>
       )}
@@ -703,6 +759,106 @@ export default function SuperadminPage() {
                         <>
                           <Settings className="w-4 h-4" />
                           {tc('actions.save')}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="max-w-2xl">
+            {profileLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <RefreshCw className="w-10 h-10 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <div className="card">
+                <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+                  <h2 className="text-xl font-bold text-neutral-900 dark:text-white">{t('profile.title')}</h2>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                    {t('profile.description')}
+                  </p>
+                </div>
+
+                <form onSubmit={handleUpdateProfile} className="p-6 space-y-6">
+                  {/* Personal Information Section */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-4">
+                      {t('profile.personal_info')}
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-label mb-2">
+                          {t('profile.email_label')}
+                        </label>
+                        <input
+                          type="email"
+                          value={profileEmail}
+                          onChange={(e) => setProfileEmail(e.target.value)}
+                          className="input-base w-full"
+                          placeholder={t('profile.email_placeholder')}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-label mb-2">
+                          {t('profile.name_label')}
+                        </label>
+                        <input
+                          type="text"
+                          value={profileName}
+                          onChange={(e) => setProfileName(e.target.value)}
+                          className="input-base w-full"
+                          placeholder={t('profile.name_placeholder')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Security Section */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-4">
+                      {t('profile.security')}
+                    </h3>
+
+                    <div>
+                      <label className="text-label mb-2">
+                        {t('profile.password_label')}
+                      </label>
+                      <input
+                        type="password"
+                        value={profilePassword}
+                        onChange={(e) => setProfilePassword(e.target.value)}
+                        className="input-base w-full"
+                        placeholder={t('profile.password_placeholder')}
+                      />
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                        {t('profile.password_help')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={profileSaving}
+                      className="button-primary flex items-center gap-2"
+                    >
+                      {profileSaving ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          {tc('actions.saving')}
+                        </>
+                      ) : (
+                        <>
+                          <UserIcon className="w-4 h-4" />
+                          {t('profile.update_profile')}
                         </>
                       )}
                     </button>

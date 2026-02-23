@@ -286,6 +286,127 @@ router.delete('/org-admins/:id', authMiddleware, superadminMiddleware, async (
 });
 
 /**
+ * GET /api/superadmin/profile - Get superadmin's own profile
+ * Only superadmins can access this endpoint
+ */
+router.get('/profile', authMiddleware, superadminMiddleware, async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const result = await db.query<Omit<User, 'password_hash'>>(
+      `SELECT id, email, name, is_active, is_approved, global_role, email_verified, created_at, organization_id
+       FROM users WHERE id = $1`,
+      [req.userId]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ detail: 'User not found' });
+      return;
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get superadmin profile error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+/**
+ * PUT /api/superadmin/profile - Update superadmin's own profile
+ * Allows superadmin to update their email, name, and password
+ */
+router.put('/profile', authMiddleware, superadminMiddleware, async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Build update query dynamically
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramIndex}`);
+      values.push(name || null);
+      paramIndex++;
+    }
+
+    if (email !== undefined) {
+      if (!email || typeof email !== 'string' || !email.includes('@')) {
+        res.status(400).json({ detail: 'Valid email is required' });
+        return;
+      }
+
+      // Check if email is already taken by another user
+      const emailCheck = await db.query<Pick<User, 'id'>>(
+        'SELECT id FROM users WHERE email = $1 AND id != $2',
+        [email, req.userId]
+      );
+
+      if (emailCheck.rows.length > 0) {
+        res.status(400).json({ detail: 'Email already in use by another user' });
+        return;
+      }
+
+      updates.push(`email = $${paramIndex}`);
+      values.push(email);
+      paramIndex++;
+    }
+
+    if (password && password.length > 0) {
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        res.status(400).json({ detail: passwordCheck.message });
+        return;
+      }
+      updates.push(`password_hash = $${paramIndex}`);
+      values.push(hashPassword(password));
+      paramIndex++;
+    }
+
+    if (updates.length === 0) {
+      res.status(400).json({ detail: 'No fields to update' });
+      return;
+    }
+
+    values.push(req.userId);
+
+    // Get current values for audit
+    const currentResult = await db.query<User>('SELECT * FROM users WHERE id = $1', [req.userId]);
+    const oldUser = currentResult.rows[0];
+
+    const result = await db.query<Omit<User, 'password_hash'>>(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex}
+       RETURNING id, email, name, is_active, is_approved, global_role, email_verified, created_at, organization_id`,
+      values
+    );
+
+    const updatedUser = result.rows[0];
+
+    // Log audit
+    await logAudit({
+      userId: req.userId!,
+      organizationId: updatedUser.organization_id || undefined,
+      action: 'SUPERADMIN_PROFILE_UPDATE',
+      resourceType: 'user',
+      resourceId: req.userId!,
+      oldValues: { name: oldUser.name, email: oldUser.email },
+      newValues: { name: updatedUser.name, email: updatedUser.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Update superadmin profile error:', error);
+    res.status(500).json({ detail: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/superadmin/settings - Get all system settings
  * Only superadmins can view system settings
  */

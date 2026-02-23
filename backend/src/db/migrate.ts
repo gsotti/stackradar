@@ -2,15 +2,11 @@ import dotenv from 'dotenv';
 import pkg from 'pg';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { Migration, User } from '../types';
 
 const { Pool } = pkg;
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function runMigrations(): Promise<void> {
   const connectionConfig = {

@@ -1,8 +1,17 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { AuthRequest, JWTPayload, GlobalRole, TenantRole } from '../types';
 import db from '../db/database.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from .env file in the backend directory
+dotenv.config({ path: join(__dirname, '../../.env') });
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {

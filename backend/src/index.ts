@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { CronJob } from 'cron';
 import os from 'os';
@@ -33,9 +32,6 @@ import { runUptimeChecksForInterval } from './services/uptime/checker.js';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 const PORT = process.env.PORT || 8001;
 const CLUSTER_MODE = (process.env.CLUSTER_MODE || 'true').toLowerCase() === 'true';
@@ -60,7 +56,9 @@ async function getEffectiveOrigins(): Promise<string[]> {
     }
   }
   const origins = [...ALLOWED_ORIGINS];
-  if (cachedAppUrl) origins.push(cachedAppUrl);
+  // Use app_url from database, fallback to APP_URL environment variable
+  const effectiveAppUrl = cachedAppUrl || process.env.APP_URL || '';
+  if (effectiveAppUrl) origins.push(effectiveAppUrl);
   return origins;
 }
 

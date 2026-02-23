@@ -1,5 +1,6 @@
 import pkg from 'pg';
 import dotenv from "dotenv";
+import { seedAdminUser } from './seedUtils.js';
 const { Pool } = pkg;
 
 dotenv.config();
@@ -33,12 +34,20 @@ pool.on('error', (err: Error) => {
   process.exit(-1);
 });
 
-// Simple initialization - just test connection
+// Simple initialization - test connection and seed admin user if needed
 export async function initDatabase(): Promise<void> {
   try {
     // Test connection
     await pool.query('SELECT NOW()');
     console.log('✅ Database connection verified');
+    
+    // Seed admin user if it doesn't exist
+    try {
+      await seedAdminUser(pool);
+    } catch (error) {
+      // Log error but don't fail startup - tables might not exist yet (before migrations)
+      console.log('ℹ️  Skipping admin user seeding (tables may not exist yet)');
+    }
   } catch (error) {
     console.error('❌ Database connection failed:', error);
     throw error;
