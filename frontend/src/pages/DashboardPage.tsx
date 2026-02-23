@@ -99,6 +99,11 @@ export default function DashboardPage() {
   // Determine if this is an uptime-only tenant (all sites have has_metrics=false)
   const isUptimeOnly = sites.length > 0 && sites.every(s => !s.has_metrics);
 
+  const levelData = useMemo(() =>
+    stats?.logs_by_level ? Object.entries(stats.logs_by_level).map(([name, value]) => ({ name, value })) : [],
+    [stats?.logs_by_level]
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
@@ -109,11 +114,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const levelData = useMemo(() =>
-    stats?.logs_by_level ? Object.entries(stats.logs_by_level).map(([name, value]) => ({ name, value })) : [],
-    [stats?.logs_by_level]
-  );
 
   // Custom tooltip component for pie chart
   const CustomTooltip = ({ active, payload }: any) => {
