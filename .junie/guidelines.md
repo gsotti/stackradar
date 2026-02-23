@@ -35,6 +35,9 @@ StackRadar is a self-hosted full-stack observability platform designed for log a
 
 ## Instructions for Junie
 
+### General Approach
+- **Always Use Current Source Code**: The developer sometimes makes manual changes to the codebase. Always read and analyze the current state of files before making any modifications or assumptions about the code structure.
+
 ### Code Style
 - Follow the existing TypeScript patterns in both backend and frontend.
 - Maintain consistency with the existing directory structure and naming conventions.
