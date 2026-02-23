@@ -96,9 +96,6 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// Initialize database
-initDatabase();
-
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/sites', siteRoutes);
@@ -240,33 +237,41 @@ function scheduleUptimeJobs() {
 }
 
 // Cluster bootstrap: utilize multiple CPU cores if enabled
-if (CLUSTER_MODE && cluster.isPrimary) {
-  // Primary/master process
-  console.log(`Primary process ${process.pid} starting ${WORKERS} worker(s)`);
+(async () => {
+  // Initialize database before starting server
+  await initDatabase();
 
-  // Schedule cleanup and alerts only once in primary
-  scheduleCleanupJobOnce();
-  scheduleAlertJobOnce();
-  scheduleUptimeJobs();
+  if (CLUSTER_MODE && cluster.isPrimary) {
+    // Primary/master process
+    console.log(`Primary process ${process.pid} starting ${WORKERS} worker(s)`);
 
-  for (let i = 0; i < WORKERS; i++) {
-    cluster.fork();
-  }
-
-  cluster.on('exit', (worker) => {
-    console.warn(`Worker ${worker.process.pid} exited. Starting a new one...`);
-    cluster.fork();
-  });
-} else {
-  // Worker or single-process mode
-  startHttpServer();
-
-  // If not clustering, ensure cleanup and alerts are still scheduled
-  if (!CLUSTER_MODE) {
+    // Schedule cleanup and alerts only once in primary
     scheduleCleanupJobOnce();
     scheduleAlertJobOnce();
     scheduleUptimeJobs();
+
+    for (let i = 0; i < WORKERS; i++) {
+      cluster.fork();
+    }
+
+    cluster.on('exit', (worker) => {
+      console.warn(`Worker ${worker.process.pid} exited. Starting a new one...`);
+      cluster.fork();
+    });
+  } else {
+    // Worker or single-process mode
+    startHttpServer();
+
+    // If not clustering, ensure cleanup and alerts are still scheduled
+    if (!CLUSTER_MODE) {
+      scheduleCleanupJobOnce();
+      scheduleAlertJobOnce();
+      scheduleUptimeJobs();
+    }
   }
-}
+})().catch(error => {
+  console.error('❌ Failed to start application:', error);
+  process.exit(1);
+});
 
 export default app;
