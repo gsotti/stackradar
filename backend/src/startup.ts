@@ -44,6 +44,15 @@ async function runMigrations(): Promise<void> {
   });
 }
 
+async function applyConfiguration(): Promise<void> {
+  const { applyConfig } = await import('./db/configSync.js');
+  const { pool } = await import('./db/database.js');
+  const applied = await applyConfig(pool);
+  if (applied) {
+    console.log('✅ Configuration applied successfully\n');
+  }
+}
+
 async function startApp(): Promise<void> {
   console.log('🚀 Starting application...\n');
 
@@ -61,6 +70,7 @@ async function main() {
     if (shouldRunMigrations) {
       console.log('📍 Running as primary process - will run migrations');
       await runMigrations();
+      await applyConfiguration();
     } else {
       console.log('📍 Running as worker process - skipping migrations');
     }

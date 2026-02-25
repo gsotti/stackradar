@@ -3,6 +3,9 @@ import dotenv from "dotenv";
 import { seedAdminUser } from './seedUtils.js';
 const { Pool } = pkg;
 
+export let configApplied = false;
+export function setConfigApplied(value: boolean): void { configApplied = value; }
+
 dotenv.config();
 
 const dbConfig = {
@@ -41,13 +44,16 @@ export async function initDatabase(): Promise<void> {
     await pool.query('SELECT NOW()');
     console.log('✅ Database connection verified');
     
-    // Seed admin user if it doesn't exist
-    try {
-      await seedAdminUser(pool);
-    } catch (error) {
-      // Log error but don't fail startup - tables might not exist yet (before migrations)
-      console.log('ℹ️  Skipping admin user seeding (tables may not exist yet)');
-      console.error('   Seed error details:', error);
+    // Seed admin user if config was not applied
+    if (!configApplied) {
+      try {
+        await seedAdminUser(pool);
+      } catch (error) {
+        console.log('ℹ️  Skipping admin user seeding (tables may not exist yet)');
+        console.error('   Seed error details:', error);
+      }
+    } else {
+      console.log('ℹ️  Skipping admin seed — configuration file was applied');
     }
   } catch (error) {
     console.error('❌ Database connection failed:', error);
