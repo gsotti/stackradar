@@ -88,10 +88,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('selectedSystemId', selectedSystemId);
   }, [selectedSystemId]);
 
-  // Auto-select tenant when none is selected and user has tenants
+  // Auto-select tenant or fix invalid selection
   useEffect(() => {
-    if (!selectedTenant && user?.tenant_roles && user.tenant_roles.length > 0) {
-      setSelectedTenant(String(user.tenant_roles[0].tenant_id));
+    if (!user?.tenant_roles || user.tenant_roles.length === 0) return;
+    const validIds = user.tenant_roles.map(tr => String(tr.tenant_id));
+    if (!selectedTenant || !validIds.includes(selectedTenant)) {
+      setSelectedTenant(validIds[0]);
     }
   }, [user, selectedTenant]);
 

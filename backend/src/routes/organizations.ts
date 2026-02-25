@@ -127,8 +127,8 @@ router.post('/', authMiddleware, superadminMiddleware, async (req: AuthRequest, 
 
     // Associate the creating user with the default tenant
     await db.query(
-      'INSERT INTO user_tenants (user_id, tenant_id) VALUES ($1, $2)',
-      [req.userId, defaultTenantId]
+      'INSERT INTO user_tenants (user_id, tenant_id, role) VALUES ($1, $2, $3)',
+      [req.userId, defaultTenantId, 'tenant_admin']
     );
 
     // Log audit
@@ -323,8 +323,8 @@ router.post('/:id/users', authMiddleware, orgAdminMiddleware, async (req: AuthRe
     );
     if (defaultTenant.rows.length > 0) {
       await db.query(
-        'INSERT INTO user_tenants (user_id, tenant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [result.rows[0].id, defaultTenant.rows[0].id]
+        'INSERT INTO user_tenants (user_id, tenant_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        [result.rows[0].id, defaultTenant.rows[0].id, 'tenant_admin']
       );
     }
 
