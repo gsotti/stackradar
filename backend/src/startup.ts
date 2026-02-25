@@ -4,15 +4,16 @@
  * Startup script that runs migrations before starting the application
  * Migrations only run once in the primary process when clustering is enabled
  */
-
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import cluster from 'cluster';
 import dotenv from 'dotenv';
-import {join} from "path";
 
 dotenv.config();
 
-console.log(process.env)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const CLUSTER_MODE = (process.env.CLUSTER_MODE || 'true').toLowerCase() === 'true';
 
