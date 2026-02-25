@@ -2,11 +2,13 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { useTranslation } from 'react-i18next';
 import { AppContextType } from '../types';
 import { api } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
+  const { user } = useAuth();
 
   // Detail page ID state
   const [selectedSiteId, setSelectedSiteId] = useState('');
@@ -85,6 +87,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('selectedSystemId', selectedSystemId);
   }, [selectedSystemId]);
+
+  // Auto-select tenant when none is selected and user has tenants
+  useEffect(() => {
+    if (!selectedTenant && user?.tenant_roles && user.tenant_roles.length > 0) {
+      setSelectedTenant(String(user.tenant_roles[0].tenant_id));
+    }
+  }, [user, selectedTenant]);
 
   return (
     <AppContext.Provider value={{

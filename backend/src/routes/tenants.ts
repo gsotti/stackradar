@@ -229,11 +229,11 @@ router.delete('/:id', authMiddleware, orgAdminMiddleware, async (req: AuthReques
       return;
     }
 
-    // Log audit
+    // Log audit (tenantId is null because the tenant was already deleted)
     await logAudit({
       userId: req.userId!,
       organizationId: req.organizationId,
-      tenantId: parseInt(id),
+      tenantId: undefined,
       action: 'TENANT_DELETE',
       resourceType: 'tenant',
       resourceId: id,
