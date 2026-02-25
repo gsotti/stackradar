@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*-app'
+      - 'v*-app-dev'
 
 jobs:
   build-push:
@@ -16,9 +17,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract version
+      - name: Extract version and channel
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" | sed 's/-app$//' >> $GITHUB_OUTPUT
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          if [[ "$TAG" == *-app-dev ]]; then
+            echo "VERSION=$(echo $TAG | sed 's/-app-dev$//')" >> $GITHUB_OUTPUT
+            echo "CHANNEL=dev-latest" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=$(echo $TAG | sed 's/-app$//')" >> $GITHUB_OUTPUT
+            echo "CHANNEL=latest" >> $GITHUB_OUTPUT
+          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -41,4 +50,4 @@ jobs:
             BUILD_COMMIT=${{ github.sha }}
           tags: |
             ghcr.io/gsotti/stackradar:${{ steps.version.outputs.VERSION }}
-            ghcr.io/gsotti/stackradar:latest
+            ghcr.io/gsotti/stackradar:${{ steps.version.outputs.CHANNEL }}
