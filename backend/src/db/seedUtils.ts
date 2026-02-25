@@ -14,23 +14,18 @@ export async function seedAdminUser(pool: Pool): Promise<void> {
   const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin User';
   const DEFAULT_TENANT = process.env.DEFAULT_TENANT || 'Default';
 
-  console.log(`🔍 Seed config: ADMIN_EMAIL=${process.env.ADMIN_EMAIL ? 'set' : 'NOT SET'}, ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? 'set' : 'NOT SET'}, using email: ${ADMIN_EMAIL}`);
-  
-  const credentialsGenerated = !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD || !process.env.ADMIN_NAME;
-  
   // Check if a superadmin user already exists
   const result = await pool.query(
     'SELECT id, email FROM users WHERE global_role = $1',
     ['superadmin']
   );
-  
+
   if (result.rows.length > 0) {
-    console.log(`ℹ️  Superadmin user already exists (${result.rows[0].email})`);
     return;
   }
-  
+
   console.log('🌱 Creating admin user...');
-  
+
   // Create admin user
   const passwordHash = hashPassword(ADMIN_PASSWORD);
   const userResult = await pool.query(
@@ -38,25 +33,11 @@ export async function seedAdminUser(pool: Pool): Promise<void> {
     [ADMIN_EMAIL, passwordHash, ADMIN_NAME]
   );
   const userId = userResult.rows[0].id;
-  
-  console.log('✅ Admin user created successfully!');
+
+  console.log('✅ Admin user created');
   console.log(`   Email: ${ADMIN_EMAIL}`);
   console.log(`   Password: ${ADMIN_PASSWORD}`);
-  console.log(`   User ID: ${userId}`);
-  
-  if (credentialsGenerated) {
-    console.log('\n⚠️  ========================================');
-    console.log('⚠️  GENERATED ADMIN CREDENTIALS');
-    console.log('⚠️  ========================================');
-    console.log(`⚠️  Email:    ${ADMIN_EMAIL}`);
-    console.log(`⚠️  Password: ${ADMIN_PASSWORD}`);
-    console.log('⚠️  ========================================');
-    console.log('⚠️  Please save these credentials securely!');
-    console.log('⚠️  Set ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_NAME');
-    console.log('⚠️  environment variables to use custom credentials.');
-    console.log('⚠️  ========================================\n');
-  }
-  
+
   // Create default tenant if it doesn't exist
   const tenantResult = await pool.query(
     'SELECT id FROM tenants WHERE name = $1',
@@ -89,6 +70,4 @@ export async function seedAdminUser(pool: Pool): Promise<void> {
     );
     console.log(`✅ Admin user associated with tenant '${DEFAULT_TENANT}'`);
   }
-  
-  console.log('⚠️  IMPORTANT: Change the admin password after first login!\n');
 }
