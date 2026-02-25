@@ -47,6 +47,7 @@ export async function initDatabase(): Promise<void> {
     } catch (error) {
       // Log error but don't fail startup - tables might not exist yet (before migrations)
       console.log('ℹ️  Skipping admin user seeding (tables may not exist yet)');
+      console.error('   Seed error details:', error);
     }
   } catch (error) {
     console.error('❌ Database connection failed:', error);

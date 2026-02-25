@@ -13,6 +13,8 @@ export async function seedAdminUser(pool: Pool): Promise<void> {
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || generatePassword();
   const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin User';
   const DEFAULT_TENANT = process.env.DEFAULT_TENANT || 'Default';
+
+  console.log(`🔍 Seed config: ADMIN_EMAIL=${process.env.ADMIN_EMAIL ? 'set' : 'NOT SET'}, ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? 'set' : 'NOT SET'}, using email: ${ADMIN_EMAIL}`);
   
   const credentialsGenerated = !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD || !process.env.ADMIN_NAME;
   
