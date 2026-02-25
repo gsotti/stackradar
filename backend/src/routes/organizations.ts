@@ -316,6 +316,18 @@ router.post('/:id/users', authMiddleware, orgAdminMiddleware, async (req: AuthRe
       [email, name || null, password_hash, id]
     );
 
+    // Add user to the organization's default tenant
+    const defaultTenant = await db.query(
+      `SELECT id FROM tenants WHERE organization_id = $1 ORDER BY id LIMIT 1`,
+      [id]
+    );
+    if (defaultTenant.rows.length > 0) {
+      await db.query(
+        'INSERT INTO user_tenants (user_id, tenant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [result.rows[0].id, defaultTenant.rows[0].id]
+      );
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Create org user error:', error);
