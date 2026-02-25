@@ -116,6 +116,21 @@ router.post('/', authMiddleware, superadminMiddleware, async (req: AuthRequest, 
 
     const newOrg = result.rows[0];
 
+    // Create a default tenant for the new organization
+    const tenantResult = await db.query(
+      `INSERT INTO tenants (name, description, organization_id)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      ['Default', 'Default tenant', newOrg.id]
+    );
+    const defaultTenantId = tenantResult.rows[0].id;
+
+    // Associate the creating user with the default tenant
+    await db.query(
+      'INSERT INTO user_tenants (user_id, tenant_id) VALUES ($1, $2)',
+      [req.userId, defaultTenantId]
+    );
+
     // Log audit
     await logAudit({
       userId: req.userId!,
