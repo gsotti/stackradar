@@ -294,15 +294,38 @@ async function syncOrganization(
   }
 
   // ------------------------------------------------------------------
-  // Step 4: User-tenant links — sync roles
+  // Step 4: User-tenant links — sync roles (full replace per user)
   // ------------------------------------------------------------------
   for (const user of org.users ?? []) {
     const userId = userIdByEmail.get(user.email.toLowerCase());
     if (userId === undefined) continue;
 
+    // Collect the tenant IDs this user should be linked to
+    const desiredTenantIds: number[] = [];
     for (const tenantRef of user.tenants ?? []) {
       const tenantId = tenantIdByName.get(tenantRef.tenant);
-      if (tenantId === undefined) continue; // validated earlier, shouldn't happen
+      if (tenantId === undefined) continue;
+      desiredTenantIds.push(tenantId);
+    }
+
+    // Remove any user_tenants links NOT in the config for this user
+    if (desiredTenantIds.length > 0) {
+      await client.query(
+        `DELETE FROM user_tenants WHERE user_id = $1 AND tenant_id != ALL($2)`,
+        [userId, desiredTenantIds],
+      );
+    } else {
+      // User has no tenant assignments — remove all links
+      await client.query(
+        `DELETE FROM user_tenants WHERE user_id = $1`,
+        [userId],
+      );
+    }
+
+    // Upsert the desired links
+    for (const tenantRef of user.tenants ?? []) {
+      const tenantId = tenantIdByName.get(tenantRef.tenant);
+      if (tenantId === undefined) continue;
 
       await client.query(
         `INSERT INTO user_tenants (user_id, tenant_id, role)

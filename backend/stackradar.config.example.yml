@@ -2,327 +2,214 @@
 # StackRadar Declarative Configuration Example
 # =============================================================================
 #
-# This file demonstrates the full structure of a StackRadar declarative config.
-# Apply it via the config loader (e.g. `stackradar-apply`) or on startup when
-# CONFIG_FILE is set to this file's path.
+# Place this file at backend/stackradar.config.yml or set STACKRADAR_CONFIG
+# env var to a custom path. The database syncs to match on every startup.
 #
 # ENVIRONMENT VARIABLE SUBSTITUTION
-#   Any value may reference an environment variable using ${VAR_NAME} syntax.
-#   The loader performs substitution before parsing. If the referenced variable
-#   is unset or empty the loader will abort with an error, preventing silent
-#   misconfigurations.
-#
-#   Examples:
-#     api_token: ${WEB_CLUSTER_TOKEN}     # required – fails if unset
-#     webhook_url: ${SLACK_WEBHOOK_URL}   # required – fails if unset
+#   Use ${VAR_NAME} in password, api_token, auth_password, and webhook_url
+#   fields. The server aborts if any referenced variable is unset.
 #
 # UPSERT SEMANTICS
-#   All resources are created-or-updated (upserted) on every apply.  The
-#   natural key used for matching depends on resource type:
-#     - organization  →  name
-#     - tenant        →  name  (within the organization)
-#     - user          →  email (within the organization)
-#     - site          →  name  (within the tenant)
-#     - environment   →  name  (within the site)
-#     - system        →  name  (within the environment)
-#     - uptime_monitor→  name  (within the site)
-#     - notification_channel → name (within the site)
-#     - alert_rule    →  name  (within the site)
+#   All resources are created-or-updated on every startup. Natural keys:
+#     organization        → name
+#     tenant              → name (within organization)
+#     user                → email
+#     site                → name (within tenant)
+#     environment         → name (within site)
+#     system              → name (within environment)
+#     uptime_monitor      → name (within site)
+#     notification_channel → name (within site)
+#     alert_rule          → name (within site)
 #
 # ORPHAN HANDLING
-#   Resources present in the database but absent from this config are handled
-#   as follows:
-#     - Operational config (alert rules, notification channels, uptime monitors)
-#       absent from config → hard DELETE.
-#     - Tenants, sites, environments, and systems absent from config → rows are
-#       preserved (no cascade deletion of logs or metrics), but user_tenants
-#       links for those tenants are removed.
-#     - Users absent from config → set is_active=false and user_tenants links
-#       removed.
-#     - Superadmin users → never removed or deactivated regardless of config.
+#   Resources absent from config are handled as follows:
+#     - Alert rules, notification channels, uptime monitors → hard deleted
+#     - Tenants, sites, environments, systems → rows preserved (no data loss),
+#       but user_tenants links are removed
+#     - Users → set is_active=false, user_tenants links removed
+#     - Superadmin users → never touched
+#   Re-adding a removed tenant/site reuses the existing row and all its
+#   historical data (logs, metrics) becomes visible again.
 #
 # DATA HIERARCHY
 #   organization
-#     └── tenants[]
-#           └── sites[]
-#                 ├── environments[]
-#                 │     └── systems[]
-#                 ├── uptime_monitors[]
-#                 ├── notification_channels[]
-#                 └── alert_rules[]
+#     └── tenants (customers / business units)
+#           └── sites (clusters / Docker hosts / infrastructure)
+#                 ├── environments (prod / staging / dev)
+#                 │     └── systems (containers / helm releases / apps)
+#                 ├── uptime_monitors
+#                 ├── notification_channels
+#                 └── alert_rules
 #
 # =============================================================================
 
-
-# -----------------------------------------------------------------------------
-# Organizations
-# -----------------------------------------------------------------------------
-# Top-level array of organizations.  Each StackRadar deployment typically has
-# one organization, although superadmins may manage multiple.
-# -----------------------------------------------------------------------------
 organizations:
-  - name: Acme Corp
-    description: >
-      Acme Corp engineering organization.  All tenants, users, and sites
-      defined below belong to this organization.
+  - name: "My Company"
+    description: "Main organization managing multiple customers"
 
-    # ---------------------------------------------------------------------------
-    # SMTP Configuration
-    # ---------------------------------------------------------------------------
-    # Used for email-based alert notifications and invitation emails.
-    # auth_password accepts an env-var reference so the secret is never stored
-    # in this file.  Omit the smtp block entirely to use the global SMTP config
-    # (if one exists) or to disable email notifications.
-    # ---------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # SMTP (optional)
+    # -------------------------------------------------------------------------
+    # Used for email alert notifications and invitation emails.
+    # Omit entirely to disable email notifications.
     smtp:
-      host: smtp.mailgun.org
+      host: smtp.example.com
       port: 587
-      # secure: true forces TLS (port 465 style).  false = STARTTLS on port 587.
       secure: false
-      auth_user: postmaster@acme.com
+      auth_user: alerts@example.com
       auth_password: ${SMTP_PASSWORD}
-      from_email: alerts@acme.com
-      from_name: Acme StackRadar Alerts
+      from_email: alerts@example.com
+      from_name: "StackRadar Alerts"
 
-    # ---------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Users
-    # ---------------------------------------------------------------------------
-    # Users are created inside this organization.  Passwords accept env-var
-    # references so plaintext secrets are kept out of version control.
+    # -------------------------------------------------------------------------
+    # global_role: org_admin → manages the organization and all tenants
+    # (omit)                 → regular user, access governed by tenants list
     #
-    # global_role options:
-    #   org_admin   – can manage the organization, tenants, sites, and all users
-    #                 within the organization; assigned to every listed tenant
-    #                 automatically unless tenants overrides this.
-    #   (omit)      – regular user; access is governed by the tenants list.
-    #
-    # tenants is an array of { tenant, role } objects where tenant references a
-    # name declared in the `tenants` array below and role is one of:
-    #   tenant_admin – full control of the tenant's sites, users, and settings
-    #   editor       – can create and modify sites, environments, systems, alerts
-    #   viewer       – read-only access
-    # ---------------------------------------------------------------------------
+    # Tenant roles: tenant_admin | editor | viewer
     users:
-      - email: admin@acme.com
-        name: Acme Admin
+      - email: admin@example.com
+        name: Admin User
         password: ${ADMIN_PASSWORD}
-        # org_admin has implicit access to all tenants in the organization.
-        # Listing tenants here is optional but makes access intent explicit.
         global_role: org_admin
         tenants:
-          - tenant: Production
+          - tenant: "Customer A"
             role: tenant_admin
-          - tenant: Development
+          - tenant: "Customer B"
             role: tenant_admin
 
-      - email: dev@acme.com
-        name: Dev User
-        password: changeme123
-        # No global_role – this is a regular member of the organization.
-        # Access is limited to the tenants listed below.
+      - email: dev@example.com
+        name: Developer
+        password: ${DEV_PASSWORD}
+        # No global_role — regular user with access only to assigned tenants.
         tenants:
-          # This user has no access to the Production tenant.
-          - tenant: Development
+          - tenant: "Customer A"
             role: editor
 
-    # ---------------------------------------------------------------------------
-    # Tenants
-    # ---------------------------------------------------------------------------
-    # Tenants provide a logical boundary within the organization.  A typical
-    # pattern is one tenant per deployment stage (Production, Development) or
-    # per business unit.
-    # ---------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Tenants (customers / business units)
+    # -------------------------------------------------------------------------
+    # Each tenant represents a customer or business unit. Users see only the
+    # tenants they are assigned to.
     tenants:
 
-      # -------------------------------------------------------------------------
-      # Tenant: Production
-      # -------------------------------------------------------------------------
-      - name: Production
-        description: Production workloads and customer-facing services.
-
+      # -----------------------------------------------------------------------
+      # Tenant: Customer A
+      # -----------------------------------------------------------------------
+      - name: "Customer A"
+        description: "Customer A workspace"
         sites:
 
-          # -----------------------------------------------------------------------
-          # Site: web-cluster
-          # -----------------------------------------------------------------------
-          # A site represents a collection point – typically a Kubernetes cluster,
-          # Docker host, or generic log source.  The api_token is used by the
-          # collector to authenticate ingest requests.
+          # --- Production Kubernetes cluster ---------------------------------
+          # A site represents a collection point — a Kubernetes cluster,
+          # Docker host, or generic log source. The api_token authenticates
+          # collector ingest requests.
           #
-          # site_type options: kubernetes | docker | generic
-          # has_metrics: true enables the metrics dashboard and metric-based alerts
+          # site_type: kubernetes | docker | generic
+          # has_metrics: true enables the metrics dashboard and metric alerts
           # retention_days: log and metrics retention window (default: 30)
-          # -----------------------------------------------------------------------
-          - name: web-cluster
-            description: Production Kubernetes cluster running the customer-facing stack.
+          - name: customer-a-prod-k8s
+            description: "Customer A production Kubernetes cluster"
+            api_token: ${CUSTOMER_A_PROD_TOKEN}
             site_type: kubernetes
-            has_metrics: true
-            # 90-day retention keeps three months of log and metrics history.
             retention_days: 90
-            # api_token is provided by the collector configuration.  Use an env var
-            # so the token is not committed to version control.
-            api_token: ${WEB_CLUSTER_TOKEN}
+            has_metrics: true
 
-            # -------------------------------------------------------------------
-            # Environments and Systems
-            # -------------------------------------------------------------------
-            # Environments subdivide a site (e.g. prod, staging, dev).  Systems
-            # are individual applications or services within an environment.
-            # Both are auto-created on first log ingestion if absent, but
-            # declaring them here ensures they exist before any logs arrive and
-            # allows metadata like display_name to be set explicitly.
-            # -------------------------------------------------------------------
+            # Environments subdivide a site. Systems are individual apps,
+            # containers, or helm releases within an environment.
             environments:
               - name: prod
-                # display_name is shown in the UI; defaults to name if omitted.
                 display_name: Production
                 systems:
-                  - name: api-gateway
-                    description: Kong API gateway – handles all inbound HTTP traffic.
-                  - name: user-service
-                    description: User registration, authentication, and profile service.
+                  - name: web-app
+                  - name: api-server
+                  - name: background-worker
 
-            # -------------------------------------------------------------------
-            # Uptime Monitors
-            # -------------------------------------------------------------------
-            # Uptime monitors perform periodic HTTP checks against an external
-            # URL.  is_main: true marks the primary monitor shown in site
-            # dashboards; only one monitor per site may be the main monitor.
-            #
-            # interval_seconds: check frequency.
-            #   Allowed values: 60, 300, 900, 1800, 3600
-            # method: GET | HEAD | POST  (default: GET)
-            # timeout_ms: request timeout in milliseconds  (default: 10000)
-            # expected_status: HTTP status that counts as "up"  (default: 200)
-            # failure_threshold: consecutive failures before status → down  (default: 3)
-            # -------------------------------------------------------------------
+            # Uptime monitors perform periodic HTTP checks.
+            # is_main: true marks the primary monitor for the site dashboard.
             uptime_monitors:
-              - name: example-com-homepage
-                url: https://example.com
-                is_main: true
+              - name: Customer A Website
+                url: https://customer-a.example.com
                 method: GET
-                # Check every 5 minutes.
-                interval_seconds: 300
-                timeout_ms: 10000
+                interval_seconds: 60
                 expected_status: 200
-                # Require 3 consecutive failures before declaring the site down.
-                failure_threshold: 3
+                is_main: true
 
-            # -------------------------------------------------------------------
-            # Notification Channels
-            # -------------------------------------------------------------------
-            # Channels receive alert notifications.  Two channel types are
-            # supported: email and webhook.
-            #
-            # email channels require email_recipients (list of addresses).
-            # webhook channels require webhook_url; optional webhook_headers can
-            # carry auth tokens or custom headers.  Forbidden headers (host,
-            # cookie, set-cookie, content-length, transfer-encoding) are rejected
-            # by the API.
-            # -------------------------------------------------------------------
+            # Notification channels receive alert notifications.
+            # Types: email (requires email_recipients) or webhook (requires webhook_url).
             notification_channels:
               - name: ops-email
                 channel_type: email
-                enabled: true
                 email_recipients:
-                  - ops@acme.com
-
-              - name: slack-webhook
+                  - ops@example.com
+                  - oncall@example.com
+              - name: slack-alerts
                 channel_type: webhook
-                enabled: true
-                # The URL contains a secret; keep it in an env var.
                 webhook_url: ${SLACK_WEBHOOK_URL}
-                # Optional custom headers, e.g. for additional auth tokens.
-                # webhook_headers:
-                #   Authorization: Bearer ${SLACK_BEARER_TOKEN}
 
-            # -------------------------------------------------------------------
-            # Alert Rules
-            # -------------------------------------------------------------------
-            # Alert rules evaluate metrics or uptime status and fire notifications
-            # to the listed notification_channels when thresholds are breached.
-            #
-            # alert_type: metric | uptime
-            #
-            # For metric alerts:
-            #   metric_type options:
-            #     cpu_percent, memory_percent, error_logs, pod_failed,
-            #     pod_pending, deployment_readiness, pvc_bound, node_health
-            #   threshold_operator: > | >= | < | <= | =
-            #   threshold_value: numeric threshold
-            #   time_window_minutes: evaluation window (default: 5)
-            #
-            # For uptime alerts:
-            #   monitor: name of an uptime_monitor defined on this site
-            #   failure_threshold: consecutive failures to trigger (default: 3)
-            #
-            # Common fields:
-            #   severity: critical | warning | info  (default: warning)
-            #   cooldown_minutes: silence period after firing  (default: 30)
-            #   repeat_interval_hours: re-notify interval while still firing
-            #     (default: 1; 0 = notify once only)
-            #   notification_channels: list of channel names to notify (must
-            #     match names defined in notification_channels above)
-            # -------------------------------------------------------------------
+            # Alert rules evaluate metrics or uptime and fire notifications.
+            # notification_channels references channel names defined above.
+            # monitor references an uptime_monitor name defined above.
             alert_rules:
               - name: high-cpu
-                description: Fire when CPU usage exceeds 90% over a 5-minute window.
                 alert_type: metric
                 metric_type: cpu_percent
                 threshold_operator: ">"
                 threshold_value: 90
-                time_window_minutes: 5
                 severity: critical
-                cooldown_minutes: 30
-                repeat_interval_hours: 2
                 notification_channels:
                   - ops-email
-                  - slack-webhook
-
+                  - slack-alerts
+              - name: high-memory
+                alert_type: metric
+                metric_type: memory_percent
+                threshold_operator: ">"
+                threshold_value: 85
+                severity: warning
+                notification_channels:
+                  - ops-email
               - name: site-down
-                description: Fire when the main uptime monitor reports the site as down.
                 alert_type: uptime
-                # References the uptime_monitor name defined above.
-                monitor: example-com-homepage
-                # Trigger after this many consecutive failures (overrides the
-                # monitor's own failure_threshold for alerting purposes).
-                failure_threshold: 3
+                monitor: Customer A Website
                 severity: critical
-                cooldown_minutes: 15
-                # Set to 0 to notify once and not repeat while the site is down.
-                repeat_interval_hours: 1
                 notification_channels:
                   - ops-email
-                  - slack-webhook
+                  - slack-alerts
 
-      # -------------------------------------------------------------------------
-      # Tenant: Development
-      # -------------------------------------------------------------------------
-      - name: Development
-        description: Internal development and testing workloads.  No customer data.
-
-        sites:
-
-          # -----------------------------------------------------------------------
-          # Site: dev-cluster  (minimal configuration)
-          # -----------------------------------------------------------------------
-          # This site collects metrics and logs from the shared dev cluster.
-          # No uptime monitors, notification channels, or alert rules are
-          # configured – those can be added via the UI as needed.
-          # -----------------------------------------------------------------------
-          - name: dev-cluster
-            description: Shared Kubernetes cluster for development and CI workloads.
-            site_type: kubernetes
-            has_metrics: true
-            # Use a shorter retention period for dev to save storage.
+          # --- Development Docker host ---------------------------------------
+          # Minimal config — no monitors or alerts (add via UI as needed).
+          - name: customer-a-dev-docker
+            description: "Customer A dev Docker host"
+            api_token: ${CUSTOMER_A_DEV_TOKEN}
+            site_type: docker
             retention_days: 14
-            api_token: ${DEV_CLUSTER_TOKEN}
-
+            has_metrics: true
             environments:
               - name: dev
                 display_name: Development
                 systems:
-                  - name: api-gateway
-                    description: Development instance of the API gateway.
-                  - name: user-service
-                    description: Development instance of the user service.
+                  - name: web-app
+                  - name: api-server
+
+      # -----------------------------------------------------------------------
+      # Tenant: Customer B (minimal setup)
+      # -----------------------------------------------------------------------
+      - name: "Customer B"
+        description: "Customer B workspace"
+        sites:
+          - name: customer-b-prod-k8s
+            description: "Customer B production cluster"
+            api_token: ${CUSTOMER_B_PROD_TOKEN}
+            site_type: kubernetes
+            retention_days: 60
+            has_metrics: true
+            environments:
+              - name: prod
+                display_name: Production
+                systems:
+                  - name: main-app
+              - name: staging
+                display_name: Staging
+                systems:
+                  - name: main-app
