@@ -805,64 +805,43 @@ async function syncOrganization(
     counts.monitorsDeleted += orphanMonitors.rowCount ?? 0;
   }
 
-  // User-tenant links for tenants that are in this org but NOT in config
-  // (i.e. tenants the config no longer manages)
+  // Orphaned tenants: in this org but NOT in config → hard delete.
+  // CASCADE removes sites, environments, systems, logs, metrics, user_tenants.
   if (managedTenantIds.length > 0) {
     await client.query(
-      `DELETE FROM user_tenants
-        WHERE tenant_id IN (
-          SELECT id FROM tenants
-           WHERE organization_id = $1
-             AND id != ALL($2)
-        )`,
+      `DELETE FROM tenants WHERE organization_id = $1 AND id != ALL($2)`,
       [orgId, managedTenantIds],
     );
   } else {
-    // No tenants managed — remove all user-tenant links for tenants of this org
+    // No tenants managed — delete all tenants for this org
     await client.query(
-      `DELETE FROM user_tenants
-        WHERE tenant_id IN (
-          SELECT id FROM tenants WHERE organization_id = $1
-        )`,
+      `DELETE FROM tenants WHERE organization_id = $1`,
       [orgId],
     );
   }
 
-  // Deactivate users in this org that are no longer in config; never touch superadmins
+  // Hard delete users in this org that are no longer in config; never touch superadmins.
+  // CASCADE on user_tenants cleans up tenant links automatically.
   if (managedUserIds.length > 0) {
-    const deactivated = await client.query<{ id: number }>(
-      `UPDATE users
-          SET is_active = false, updated_at = CURRENT_TIMESTAMP
+    const deleted = await client.query<{ id: number }>(
+      `DELETE FROM users
         WHERE organization_id = $1
           AND id != ALL($2)
           AND (global_role IS NULL OR global_role != 'superadmin')
         RETURNING id`,
       [orgId, managedUserIds],
     );
-    counts.usersDeactivated += deactivated.rowCount ?? 0;
-
-    // Remove their tenant memberships too
-    await client.query(
-      `DELETE FROM user_tenants
-        WHERE user_id IN (
-          SELECT id FROM users
-           WHERE organization_id = $1
-             AND id != ALL($2)
-             AND (global_role IS NULL OR global_role != 'superadmin')
-        )`,
-      [orgId, managedUserIds],
-    );
+    counts.usersDeactivated += deleted.rowCount ?? 0;
   } else {
-    // No users managed — deactivate all non-superadmin users in org
-    const deactivated = await client.query<{ id: number }>(
-      `UPDATE users
-          SET is_active = false, updated_at = CURRENT_TIMESTAMP
+    // No users managed — delete all non-superadmin users in org
+    const deleted = await client.query<{ id: number }>(
+      `DELETE FROM users
         WHERE organization_id = $1
           AND (global_role IS NULL OR global_role != 'superadmin')
         RETURNING id`,
       [orgId],
     );
-    counts.usersDeactivated += deactivated.rowCount ?? 0;
+    counts.usersDeactivated += deleted.rowCount ?? 0;
   }
 
   console.log(`✅ Organization "${org.name}" synced (id=${orgId})`);
