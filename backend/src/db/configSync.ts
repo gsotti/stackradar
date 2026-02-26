@@ -266,6 +266,18 @@ async function syncOrganization(
   const tenantIdByName = new Map<string, number>();
   const managedTenantIds: number[] = [];
 
+  // Collect tenant names from config first
+  const configTenantNames = new Set((org.tenants ?? []).map(t => t.name));
+
+  // Delete orphaned tenants BEFORE creating/updating, so that renamed tenants
+  // free up their sites' api_tokens before new tenants try to claim them.
+  await client.query(
+    `DELETE FROM tenants
+      WHERE organization_id = $1
+        AND name != ALL($2)`,
+    [orgId, [...configTenantNames]],
+  );
+
   for (const tenant of org.tenants ?? []) {
     const existing = await client.query<{ id: number }>(
       'SELECT id FROM tenants WHERE name = $1 AND organization_id = $2',
@@ -805,20 +817,7 @@ async function syncOrganization(
     counts.monitorsDeleted += orphanMonitors.rowCount ?? 0;
   }
 
-  // Orphaned tenants: in this org but NOT in config → hard delete.
-  // CASCADE removes sites, environments, systems, logs, metrics, user_tenants.
-  if (managedTenantIds.length > 0) {
-    await client.query(
-      `DELETE FROM tenants WHERE organization_id = $1 AND id != ALL($2)`,
-      [orgId, managedTenantIds],
-    );
-  } else {
-    // No tenants managed — delete all tenants for this org
-    await client.query(
-      `DELETE FROM tenants WHERE organization_id = $1`,
-      [orgId],
-    );
-  }
+  // Orphaned tenants already deleted in Step 3 (before site creation).
 
   // Hard delete users in this org that are no longer in config; never touch superadmins.
   // CASCADE on user_tenants cleans up tenant links automatically.
