@@ -65,170 +65,178 @@ interface SiteGroupedMonitorsProps {
   t: (key: string) => string;
   formatTimeAgo: (d: string | null) => string;
   formatInLocalTime: (d: string, fmt: string) => string;
-  variant: 'detailed' | 'compact';
 }
 
-function SiteGroupedMonitors({ monitors, checksMap, t, formatTimeAgo: fmtAgo, formatInLocalTime: fmtLocal, variant }: SiteGroupedMonitorsProps) {
+function SiteGroupedMonitors({ monitors, checksMap, t, formatTimeAgo: fmtAgo, formatInLocalTime: fmtLocal }: SiteGroupedMonitorsProps) {
   const groups = useMemo(() => buildSiteGroups(monitors), [monitors]);
+  const [expandedSite, setExpandedSite] = useState<number | null>(null);
 
-  // Auto-expand sites with issues; collapse healthy ones by default
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
-
-  // Recalculate default expansion when groups change
+  // Auto-expand first site with issues
   useEffect(() => {
-    const defaults: Record<number, boolean> = {};
-    for (const g of groups) {
-      // Expand if has issues OR total groups <= 5
-      defaults[g.siteId] = g.downCount > 0 || g.degradedCount > 0 || groups.length <= 5;
-    }
-    setExpanded(defaults);
+    const problem = groups.find(g => g.downCount > 0 || g.degradedCount > 0);
+    setExpandedSite(problem?.siteId ?? null);
   }, [groups]);
 
   const toggle = useCallback((siteId: number) => {
-    setExpanded(prev => ({ ...prev, [siteId]: !prev[siteId] }));
+    setExpandedSite(prev => prev === siteId ? null : siteId);
   }, []);
 
-  return (
-    <div className="space-y-3">
-      {groups.map((group) => {
-        const isOpen = expanded[group.siteId] ?? false;
-        const total = group.monitors.length;
-        const allUp = group.downCount === 0 && group.degradedCount === 0;
+  const borderColor: Record<UptimeStatus, string> = {
+    up: 'border-t-accent-success',
+    down: 'border-t-accent-danger',
+    degraded: 'border-t-accent-warning',
+    unknown: 'border-t-neutral-400',
+  };
 
-        return (
-          <div key={group.siteId} className="card-compact !p-0 overflow-hidden">
-            {/* Site header — always visible */}
+  return (
+    <div className="space-y-4">
+      {/* Site cards grid — max 4 per row, same style as stat cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {groups.map((group) => {
+          const total = group.monitors.length;
+          const allUp = group.downCount === 0 && group.degradedCount === 0;
+          const isOpen = expandedSite === group.siteId;
+
+          // Compute avg response time across this site's monitors
+          const responseTimes = group.monitors.map(m => m.last_response_time).filter((v): v is number => v != null);
+          const avgMs = responseTimes.length > 0
+            ? Math.round(responseTimes.reduce((s, v) => s + v, 0) / responseTimes.length)
+            : null;
+
+          return (
             <button
+              key={group.siteId}
               onClick={() => toggle(group.siteId)}
-              className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors text-left"
+              className={`card-compact border-t-4 ${borderColor[group.worstStatus]} text-left transition-all ${isOpen ? 'ring-2 ring-primary-500/40' : 'hover:shadow-md'}`}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${statusDotClass[group.worstStatus]} ${group.worstStatus === 'down' ? 'animate-pulse' : ''}`} />
+                  <span className="font-semibold text-sm text-neutral-900 dark:text-white truncate">{group.siteName}</span>
+                </div>
                 {isOpen
                   ? <ChevronDown className="w-4 h-4 text-neutral-400 flex-shrink-0" />
                   : <ChevronRight className="w-4 h-4 text-neutral-400 flex-shrink-0" />
                 }
-                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusDotClass[group.worstStatus]} ${group.worstStatus === 'down' ? 'animate-pulse' : ''}`} />
-                <span className="font-medium text-sm text-neutral-900 dark:text-white truncate">{group.siteName}</span>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+
+              {/* Status summary */}
+              <div className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
+                <span className={allUp ? 'text-accent-success' : ''}>{group.upCount}/{total}</span>
+                <span className="text-sm font-normal text-neutral-400 ml-1">{t('stats.up').toLowerCase()}</span>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
                 {group.downCount > 0 && (
-                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300">
-                    {group.downCount} {t('stats.down').toLowerCase()}
-                  </span>
+                  <span className="font-medium text-rose-600 dark:text-rose-400">{group.downCount} {t('stats.down').toLowerCase()}</span>
                 )}
                 {group.degradedCount > 0 && (
-                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                    {group.degradedCount} {t('stats.degraded').toLowerCase()}
-                  </span>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">{group.degradedCount} {t('stats.degraded').toLowerCase()}</span>
                 )}
-                <span className={`text-xs font-medium ${allUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'}`}>
-                  {group.upCount}/{total} {t('stats.up').toLowerCase()}
-                </span>
+                {avgMs !== null && (
+                  <span>Ø {avgMs}ms</span>
+                )}
               </div>
             </button>
+          );
+        })}
+      </div>
 
-            {/* Expanded: show individual monitors */}
-            {isOpen && (
-              <div className="border-t border-neutral-200 dark:border-neutral-700">
-                {variant === 'detailed' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 p-3">
-                    {group.monitors.map((monitor) => {
-                      const mStatus = monitor.current_status || 'unknown';
-                      const checks = checksMap[monitor.id] || [];
-                      const bars = checks.slice(0, 30).reverse();
-                      const uptimePct = checks.length > 0
-                        ? (checks.filter(c => c.status === 'up').length / checks.length) * 100
-                        : null;
-                      const validChecks = checks.filter(c => c.response_time_ms != null);
-                      const avgMs = validChecks.length > 0
-                        ? Math.round(validChecks.reduce((s, c) => s + (c.response_time_ms ?? 0), 0) / validChecks.length)
-                        : null;
+      {/* Expanded detail panel — shows below the grid */}
+      {expandedSite !== null && (() => {
+        const group = groups.find(g => g.siteId === expandedSite);
+        if (!group) return null;
 
-                      return (
-                        <div key={monitor.id} className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3">
-                          {/* Header row */}
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <div className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass[mStatus]}`} />
-                                <span className="font-medium text-sm text-neutral-900 dark:text-white truncate">{monitor.name}</span>
-                              </div>
-                              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5 pl-4">
-                                {monitor.url.replace(/^https?:\/\//, '')}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {monitor.is_main && (
-                                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 uppercase">{t('uptime_summary.main_label')}</span>
-                              )}
-                            </div>
-                          </div>
+        return (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-heading-4 flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${statusDotClass[group.worstStatus]}`} />
+                {group.siteName}
+              </h3>
+              <button onClick={() => setExpandedSite(null)} className="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+                ✕
+              </button>
+            </div>
 
-                          {/* Sparkline */}
-                          {bars.length > 0 && (
-                            <div className="mb-2">
-                              <div className="flex gap-px h-5 items-end">
-                                {bars.map((check, i) => {
-                                  const height = check.status === 'up' ? 'h-full' : check.status === 'degraded' ? 'h-3/4' : 'h-1/2';
-                                  const barColor = check.status === 'up'
-                                    ? 'bg-accent-success/60 dark:bg-accent-success/40'
-                                    : check.status === 'degraded'
-                                    ? 'bg-accent-warning/60 dark:bg-accent-warning/40'
-                                    : 'bg-accent-danger/60 dark:bg-accent-danger/40';
-                                  return (
-                                    <div key={i}
-                                      className={`flex-1 rounded-sm ${barColor} ${height}`}
-                                      title={`${check.status.toUpperCase()} – ${check.response_time_ms ?? 0}ms\n${fmtLocal(check.checked_at, 'dd.MM.yyyy HH:mm:ss')}`}
-                                    />
-                                  );
-                                })}
-                                {Array.from({ length: Math.max(0, 30 - bars.length) }).map((_, i) => (
-                                  <div key={`e-${i}`} className="flex-1 h-full rounded-sm bg-neutral-200 dark:bg-neutral-700/50" />
-                                ))}
-                              </div>
-                            </div>
-                          )}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {group.monitors.map((monitor) => {
+                const mStatus = monitor.current_status || 'unknown';
+                const checks = checksMap[monitor.id] || [];
+                const bars = checks.slice(0, 30).reverse();
+                const uptimePct = checks.length > 0
+                  ? (checks.filter(c => c.status === 'up').length / checks.length) * 100
+                  : null;
+                const validChecks = checks.filter(c => c.response_time_ms != null);
+                const monitorAvgMs = validChecks.length > 0
+                  ? Math.round(validChecks.reduce((s, c) => s + (c.response_time_ms ?? 0), 0) / validChecks.length)
+                  : null;
 
-                          {/* Stats row */}
-                          <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
-                            <div className="flex items-center gap-2">
-                              {uptimePct !== null && (
-                                <span><span className="font-medium text-neutral-700 dark:text-neutral-300">{uptimePct.toFixed(1)}%</span> {t('uptime_summary.uptime_percent')}</span>
-                              )}
-                              {avgMs !== null && (
-                                <span><span className="font-medium text-neutral-700 dark:text-neutral-300">{avgMs}</span>{t('uptime_summary.ms_avg')}</span>
-                              )}
-                            </div>
-                            <span>{fmtAgo(monitor.last_checked_at)}</span>
-                          </div>
+                return (
+                  <div key={monitor.id} className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass[mStatus]} ${mStatus === 'down' ? 'animate-pulse' : ''}`} />
+                          <span className="font-medium text-sm text-neutral-900 dark:text-white truncate">{monitor.name}</span>
                         </div>
-                      );
-                    })}
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5 pl-4">
+                          {monitor.url.replace(/^https?:\/\//, '')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {monitor.is_main && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 uppercase">{t('uptime_summary.main_label')}</span>
+                        )}
+                        {!monitor.enabled && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">{t('uptime_summary.paused_label')}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Sparkline */}
+                    <div className="mb-2">
+                      <div className="flex gap-px h-5 items-end">
+                        {bars.map((check, i) => {
+                          const height = check.status === 'up' ? 'h-full' : check.status === 'degraded' ? 'h-3/4' : 'h-1/2';
+                          const barColor = check.status === 'up'
+                            ? 'bg-accent-success/60 dark:bg-accent-success/40'
+                            : check.status === 'degraded'
+                            ? 'bg-accent-warning/60 dark:bg-accent-warning/40'
+                            : 'bg-accent-danger/60 dark:bg-accent-danger/40';
+                          return (
+                            <div key={i}
+                              className={`flex-1 rounded-sm ${barColor} ${height}`}
+                              title={`${check.status.toUpperCase()} – ${check.response_time_ms ?? 0}ms\n${fmtLocal(check.checked_at, 'dd.MM.yyyy HH:mm:ss')}`}
+                            />
+                          );
+                        })}
+                        {Array.from({ length: Math.max(0, 30 - bars.length) }).map((_, i) => (
+                          <div key={`e-${i}`} className="flex-1 h-full rounded-sm bg-neutral-200 dark:bg-neutral-700/50" />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <div className="flex items-center gap-2">
+                        {uptimePct !== null && (
+                          <span><span className="font-medium text-neutral-700 dark:text-neutral-300">{uptimePct.toFixed(1)}%</span> {t('uptime_summary.uptime_percent')}</span>
+                        )}
+                        {monitorAvgMs !== null && (
+                          <span><span className="font-medium text-neutral-700 dark:text-neutral-300">{monitorAvgMs}</span>{t('uptime_summary.ms_avg')}</span>
+                        )}
+                      </div>
+                      <span>{fmtAgo(monitor.last_checked_at)}</span>
+                    </div>
                   </div>
-                ) : (
-                  /* Compact variant: simple rows */
-                  <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                    {group.monitors.map((monitor) => {
-                      const mStatus = monitor.current_status || 'unknown';
-                      return (
-                        <div key={monitor.id} className="flex items-center justify-between gap-3 px-4 py-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass[mStatus]} ${mStatus === 'down' ? 'animate-pulse' : ''}`} />
-                            <span className="text-sm text-neutral-900 dark:text-white truncate">{monitor.name}</span>
-                          </div>
-                          <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 whitespace-nowrap flex-shrink-0">
-                            {monitor.last_response_time ? `${monitor.last_response_time}ms` : '—'}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
         );
-      })}
+      })()}
     </div>
   );
 }
@@ -503,7 +511,6 @@ export default function DashboardPage() {
           t={t}
           formatTimeAgo={formatTimeAgo}
           formatInLocalTime={formatInLocalTime}
-          variant="detailed"
         />
       </div>
     );
@@ -636,7 +643,6 @@ export default function DashboardPage() {
             t={t}
             formatTimeAgo={formatTimeAgo}
             formatInLocalTime={formatInLocalTime}
-            variant="compact"
           />
         </div>
       )}
