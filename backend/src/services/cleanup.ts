@@ -50,6 +50,20 @@ export async function cleanupOldLogs(): Promise<number> {
 
     totalDeleted += parseInt(historyResult.rows[0]?.deleted_count || '0');
 
+    // Cleanup lambda metrics history for this site
+    const lambdaResult = await db.query<{ deleted_count: string }>(
+      `WITH deleted AS (
+         DELETE FROM lambda_metrics_history h
+         WHERE h.site_id = $1
+         AND h.timestamp < $2
+         RETURNING h.*
+       )
+       SELECT COUNT(*)::text as deleted_count FROM deleted`,
+      [site.id, retentionDate.toISOString()]
+    );
+
+    totalDeleted += parseInt(lambdaResult.rows[0]?.deleted_count || '0');
+
     // Cleanup uptime checks for monitors in this site
     const uptimeResult = await db.query<{ deleted_count: string }>(
       `WITH deleted AS (

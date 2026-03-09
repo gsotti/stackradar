@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  StackRadar Lambda Monitoring Collectors.
+  Deploys a Log Forwarder Lambda (triggered via CloudWatch subscription filters)
+  and a Metrics Collector Lambda (triggered by EventBridge on a schedule).
+
+  After deployment, use the LogForwarderFunctionArn output to create CloudWatch
+  subscription filters for each Lambda function you want to monitor. See the
+  SubscriptionFilterCommand output for an example CLI command.
+
+  NOTE: This template uses inline code placeholders. You must upload the actual
+  function code using `aws lambda update-function-code` after the stack is created,
+  or use AWS SAM / CDK for full code packaging workflows.
+
+Parameters:
+
+  StackRadarUrl:
+    Type: String
+    Description: >
+      Base URL of your StackRadar instance (e.g., https://stackradar.example.com).
+      No trailing slash.
+
+  StackRadarApiToken:
+    Type: String
+    NoEcho: true
+    Description: >
+      Site API token from StackRadar. Create an aws_lambda site in StackRadar
+      first, then copy its API token here.
+
+  Environment:
+    Type: String
+    Default: production
+    Description: >
+      Environment name used to tag all forwarded logs and metrics in StackRadar
+      (e.g., production, staging, dev).
+
+  FunctionPrefix:
+    Type: String
+    Default: ''
+    Description: >
+      Optional prefix to filter which Lambda functions the Metrics Collector
+      monitors. Leave empty to monitor all functions in the region. Example: "api-"
+      to monitor only functions whose names start with "api-".
+
+  MetricsCollectionInterval:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 60
+    Description: >
+      How often (in minutes) the Metrics Collector Lambda runs to pull CloudWatch
+      metrics. Must be between 1 and 60. Default is 5 minutes.
+
+  NodeRuntime:
+    Type: String
+    Default: nodejs20.x
+    AllowedValues:
+      - nodejs18.x
+      - nodejs20.x
+      - nodejs22.x
+    Description: >
+      Node.js Lambda runtime version to use for both collector functions.
+
+Resources:
+
+  # ---------------------------------------------------------------------------
+  # Log Forwarder
+  # Receives CloudWatch log events forwarded by subscription filters and sends
+  # them to StackRadar's /api/ingest/{apiToken} endpoint.
+  # ---------------------------------------------------------------------------
+
+  LogForwarderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-log-forwarder-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # Grants permission to write its own execution logs to CloudWatch.
+        # No additional AWS permissions are needed — this function only
+        # decompresses incoming payloads and makes outbound HTTPS calls.
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LogForwarderFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-log-forwarder'
+      Description: >
+        Receives CloudWatch Logs events via subscription filters and forwards
+        them to StackRadar for log aggregation and analysis.
+      Runtime: !Ref NodeRuntime
+      Handler: index.handler
+      Role: !GetAtt LogForwarderRole.Arn
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          STACKRADAR_URL: !Ref StackRadarUrl
+          STACKRADAR_API_TOKEN: !Ref StackRadarApiToken
+          STACKRADAR_ENVIRONMENT: !Ref Environment
+      Code:
+        # Placeholder — replace with actual code after stack creation:
+        #   aws lambda update-function-code \
+        #     --function-name <LogForwarderFunctionName> \
+        #     --zip-file fileb://collector-lambda/log-forwarder.zip
+        #
+        # Or use AWS SAM / CDK for a full packaging workflow.
+        ZipFile: |
+          exports.handler = async (event) => {
+            console.log('StackRadar log forwarder placeholder. Upload the actual code.');
+            console.log('See collector-lambda/log-forwarder/ for the source.');
+          };
+
+  # Allow CloudWatch Logs to invoke the forwarder when a subscription filter
+  # delivers log events. The SourceArn uses a wildcard so a single permission
+  # covers all log groups in this account/region.
+  LogForwarderPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt LogForwarderFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: logs.amazonaws.com
+      SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+
+  # ---------------------------------------------------------------------------
+  # Metrics Collector
+  # Runs on a schedule (EventBridge), queries CloudWatch metrics for all
+  # Lambda functions, and sends aggregated data to StackRadar.
+  # ---------------------------------------------------------------------------
+
+  MetricsCollectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-metrics-collector-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: MetricsCollectorPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ReadCloudWatchMetrics
+                Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricData
+                Resource: '*'
+              - Sid: ListLambdaFunctions
+                Effect: Allow
+                Action:
+                  - lambda:ListFunctions
+                Resource: '*'
+
+  MetricsCollectorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-metrics-collector'
+      Description: >
+        Scheduled Lambda that pulls CloudWatch metrics for all monitored Lambda
+        functions and forwards aggregated data to StackRadar.
+      Runtime: !Ref NodeRuntime
+      Handler: index.handler
+      Role: !GetAtt MetricsCollectorRole.Arn
+      MemorySize: 256
+      Timeout: 120
+      Environment:
+        Variables:
+          STACKRADAR_URL: !Ref StackRadarUrl
+          STACKRADAR_API_TOKEN: !Ref StackRadarApiToken
+          # Filter by function name prefix. Empty = collect metrics for all functions.
+          FUNCTION_PREFIX: !Ref FunctionPrefix
+          # Automatically exclude this collector function from its own metrics report.
+          EXCLUDE_SELF: 'true'
+      Code:
+        # Placeholder — replace with actual code after stack creation:
+        #   aws lambda update-function-code \
+        #     --function-name <MetricsCollectorFunctionName> \
+        #     --zip-file fileb://collector-lambda/metrics-collector.zip
+        #
+        # Or use AWS SAM / CDK for a full packaging workflow.
+        ZipFile: |
+          exports.handler = async (event) => {
+            console.log('StackRadar metrics collector placeholder. Upload the actual code.');
+            console.log('See collector-lambda/metrics-collector/ for the source.');
+          };
+
+  # EventBridge rule that triggers the Metrics Collector on a fixed schedule.
+  MetricsScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${AWS::StackName}-metrics-schedule'
+      Description: !Sub >
+        Triggers the StackRadar metrics collector every ${MetricsCollectionInterval} minute(s).
+      ScheduleExpression: !Sub 'rate(${MetricsCollectionInterval} minutes)'
+      State: ENABLED
+      Targets:
+        - Id: MetricsCollectorTarget
+          Arn: !GetAtt MetricsCollectorFunction.Arn
+
+  # Allow EventBridge to invoke the Metrics Collector.
+  MetricsSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt MetricsCollectorFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MetricsScheduleRule.Arn
+
+Outputs:
+
+  LogForwarderFunctionArn:
+    Description: >
+      ARN of the Log Forwarder Lambda. Use this as the destination ARN when
+      creating CloudWatch subscription filters for your Lambda functions.
+    Value: !GetAtt LogForwarderFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-LogForwarderArn'
+
+  LogForwarderFunctionName:
+    Description: Name of the Log Forwarder Lambda function.
+    Value: !Ref LogForwarderFunction
+    Export:
+      Name: !Sub '${AWS::StackName}-LogForwarderName'
+
+  MetricsCollectorFunctionArn:
+    Description: ARN of the Metrics Collector Lambda function.
+    Value: !GetAtt MetricsCollectorFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MetricsCollectorArn'
+
+  SubscriptionFilterCommand:
+    Description: >
+      Example AWS CLI command to subscribe a Lambda function's log group to the
+      Log Forwarder. Replace /aws/lambda/YOUR_FUNCTION with your actual log group.
+    Value: !Sub >
+      aws logs put-subscription-filter
+      --log-group-name /aws/lambda/YOUR_FUNCTION
+      --filter-name stackradar
+      --filter-pattern ""
+      --destination-arn ${LogForwarderFunction.Arn}

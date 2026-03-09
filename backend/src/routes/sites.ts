@@ -90,9 +90,9 @@ router.post('/', authMiddleware, editorMiddleware, async (
     }
 
     // Validate site_type
-    const validSiteTypes = ['docker', 'kubernetes', 'generic'];
+    const validSiteTypes = ['docker', 'kubernetes', 'generic', 'aws_lambda'];
     if (!validSiteTypes.includes(site_type)) {
-      res.status(400).json({ detail: 'Invalid site_type. Must be docker, kubernetes, or generic' });
+      res.status(400).json({ detail: 'Invalid site_type. Must be docker, kubernetes, generic, or aws_lambda' });
       return;
     }
 
@@ -133,9 +133,9 @@ router.put('/:id', authMiddleware, editorMiddleware, async (
 
     // Validate site_type if provided
     if (site_type) {
-      const validSiteTypes = ['docker', 'kubernetes', 'generic'];
+      const validSiteTypes = ['docker', 'kubernetes', 'generic', 'aws_lambda'];
       if (!validSiteTypes.includes(site_type)) {
-        res.status(400).json({ detail: 'Invalid site_type. Must be docker, kubernetes, or generic' });
+        res.status(400).json({ detail: 'Invalid site_type. Must be docker, kubernetes, generic, or aws_lambda' });
         return;
       }
     }

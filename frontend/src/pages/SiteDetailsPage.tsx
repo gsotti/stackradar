@@ -13,6 +13,7 @@ import AlertsView from '../components/alerts/AlertsView';
 import SiteSetupInstructions from '../components/SiteSetupInstructions';
 import UptimeMonitorsView from '../components/uptime/UptimeMonitorsView';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import LambdaDashboard from './LambdaDashboardPage';
 
 import { Site, K8sMetrics } from '../types';
 
@@ -165,11 +166,12 @@ export default function SiteDetailsPage() {
   // Get labels based on site type
   const isDocker = site?.site_type === 'docker';
   const isK8s = site?.site_type === 'kubernetes';
+  const isLambda = site?.site_type === 'aws_lambda';
   const labels = {
     containers: isDocker ? t('details.label_containers') : t('details.label_pods'),
     hosts: isDocker ? t('details.label_host') : t('details.label_nodes'),
     deployments: isDocker ? t('details.label_running') : t('details.label_deployments'),
-    platform: isDocker ? 'Docker' : isK8s ? 'Kubernetes' : t('details.label_infrastructure')
+    platform: isDocker ? 'Docker' : isK8s ? 'Kubernetes' : isLambda ? 'AWS Lambda' : t('details.label_infrastructure')
   };
 
   if (loading) {
@@ -300,7 +302,9 @@ export default function SiteDetailsPage() {
       </div>
 
       {/* Content based on active tab */}
-      {activeTab === 'metrics' ? (
+      {activeTab === 'metrics' && isLambda ? (
+        <LambdaDashboard siteId={id!} />
+      ) : activeTab === 'metrics' ? (
         <>
           {/* Site Info Bar */}
           <div className="card-compact flex items-center gap-4">
@@ -496,6 +500,7 @@ export default function SiteDetailsPage() {
                     <option value="docker">{t('settings.site_type_docker')}</option>
                     <option value="kubernetes">{t('settings.site_type_kubernetes')}</option>
                     <option value="generic">{t('settings.site_type_generic')}</option>
+                    <option value="aws_lambda">{t('form.site_type_aws_lambda')}</option>
                   </select>
                 </div>
                 <div>

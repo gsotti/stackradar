@@ -1,0 +1,10 @@
+{
+  "name": "stackradar-lambda-log-forwarder",
+  "version": "1.0.0",
+  "description": "CloudWatch Logs forwarder to StackRadar for AWS Lambda functions",
+  "main": "index.mjs",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

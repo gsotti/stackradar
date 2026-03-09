@@ -1,0 +1,17 @@
+{
+  "name": "stackradar-lambda-metrics-collector",
+  "version": "1.0.0",
+  "description": "AWS Lambda metrics collector for StackRadar",
+  "main": "index.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.0.0",
+    "@aws-sdk/client-lambda": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

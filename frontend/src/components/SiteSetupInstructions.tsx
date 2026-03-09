@@ -838,6 +838,207 @@ sendLog(log).catch(console.error);`;
     );
   };
 
+  const renderLambdaInstructions = () => {
+    const apiToken = site.api_token;
+    const stackradarUrl = resolveAppUrl();
+
+    const logForwarderEnvVars = `STACKRADAR_URL=${stackradarUrl}
+STACKRADAR_API_TOKEN=${apiToken}`;
+
+    const subscriptionFilterCmd = `aws logs put-subscription-filter \\
+  --log-group-name "/aws/lambda/<function-name>" \\
+  --filter-name "stackradar-forwarder" \\
+  --filter-pattern "" \\
+  --destination-arn "<log-forwarder-lambda-arn>"`;
+
+    const metricsCollectorEnvVars = `STACKRADAR_URL=${stackradarUrl}
+STACKRADAR_API_TOKEN=${apiToken}
+AWS_REGION=<your-aws-region>`;
+
+    const eventBridgeCmd = `aws events put-rule \\
+  --name stackradar-metrics-collector \\
+  --schedule-expression "rate(5 minutes)" \\
+  --state ENABLED
+
+aws events put-targets \\
+  --rule stackradar-metrics-collector \\
+  --targets "Id=metrics-collector,Arn=<metrics-collector-lambda-arn>"`;
+
+    const iamPolicy = `{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetMetricData",
+        "cloudwatch:ListMetrics",
+        "lambda:ListFunctions",
+        "lambda:GetFunctionConfiguration"
+      ],
+      "Resource": "*"
+    }
+  ]
+}`;
+
+    return (
+      <div className="space-y-8">
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+          <p className="text-sm text-orange-800 dark:text-orange-200 font-medium">
+            {t('setup.lambda_intro')}
+          </p>
+        </div>
+
+        {/* Step 1: Log Forwarder Lambda */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            {t('setup.lambda_step1_title')}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('setup.lambda_step1_description')}
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {t('setup.lambda_env_vars_label')}
+              </span>
+              <button
+                onClick={() => copyToClipboard(logForwarderEnvVars, 'lambda-log-env')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {getCopiedText('lambda-log-env')}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {logForwarderEnvVars}
+            </pre>
+          </div>
+        </div>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
+        {/* Step 2: CloudWatch Subscription Filters */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            {t('setup.lambda_step2_title')}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('setup.lambda_step2_description')}
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {t('setup.lambda_subscription_filter_label')}
+              </span>
+              <button
+                onClick={() => copyToClipboard(subscriptionFilterCmd, 'lambda-sub-filter')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {getCopiedText('lambda-sub-filter')}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {subscriptionFilterCmd}
+            </pre>
+          </div>
+        </div>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
+        {/* Step 3: Metrics Collector Lambda */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            {t('setup.lambda_step3_title')}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('setup.lambda_step3_description')}
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {t('setup.lambda_env_vars_label')}
+              </span>
+              <button
+                onClick={() => copyToClipboard(metricsCollectorEnvVars, 'lambda-metrics-env')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {getCopiedText('lambda-metrics-env')}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {metricsCollectorEnvVars}
+            </pre>
+          </div>
+        </div>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
+        {/* Step 4: EventBridge Rule */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            {t('setup.lambda_step4_title')}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('setup.lambda_step4_description')}
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {t('setup.lambda_eventbridge_label')}
+              </span>
+              <button
+                onClick={() => copyToClipboard(eventBridgeCmd, 'lambda-eventbridge')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {getCopiedText('lambda-eventbridge')}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {eventBridgeCmd}
+            </pre>
+          </div>
+        </div>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
+        {/* IAM Permissions */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            {t('setup.lambda_iam_title')}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('setup.lambda_iam_description')}
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {t('setup.lambda_iam_policy_label')}
+              </span>
+              <button
+                onClick={() => copyToClipboard(iamPolicy, 'lambda-iam-policy')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {getCopiedText('lambda-iam-policy')}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {iamPolicy}
+            </pre>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const content = (
     <div className={`${embedded ? '' : 'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col'}`}>
       {!embedded && (
@@ -862,6 +1063,7 @@ sendLog(log).catch(console.error);`;
       <div className={`${embedded ? '' : 'p-6 overflow-y-auto'}`}>
         {site.site_type === 'docker' ? renderDockerInstructions() :
          site.site_type === 'kubernetes' ? renderKubernetesInstructions() :
+         site.site_type === 'aws_lambda' ? renderLambdaInstructions() :
          renderGenericInstructions()}
       </div>
 

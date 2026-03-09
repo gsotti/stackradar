@@ -20,6 +20,7 @@
     "site_type_kubernetes": "Kubernetes",
     "site_type_docker": "Docker",
     "site_type_generic": "Generic",
+    "site_type_aws_lambda": "AWS Lambda",
     "has_metrics_label": "Collect infrastructure metrics",
     "has_metrics_description": "Disable for uptime-only sites (no metrics tab shown)"
   },
@@ -185,6 +186,41 @@
     "helm_oci_note": "Charts are published to the OCI registry. No helm repo add needed.",
     "helm_install_command": "Helm Install Command",
     "helmfile_intro": "Install helmfile from https://helmfile.readthedocs.io, then run helmfile apply.",
-    "helmfile_save_hint": "Save this file as helmfile.yaml and run helmfile apply to deploy both collectors."
+    "helmfile_save_hint": "Save this file as helmfile.yaml and run helmfile apply to deploy both collectors.",
+    "lambda_intro": "Deploy the Log Forwarder Lambda and Metrics Collector Lambda to start monitoring your AWS Lambda functions.",
+    "lambda_step1_title": "1. Deploy the Log Forwarder Lambda",
+    "lambda_step1_description": "Deploy the StackRadar Log Forwarder Lambda function in your AWS account. Set the following environment variables on the function.",
+    "lambda_step2_title": "2. Create CloudWatch Subscription Filters",
+    "lambda_step2_description": "For each Lambda function you want to monitor, create a CloudWatch Logs subscription filter pointing to the Log Forwarder Lambda. Repeat this command for each function.",
+    "lambda_step3_title": "3. Deploy the Metrics Collector Lambda",
+    "lambda_step3_description": "Deploy the StackRadar Metrics Collector Lambda. This function queries CloudWatch metrics for all your Lambda functions and forwards them to StackRadar.",
+    "lambda_step4_title": "4. Create EventBridge Rule",
+    "lambda_step4_description": "Create an EventBridge (CloudWatch Events) rule to invoke the Metrics Collector Lambda every 5 minutes.",
+    "lambda_iam_title": "Required IAM Permissions",
+    "lambda_iam_description": "Attach the following IAM policy to the execution role of the Metrics Collector Lambda.",
+    "lambda_env_vars_label": "Environment Variables",
+    "lambda_subscription_filter_label": "AWS CLI Command",
+    "lambda_eventbridge_label": "AWS CLI Commands",
+    "lambda_iam_policy_label": "IAM Policy (JSON)"
+  },
+  "lambda": {
+    "dashboard": {
+      "title": "Lambda Functions",
+      "total_functions": "Total Functions",
+      "total_invocations": "Invocations (5m)",
+      "error_rate": "Error Rate",
+      "avg_duration": "Avg Duration",
+      "table": {
+        "function_name": "Function Name",
+        "invocations": "Invocations",
+        "errors": "Errors",
+        "throttles": "Throttles",
+        "avg_duration": "Avg Duration",
+        "max_duration": "Max Duration",
+        "memory": "Memory",
+        "runtime": "Runtime"
+      },
+      "no_data": "No Lambda metrics available yet. Deploy the collector to start monitoring."
+    }
   }
 }

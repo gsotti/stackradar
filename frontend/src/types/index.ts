@@ -26,7 +26,7 @@ export interface Site {
   description: string | null;
   api_token: string;
   retention_days: number;
-  site_type: 'docker' | 'kubernetes' | 'generic';
+  site_type: 'docker' | 'kubernetes' | 'generic' | 'aws_lambda';
   has_metrics: boolean;
   tenant_id: number;
   created_at: string;
@@ -131,7 +131,7 @@ export interface CreateSiteRequest {
   name: string;
   description?: string;
   retention_days?: number;
-  site_type?: 'docker' | 'kubernetes' | 'generic';
+  site_type?: 'docker' | 'kubernetes' | 'generic' | 'aws_lambda';
   has_metrics?: boolean;
 }
 
@@ -139,7 +139,7 @@ export interface UpdateSiteRequest {
   name?: string;
   description?: string;
   retention_days?: number;
-  site_type?: 'docker' | 'kubernetes' | 'generic';
+  site_type?: 'docker' | 'kubernetes' | 'generic' | 'aws_lambda';
   has_metrics?: boolean;
 }
 

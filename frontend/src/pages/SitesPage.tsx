@@ -108,6 +108,7 @@ export default function SitesPage() {
       case 'docker': return t('form.site_type_docker');
       case 'kubernetes': return t('form.site_type_kubernetes');
       case 'generic': return t('form.site_type_generic');
+      case 'aws_lambda': return t('form.site_type_aws_lambda');
       default: return t('form.site_type_kubernetes');
     }
   };
@@ -188,6 +189,7 @@ export default function SitesPage() {
                     <option value="kubernetes">{t('form.site_type_kubernetes')}</option>
                     <option value="docker">{t('form.site_type_docker')}</option>
                     <option value="generic">{t('form.site_type_generic')}</option>
+                    <option value="aws_lambda">{t('form.site_type_aws_lambda')}</option>
                   </select>
                 </div>
               </div>
