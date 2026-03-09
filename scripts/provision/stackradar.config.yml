@@ -1,0 +1,78 @@
+# =============================================================================
+# StackRadar Provisioning Config — Example
+# =============================================================================
+#
+# Usage:
+#   npx tsx provision.ts                      # uses this file (default)
+#   npx tsx provision.ts my-config.yaml       # uses custom file path
+#
+# tier field controls alert thresholds:
+#   prod / qa  → failure_threshold: 1,  cooldown: 5 min,  repeat: 1h
+#   dev        → failure_threshold: 12, cooldown: 60 min, repeat: 1h
+#
+# Alert rules are AUTO-GENERATED for every uptime monitor by the script.
+# =============================================================================
+
+tenants:
+
+  - name: "Example Corp"
+    description: "Example tenant"
+    sites:
+
+      - name: example-prod
+        description: "Production monitoring"
+        site_type: generic
+        retention_days: 30
+        has_metrics: false
+        tier: prod
+        notification_channels:
+          - name: monitoring-email
+            channel_type: email
+            email_recipients:
+              - ops-team@example.com
+        uptime_monitors:
+          - name: "Example App PROD"
+            url: https://app.example.com
+            method: GET
+            expected_status: 200
+            is_main: true
+          - name: "Example API PROD"
+            url: https://api.example.com/health
+            method: GET
+            expected_status: 200
+
+      - name: example-qa
+        description: "QA / staging monitoring"
+        site_type: generic
+        retention_days: 30
+        has_metrics: false
+        tier: qa
+        notification_channels:
+          - name: monitoring-email
+            channel_type: email
+            email_recipients:
+              - ops-team@example.com
+        uptime_monitors:
+          - name: "Example App QA"
+            url: https://qa.app.example.com
+            method: GET
+            expected_status: 200
+            is_main: true
+
+      - name: example-dev
+        description: "Development monitoring"
+        site_type: generic
+        retention_days: 30
+        has_metrics: false
+        tier: dev
+        notification_channels:
+          - name: monitoring-email
+            channel_type: email
+            email_recipients:
+              - ops-team@example.com
+        uptime_monitors:
+          - name: "Example App DEV"
+            url: https://dev.app.example.com
+            method: GET
+            expected_status: 200
+            is_main: true

@@ -43,3 +43,4 @@ coverage/
 /plans
 /images/
 /backend/stackradar.config.yml
+/scripts/provision/raan.config.yaml

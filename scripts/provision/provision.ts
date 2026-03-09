@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { parseArgs } from "util";
 import { parse as parseYaml } from "yaml";
 import "dotenv/config";
 
@@ -317,7 +318,7 @@ async function provisionChannel(
 async function provisionMonitor(
   cfg: MonitorConfig,
   siteId: number,
-  tier: string
+  _tier: string
 ): Promise<number> {
   const existing = await apiGet<Monitor[]>(
     `/api/uptime/monitors?site_id=${siteId}`
@@ -471,8 +472,35 @@ async function main(): Promise<void> {
   const email = process.env.STACKRADAR_EMAIL!;
   const password = process.env.STACKRADAR_PASSWORD!;
 
-  // Load config
-  const configPath = resolve(__dirname, "stackradar.config.yml");
+  // Parse CLI args
+  const { values: flags, positionals } = parseArgs({
+    options: {
+      help: { type: "boolean", short: "h" },
+    },
+    allowPositionals: true,
+    strict: false,
+  });
+
+  if (flags.help) {
+    console.log(`
+Usage: npm run provision -- [config.yaml]
+       tsx provision.ts [config.yaml]
+
+Arguments:
+  config.yaml  Path to YAML config file (default: stackradar.config.yml)
+
+Options:
+  -h, --help   Show this help message
+`);
+    process.exit(0);
+  }
+
+  const configPath = positionals[0]
+    ? resolve(positionals[0])
+    : resolve(__dirname, "stackradar.config.yml");
+
+  console.log(`${tag("Config", C.cyan)} ${C.dim}${configPath}${C.reset}`);
+
   let configRaw: string;
   try {
     configRaw = readFileSync(configPath, "utf-8");
