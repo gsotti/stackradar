@@ -403,11 +403,11 @@ export default function SiteDetailsPage() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : site?.has_metrics !== false ? (
             <div className="bg-accent-warning/10 border border-accent-warning/20 text-accent-warning rounded-lg p-4">
               {t('details.no_metrics_yet', { platform: labels.platform.toLowerCase() })}
             </div>
-          )}
+          ) : null}
 
           <div className="grid grid-cols-1 gap-4">
             <div className="card">
