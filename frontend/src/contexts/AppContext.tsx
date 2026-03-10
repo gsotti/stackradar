@@ -92,7 +92,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.tenant_roles || user.tenant_roles.length === 0) return;
     const validIds = user.tenant_roles.map(tr => String(tr.tenant_id));
-    if (!selectedTenant || !validIds.includes(selectedTenant)) {
+    // Empty string = "all tenants" — only fix if a non-empty invalid ID is set
+    if (selectedTenant !== '' && !validIds.includes(selectedTenant)) {
       setSelectedTenant(validIds[0]);
     }
   }, [user, selectedTenant]);
