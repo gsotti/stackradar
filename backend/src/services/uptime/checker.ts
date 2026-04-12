@@ -5,8 +5,7 @@ import { resolveHierarchy } from '../hierarchy.js';
 import { UptimeMonitor, UptimeStatus, NotificationChannel } from '../../types/index.js';
 import { sendEmail } from '../alerting/smtp.js';
 import { renderTemplate } from '../email/templateRenderer.js';
-
-const MAX_CONCURRENT_CHECKS = 10;
+import { notificationDispatcher } from './notificationDispatcher.js';
 
 interface CheckResult {
   status: UptimeStatus;
@@ -15,8 +14,52 @@ interface CheckResult {
   errorMessage: string | null;
 }
 
+// DNS errors that are transient and worth retrying
+const RETRYABLE_DNS_CODES = new Set(['EAI_AGAIN', 'EAI_NODATA', 'ETIMEOUT', 'ECONNRESET']);
+const DNS_RETRY_MIN_MS = 1000;
+const DNS_RETRY_MAX_MS = 3000;
+
 /**
- * Perform HTTP check for a monitor
+ * Execute a single HTTP request for a monitor
+ */
+function executeHttpRequest(monitor: UptimeMonitor): Promise<{ statusCode: number }> {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(monitor.url);
+    const protocol = urlObj.protocol === 'https:' ? https : http;
+
+    const timeout = Math.min(monitor.timeout_ms || 10000, 30000);
+
+    const options = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
+      method: monitor.method,
+      timeout,
+      headers: {
+        'User-Agent': 'StackRadar-UptimeMonitor/1.0',
+      },
+    };
+
+    const req = protocol.request(options, (res) => {
+      res.resume();
+      resolve({ statusCode: res.statusCode || 0 });
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request timed out'));
+    });
+
+    req.end();
+  });
+}
+
+/**
+ * Perform HTTP check for a monitor, with one automatic retry on transient DNS failures.
  */
 async function performHttpCheck(monitor: UptimeMonitor): Promise<CheckResult> {
   const start = Date.now();
@@ -25,40 +68,20 @@ async function performHttpCheck(monitor: UptimeMonitor): Promise<CheckResult> {
   let errorMessage: string | null = null;
 
   try {
-    const result = await new Promise<{ statusCode: number }>((resolve, reject) => {
-      const urlObj = new URL(monitor.url);
-      const protocol = urlObj.protocol === 'https:' ? https : http;
-
-      const timeout = Math.min(monitor.timeout_ms || 10000, 30000);
-
-      const options = {
-        hostname: urlObj.hostname,
-        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-        path: urlObj.pathname + urlObj.search,
-        method: monitor.method,
-        timeout,
-        headers: {
-          'User-Agent': 'StackRadar-UptimeMonitor/1.0',
-        },
-      };
-
-      const req = protocol.request(options, (res) => {
-        // Consume response data to free up memory
-        res.resume();
-        resolve({ statusCode: res.statusCode || 0 });
-      });
-
-      req.on('error', (err) => {
-        reject(err);
-      });
-
-      req.on('timeout', () => {
-        req.destroy();
-        reject(new Error('Request timed out'));
-      });
-
-      req.end();
-    });
+    let result: { statusCode: number };
+    try {
+      result = await executeHttpRequest(monitor);
+    } catch (err: any) {
+      // Retry once on transient DNS errors
+      if (err?.code && RETRYABLE_DNS_CODES.has(err.code)) {
+        const retryDelay = DNS_RETRY_MIN_MS + Math.floor(Math.random() * (DNS_RETRY_MAX_MS - DNS_RETRY_MIN_MS));
+        console.log(`[Uptime] DNS error ${err.code} for "${monitor.name}", retrying in ${retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        result = await executeHttpRequest(monitor);
+      } else {
+        throw err;
+      }
+    }
 
     statusCode = result.statusCode;
 
@@ -68,7 +91,7 @@ async function performHttpCheck(monitor: UptimeMonitor): Promise<CheckResult> {
       status = 'degraded';
       errorMessage = `Expected status ${monitor.expected_status}, got ${statusCode}`;
     }
-  } catch (error) {
+  } catch (error: any) {
     errorMessage = error instanceof Error ? error.message : String(error);
     status = 'down';
   }
@@ -98,7 +121,7 @@ async function saveCheck(
 /**
  * Update monitor status and consecutive failures
  */
-async function updateMonitorStatus(
+export async function updateMonitorStatus(
   monitorId: number,
   updates: {
     current_status?: UptimeStatus;
@@ -399,7 +422,7 @@ async function sendWebhookNotification(
 /**
  * Process a single monitor check
  */
-async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
+export async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
   const result = await performHttpCheck(monitor);
 
   // Save the check result
@@ -433,8 +456,8 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
         last_checked_at: now,
       });
 
-      // Send recovery notification immediately
-      await sendUptimeNotification(monitor, 'recovered');
+      // Fire-and-forget recovery notification
+      notificationDispatcher.enqueue(() => sendUptimeNotification(monitor, 'recovered'));
     } else {
       await updateMonitorStatus(monitor.id, {
         current_status: 'up',
@@ -466,7 +489,7 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
       await updateMonitorStatus(monitor.id, {
         last_status_change: now
       });
-      await sendUptimeNotification(monitor, 'down', triggerMessage, false, newFailures);
+      notificationDispatcher.enqueue(() => sendUptimeNotification(monitor, 'down', triggerMessage, false, newFailures));
     } else if (hadAlreadyReachedThreshold) {
       console.log(`[Uptime] Monitor "${monitor.name}" still down, checking for recurring notification`);
 
@@ -505,54 +528,24 @@ async function processMonitorCheck(monitor: UptimeMonitor): Promise<void> {
 
           if (atomicResult.rowCount && atomicResult.rowCount > 0) {
             console.log(`🔔 Sending recurring notification for uptime alert "${monitor.name}" (still firing, interval: ${monitorAlertRule.repeat_interval_hours}h)`);
-            try {
-              await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`, true, newFailures);
-            } catch (notifError) {
-              // Revert last_notified_at so the notification will be retried next cycle
-              await db.query(
-                'UPDATE alert_history SET last_notified_at = $1 WHERE id = $2',
-                [lastAlert.last_notified_at, lastAlert.id]
-              );
-              console.error(`[Uptime] Failed to send recurring notification, reverted last_notified_at:`, notifError);
-            }
+            const capturedLastNotifiedAt = lastAlert.last_notified_at;
+            const capturedAlertId = lastAlert.id;
+            notificationDispatcher.enqueue(async () => {
+              try {
+                await sendUptimeNotification(monitor, 'down', `Monitor "${monitor.name}" is STILL DOWN (persistent failure)`, true, newFailures);
+              } catch (notifError) {
+                // Revert last_notified_at so the notification will be retried next cycle
+                await db.query(
+                  'UPDATE alert_history SET last_notified_at = $1 WHERE id = $2',
+                  [capturedLastNotifiedAt, capturedAlertId]
+                );
+                console.error(`[Uptime] Failed to send recurring notification, reverted last_notified_at:`, notifError);
+              }
+            });
           }
         }
       }
     }
-  }
-}
-
-/**
- * Get all enabled monitors for a specific interval
- */
-async function getMonitorsByInterval(intervalSeconds: number): Promise<UptimeMonitor[]> {
-  const result = await db.query<UptimeMonitor>(
-    `SELECT * FROM uptime_monitors
-     WHERE enabled = true AND interval_seconds = $1
-     ORDER BY id`,
-    [intervalSeconds]
-  );
-  return result.rows;
-}
-
-/**
- * Run uptime checks for all monitors with a specific interval
- */
-export async function runUptimeChecksForInterval(intervalSeconds: number): Promise<void> {
-  const monitors = await getMonitorsByInterval(intervalSeconds);
-
-  if (monitors.length === 0) {
-    return;
-  }
-
-  console.log(`[Uptime ${intervalSeconds}s] Running checks for ${monitors.length} monitor(s)...`);
-
-  // Process in batches with limited concurrency
-  for (let i = 0; i < monitors.length; i += MAX_CONCURRENT_CHECKS) {
-    const batch = monitors.slice(i, i + MAX_CONCURRENT_CHECKS);
-    await Promise.all(batch.map(monitor => processMonitorCheck(monitor).catch(err => {
-      console.error(`Failed to check monitor ${monitor.id}:`, err);
-    })));
   }
 }
 

@@ -29,7 +29,12 @@
       "Bash(PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\" corepack enable:*)",
       "Bash(PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\" yarn:*)",
       "Bash(export PATH=\"/Users/stefan/.nvm/versions/node/v20.5.0/bin:$PATH\")",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

@@ -29,7 +29,7 @@ import auditLogsRoutes from './routes/audit-logs.js';
 import settingsRoutes from './routes/settings.js';
 import { cleanupOldLogs } from './services/cleanup.js';
 import { evaluateAllAlerts } from './services/alerting/evaluator.js';
-import { runUptimeChecksForInterval } from './services/uptime/checker.js';
+import { startUptimeScheduler } from './services/uptime/scheduler.js';
 
 dotenv.config();
 
@@ -183,61 +183,6 @@ function scheduleAlertJobOnce() {
 
 
 
-// Uptime Monitoring Cron Jobs - one per interval
-function scheduleUptimeJobs() {
-  // 1 minute interval - runs every minute
-  const job1m = new CronJob('0 * * * * *', async () => {
-    try {
-      await runUptimeChecksForInterval(60);
-    } catch (error) {
-      console.error('Uptime check (1m) failed:', error);
-    }
-  });
-  job1m.start();
-
-  // 5 minute interval - runs every 5 minutes
-  const job5m = new CronJob('0 */5 * * * *', async () => {
-    try {
-      await runUptimeChecksForInterval(300);
-    } catch (error) {
-      console.error('Uptime check (5m) failed:', error);
-    }
-  });
-  job5m.start();
-
-  // 15 minute interval - runs every 15 minutes
-  const job15m = new CronJob('0 */15 * * * *', async () => {
-    try {
-      await runUptimeChecksForInterval(900);
-    } catch (error) {
-      console.error('Uptime check (15m) failed:', error);
-    }
-  });
-  job15m.start();
-
-  // 30 minute interval - runs every 30 minutes
-  const job30m = new CronJob('0 */30 * * * *', async () => {
-    try {
-      await runUptimeChecksForInterval(1800);
-    } catch (error) {
-      console.error('Uptime check (30m) failed:', error);
-    }
-  });
-  job30m.start();
-
-  // 1 hour interval - runs every hour
-  const job1h = new CronJob('0 0 * * * *', async () => {
-    try {
-      await runUptimeChecksForInterval(3600);
-    } catch (error) {
-      console.error('Uptime check (1h) failed:', error);
-    }
-  });
-  job1h.start();
-
-  console.log('📅 Uptime monitoring cron jobs scheduled (1m, 5m, 15m, 30m, 1h)');
-}
-
 // Cluster bootstrap: utilize multiple CPU cores if enabled
 (async () => {
   // Initialize database before starting server
@@ -250,7 +195,7 @@ function scheduleUptimeJobs() {
     // Schedule cleanup and alerts only once in primary
     scheduleCleanupJobOnce();
     scheduleAlertJobOnce();
-    scheduleUptimeJobs();
+    startUptimeScheduler();
 
     for (let i = 0; i < WORKERS; i++) {
       cluster.fork();
@@ -268,7 +213,7 @@ function scheduleUptimeJobs() {
     if (!CLUSTER_MODE) {
       scheduleCleanupJobOnce();
       scheduleAlertJobOnce();
-      scheduleUptimeJobs();
+      startUptimeScheduler();
     }
   }
 })().catch(error => {

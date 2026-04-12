@@ -14,7 +14,7 @@ const dbConfig = {
   user: process.env.POSTGRES_USER || 'stackradar',
   password: process.env.POSTGRES_PASSWORD || 'stackradar_password',
   database: process.env.POSTGRES_DB || 'stackradar',
-  max: 20,
+  max: parseInt(process.env.POSTGRES_POOL_MAX || '30', 10),
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 };
