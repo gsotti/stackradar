@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatInLocalTime } from '../utils/dateUtils';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
+import { stripAnsi } from '../utils/ansi';
 import SystemFilter from '../components/SystemFilter';
 import { LogEntry } from '../types';
 
@@ -167,7 +168,7 @@ export default function LogsTablePage() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300 font-mono line-clamp-1">
-                          {log.message}
+                          {stripAnsi(log.message)}
                         </td>
                       </tr>
                       {expandedLog === log.id && (
@@ -178,7 +179,7 @@ export default function LogsTablePage() {
                                 <div>
                                   <h4 className="text-label mb-2">{t('table.raw_message')}</h4>
                                   <div className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg font-mono text-xs text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap break-all">
-                                    {log.message}
+                                    {stripAnsi(log.message)}
                                   </div>
                                 </div>
                                 <div className="flex gap-6">

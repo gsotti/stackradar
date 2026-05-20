@@ -6,6 +6,7 @@ import { formatInLocalTime } from '../utils/dateUtils';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../utils/api';
 import { getLogLevelConfig } from '../utils/logLevels';
+import { stripAnsi } from '../utils/ansi';
 import SystemFilter from '../components/SystemFilter';
 import { LogEntry } from '../types';
 
@@ -374,7 +375,7 @@ export default function LogsLivePage() {
                 [{log.system}]
               </span>
               <div className="text-neutral-700 dark:text-gray-300 break-all whitespace-pre-wrap group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
-                {log.message}
+                {stripAnsi(log.message)}
               </div>
             </div>
           );

@@ -29,6 +29,9 @@ const TENANT = process.env.TENANT || 'default';
 const SITE = process.env.SITE || 'kubernetes';
 const ENVIRONMENT = process.env.ENVIRONMENT || 'production';
 
+// Optional override for the system/app name sent to stackradar
+const SYSTEM = process.env.SYSTEM;
+
 // Cached pod name when using label selector
 let resolvedPodName = null;
 
@@ -129,8 +132,7 @@ async function collectPodLogs(sinceTime = null) {
 
       console.log(`Collected ${logLines.length} log lines`);
 
-      // Auto-detect application from pod name if not set
-      const appName = targetPodName.split('-').slice(0, 2).join('-');
+      const appName = SYSTEM || targetPodName.split('-')[0];
 
       // Send each log line to stackradar
       let successCount = 0;

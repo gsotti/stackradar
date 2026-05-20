@@ -144,21 +144,37 @@ async function collectMetrics() {
         let totalCpu = 0, totalMemory = 0;
         let usedCpu = 0, usedMemory = 0;
 
-        for (const node of nodes.items) {
-          const allocatable = node.status?.allocatable;
-          if (allocatable) {
-            totalCpu += parseCpu(allocatable.cpu);
-            totalMemory += parseMemory(allocatable.memory);
-          }
-        }
-
+        // Match each metric entry to its node to avoid counting usage without allocatable data
         for (const metric of nodeMetrics.items) {
+          const node = nodes.items?.find(n => n.metadata?.name === metric.metadata?.name);
+          if (!node) continue;
+          const allocatable = node.status?.allocatable;
+          if (!allocatable) continue;
+          totalCpu += parseCpu(allocatable.cpu);
+          totalMemory += parseMemory(allocatable.memory);
           usedCpu += parseCpu(metric.usage?.cpu);
           usedMemory += parseMemory(metric.usage?.memory);
         }
 
-        if (totalCpu > 0) metrics.cpu_usage_percent = (usedCpu / totalCpu) * 100;
-        if (totalMemory > 0) metrics.memory_usage_percent = (usedMemory / totalMemory) * 100;
+        console.log(`CPU  — allocatable: ${totalCpu.toFixed(3)} cores, used: ${usedCpu.toFixed(3)} cores`);
+        console.log(`Mem  — allocatable: ${(totalMemory / 1024**3).toFixed(2)} GiB, used: ${(usedMemory / 1024**3).toFixed(2)} GiB`);
+
+        if (totalCpu > 0) {
+          const raw = (usedCpu / totalCpu) * 100;
+          if (raw > 100) {
+            console.warn(`CPU percent sanity check failed: raw=${raw.toFixed(2)}% (usedCpu=${usedCpu}, totalCpu=${totalCpu}) — skipping metric`);
+          } else {
+            metrics.cpu_usage_percent = raw;
+          }
+        }
+        if (totalMemory > 0) {
+          const raw = (usedMemory / totalMemory) * 100;
+          if (raw > 100) {
+            console.warn(`Memory percent sanity check failed: raw=${raw.toFixed(2)}% — skipping metric`);
+          } else {
+            metrics.memory_usage_percent = raw;
+          }
+        }
       }
     } catch (e) {
       console.log('Metrics server not available, skipping resource metrics');
@@ -174,9 +190,10 @@ async function collectMetrics() {
 
 function parseCpu(cpu) {
   if (!cpu) return 0;
-  if (cpu.endsWith('n')) return parseInt(cpu) / 1e9;
-  if (cpu.endsWith('m')) return parseInt(cpu) / 1000;
-  return parseInt(cpu);
+  const s = String(cpu).trim();
+  if (s.endsWith('n')) return parseFloat(s) / 1e9;   // nanocores
+  if (s.endsWith('m')) return parseFloat(s) / 1000;  // millicores
+  return parseFloat(s);                               // whole cores (may be decimal)
 }
 
 function parseMemory(mem) {
