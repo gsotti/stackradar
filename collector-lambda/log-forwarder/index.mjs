@@ -30,8 +30,11 @@ const BATCH_SIZE = 100;
  * Falls back to the full log group name if the pattern does not match.
  */
 function extractFunctionName(logGroup) {
-  const match = logGroup.match(/^\/aws\/lambda\/(.+)$/);
-  return match ? match[1] : logGroup;
+  const lambda = logGroup.match(/^\/aws\/lambda\/(.+)$/);
+  if (lambda) return lambda[1];
+  const sfn = logGroup.match(/^\/aws\/(?:vendedlogs\/)?states\/(.+)$/);
+  if (sfn) return sfn[1];
+  return logGroup;
 }
 
 /**
@@ -196,6 +199,23 @@ export async function handler(event) {
     console.error(
       'Missing required environment variables: STACKRADAR_URL and/or STACKRADAR_API_TOKEN'
     );
+    return { statusCode: 200 };
+  }
+
+  if (!event.awslogs?.data) {
+    console.warn('Unexpected event shape (not a CloudWatch Logs subscription delivery):', JSON.stringify(event));
+    try {
+      await postBatch([{
+        timestamp: new Date().toISOString(),
+        level: 'warn',
+        message: `[log-forwarder] unexpected event: ${JSON.stringify(event)}`,
+        system: 'stackradar-log-forwarder',
+        environment: STACKRADAR_ENVIRONMENT,
+        metadata: { source: 'log-forwarder', raw_event: event },
+      }]);
+    } catch (err) {
+      console.error('Failed to forward unexpected event to StackRadar:', err.message);
+    }
     return { statusCode: 200 };
   }
 
