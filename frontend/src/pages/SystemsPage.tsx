@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Plus, Trash2, Settings, Package } from 'lucide-react';
+import { Plus, Trash2, Settings, Package, LayoutGrid, List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../utils/api';
 import { useApp } from '../contexts/AppContext';
@@ -23,6 +23,14 @@ export default function SystemsPage() {
   const [editingSystem, setEditingSystem] = useState<SystemWithDetails | null>(null);
   const [form, setForm] = useState({ environment_id: '', name: '', description: '' });
   const [deleteTarget, setDeleteTarget] = useState<SystemWithDetails | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() =>
+    (localStorage.getItem('viewMode_systems') as 'grid' | 'list') || 'grid'
+  );
+
+  const toggleView = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('viewMode_systems', mode);
+  };
 
   useEffect(() => {
     fetchSystems();
@@ -73,11 +81,7 @@ export default function SystemsPage() {
 
   const handleEdit = (system: SystemWithDetails) => {
     setEditingSystem(system);
-    setForm({
-      environment_id: String(system.environment_id || ''),
-      name: system.name || '',
-      description: system.description || ''
-    });
+    setForm({ environment_id: String(system.environment_id || ''), name: system.name || '', description: system.description || '' });
     setShowForm(true);
   };
 
@@ -97,13 +101,31 @@ export default function SystemsPage() {
           <h1 className="text-heading-2">{t('page.title')}</h1>
           <p className="text-body-secondary mt-2">{t('systems.subtitle')}</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
-          className="button-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          {t('systems.add')}
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1 gap-0.5">
+            <button
+              onClick={() => toggleView('grid')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white dark:bg-neutral-700 shadow-sm text-primary-600 dark:text-primary-400' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}
+              title="Grid view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => toggleView('list')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white dark:bg-neutral-700 shadow-sm text-primary-600 dark:text-primary-400' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'}`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
+            className="button-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            {t('systems.add')}
+          </button>
+        </div>
       </div>
 
       {/* Form Modal */}
@@ -124,9 +146,7 @@ export default function SystemsPage() {
                 >
                   <option value="">{t('systems.environment_placeholder')}</option>
                   {environments.map(env => (
-                    <option key={env.id} value={env.id}>
-                      {env.name}
-                    </option>
+                    <option key={env.id} value={env.id}>{env.name}</option>
                   ))}
                 </select>
               </div>
@@ -152,17 +172,10 @@ export default function SystemsPage() {
                 />
               </div>
               <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="button-secondary button-center"
-                >
+                <button type="button" onClick={() => setShowForm(false)} className="button-secondary button-center">
                   {tc('actions.cancel')}
                 </button>
-                <button
-                  type="submit"
-                  className="button-primary button-center"
-                >
+                <button type="submit" className="button-primary button-center">
                   {editingSystem ? tc('actions.save') : t('systems.create')}
                 </button>
               </div>
@@ -175,7 +188,20 @@ export default function SystemsPage() {
         <div className="flex items-center justify-center h-64">
           <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-      ) : (
+      ) : systems.length === 0 ? (
+        <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
+          <Package className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
+          <h3 className="text-heading-4 mb-2">{t('systems.empty_title')}</h3>
+          <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-8">{t('systems.empty_description')}</p>
+          <button
+            onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
+            className="button-primary inline-flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            {t('systems.create_first')}
+          </button>
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {systems.map((system) => (
             <div key={system.id} className="card-hover group">
@@ -184,16 +210,10 @@ export default function SystemsPage() {
                   <Package className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div className="flex gap-1">
-                  <button
-                    onClick={() => handleEdit(system)}
-                    className="p-1.5 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                  >
+                  <button onClick={() => handleEdit(system)} className="p-1.5 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
                     <Settings className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    onClick={() => setDeleteTarget(system)}
-                    className="p-1.5 text-neutral-400 hover:text-accent-danger transition-colors"
-                  >
+                  <button onClick={() => setDeleteTarget(system)} className="p-1.5 text-neutral-400 hover:text-accent-danger transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -217,22 +237,41 @@ export default function SystemsPage() {
             </div>
           ))}
         </div>
-      )}
-
-      {!loading && systems.length === 0 && (
-        <div className="text-center py-20 surface rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
-          <Package className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
-          <h3 className="text-heading-4 mb-2">{t('systems.empty_title')}</h3>
-          <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-8">
-            {t('systems.empty_description')}
-          </p>
-          <button
-            onClick={() => { setShowForm(true); setEditingSystem(null); setForm({ environment_id: '', name: '', description: '' }); }}
-            className="button-primary inline-flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            {t('systems.create_first')}
-          </button>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {systems.map((system) => (
+            <div key={system.id} className="card-hover group flex items-center gap-4 py-3 px-4">
+              <div className="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex-shrink-0 group-hover:scale-110 transition-transform">
+                <Package className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
+                  {system.name}
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                  {system.description || tc('meta.no_description')}
+                </p>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0">
+                <span className="hidden sm:flex items-center gap-1">
+                  <span className="text-label">{t('systems.env_label')}</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">{system.environment_name}</span>
+                </span>
+                <span className="hidden md:flex items-center gap-1">
+                  <span className="text-label">{t('systems.site_label')}</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">{system.site_name}</span>
+                </span>
+              </div>
+              <div className="flex gap-1 flex-shrink-0">
+                <button onClick={() => handleEdit(system)} className="p-1.5 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setDeleteTarget(system)} className="p-1.5 text-neutral-400 hover:text-accent-danger transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

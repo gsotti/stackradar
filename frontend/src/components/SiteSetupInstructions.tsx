@@ -680,7 +680,25 @@ releases:
 
   const renderGenericInstructions = () => {
     const apiEndpoint = `${resolveAppUrl()}/api/ingest/${site.api_token}/single`;
+    const snsEndpoint = `${resolveAppUrl()}/api/ingest/${site.api_token}/sns`;
     const envName = getEnvName();
+
+    const snsSubscribeCmd = `# 1. Create SNS topic
+aws sns create-topic --name stackradar-cw-alarms --region <your-region>
+
+# 2. Subscribe StackRadar to the topic
+aws sns subscribe \\
+  --topic-arn arn:aws:sns:<region>:<account-id>:stackradar-cw-alarms \\
+  --protocol https \\
+  --notification-endpoint "${snsEndpoint}"
+
+# 3. Add the topic as action on your CloudWatch alarm
+aws cloudwatch put-metric-alarm \\
+  --alarm-name "<your-alarm-name>" \\
+  --alarm-actions arn:aws:sns:<region>:<account-id>:stackradar-cw-alarms \\
+  --ok-actions     arn:aws:sns:<region>:<account-id>:stackradar-cw-alarms \\
+  --insufficient-data-actions arn:aws:sns:<region>:<account-id>:stackradar-cw-alarms \\
+  # keep all existing --metric-name, --namespace, --threshold etc.`;
 
     const curlSnippet = `curl -X POST "${apiEndpoint}" \\
   -H "Content-Type: application/json" \\
@@ -777,6 +795,50 @@ sendLog(log).catch(console.error);`;
             </select>
           </div>
         </div>
+
+        {/* CloudWatch Alarms via SNS */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            CloudWatch Alarms via SNS
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Subscribe an SNS topic to this endpoint — StackRadar auto-confirms the subscription and ingests alarm state changes as log entries (<code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">ALARM → ERROR</code>, <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">OK → INFO</code>, <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">INSUFFICIENT_DATA → WARN</code>).
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">SNS Endpoint URL</span>
+              <button
+                onClick={() => copyToClipboard(snsEndpoint, 'sns-endpoint')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {getCopiedText('sns-endpoint')}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {snsEndpoint}
+            </pre>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">AWS CLI setup</span>
+              <button
+                onClick={() => copyToClipboard(snsSubscribeCmd, 'sns-cli')}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              >
+                <Copy className="w-4 h-4" />
+                {getCopiedText('sns-cli')}
+              </button>
+            </div>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
+              {snsSubscribeCmd}
+            </pre>
+          </div>
+        </div>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
 
         {/* cURL Snippet */}
         <div>
