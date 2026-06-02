@@ -11,7 +11,16 @@ RUN corepack enable && corepack yarn install --immutable
 COPY frontend/ ./
 RUN corepack yarn build
 
-# Stage 2: Build Backend
+# Stage 2a: Bundle provision script (self-contained ESM, no runtime deps)
+FROM node:20-alpine AS provision-builder
+
+WORKDIR /app/provision
+COPY scripts/provision/package.json scripts/provision/package-lock.json* ./
+RUN npm install
+COPY scripts/provision/provision.ts ./
+RUN npx esbuild provision.ts --bundle --platform=node --format=esm --outfile=provision.mjs
+
+# Stage 2b: Build Backend
 FROM node:20-alpine AS backend-builder
 
 WORKDIR /app/backend
@@ -41,6 +50,9 @@ RUN apk update && apk upgrade && apk add --no-cache tini && rm -rf /var/cache/ap
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 -G nodejs
+
+# Copy provision script (used by the Helm init job)
+COPY --from=provision-builder /app/provision/provision.mjs ./provision.mjs
 
 # Copy backend compiled code and dependencies
 COPY --from=backend-builder /app/backend/dist ./dist

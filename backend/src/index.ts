@@ -96,6 +96,8 @@ app.use(cors({
   maxAge: 3600
 }));
 app.use(express.json({ limit: '10mb' }));
+// SNS delivers CloudWatch alarms as text/plain containing JSON
+app.use('/api/ingest', express.text({ type: 'text/plain' }));
 
 // API Routes
 app.use('/api/auth', authRoutes);

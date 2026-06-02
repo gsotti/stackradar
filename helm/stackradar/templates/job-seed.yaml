@@ -1,3 +1,4 @@
+{{- if not .Values.config.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -35,17 +36,18 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "stackradar.fullname" . }}
+                  name: {{ default (include "stackradar.fullname" .) .Values.existingSecret }}
                   key: POSTGRES_PASSWORD
             - name: ADMIN_EMAIL
               value: {{ .Values.admin.email | quote }}
             - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "stackradar.fullname" . }}
+                  name: {{ default (include "stackradar.fullname" .) .Values.existingSecret }}
                   key: ADMIN_PASSWORD
             - name: ADMIN_NAME
               value: {{ .Values.admin.name | quote }}
             - name: DEFAULT_TENANT
               value: {{ .Values.tenant.name | quote }}
   backoffLimit: 3
+{{- end }}

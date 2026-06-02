@@ -2,6 +2,9 @@
 
 replicaCount: 1
 
+# Override the full resource name (avoids the default "<release>-<chart>" double name)
+fullnameOverride: ""
+
 image:
   repository: ghcr.io/gsotti/stackradar
   tag: latest
@@ -40,10 +43,24 @@ admin:
 tenant:
   name: Default
 
-# Security secrets
+# Security secrets — used when existingSecret is empty (chart creates the Secret)
 secrets:
   jwtSecret: change-this-to-a-secure-random-string
   adminApiKey: change-this-to-a-secure-random-string
+  # API token for the site used by collectors (SITE_API_TOKEN env var, resolved by configSync)
+  siteApiToken: ""
+
+# Name of a pre-existing Kubernetes Secret containing JWT_SECRET, ADMIN_API_KEY,
+# POSTGRES_PASSWORD, ADMIN_PASSWORD, SITE_API_TOKEN.
+# When set the chart does NOT create its own Secret resource.
+existingSecret: ""
+
+# Declarative YAML config (STACKRADAR_CONFIG). When enabled the startup configSync
+# applies organizations/tenants/sites/monitors/alerts from the YAML, and the seed
+# job is skipped (configSync creates all users instead).
+config:
+  enabled: false
+  content: ""
 
 # Resource limits
 resources:
