@@ -137,44 +137,35 @@ async function collectMetrics() {
       metrics.alerts.push(`${metrics.pod_pending} pod(s) pending`);
     }
 
-    // Try to get metrics from metrics-server (optional)
+    // Try to get metrics from metrics-server (optional).
+    // Uses capacity (not allocatable) as denominator — mirrors Headlamp's cluster charts
+    // (frontend/src/components/cluster/Charts/ResourceCharts.tsx).
     try {
       const nodeMetrics = await k8sRequest('/apis/metrics.k8s.io/v1beta1/nodes');
       if (nodeMetrics.items) {
+        // Denominator: capacity summed over ALL nodes
         let totalCpu = 0, totalMemory = 0;
-        let usedCpu = 0, usedMemory = 0;
+        for (const node of nodes.items || []) {
+          const capacity = node.status?.capacity;
+          if (!capacity) continue;
+          totalCpu += parseCpu(capacity.cpu);
+          totalMemory += parseMemory(capacity.memory);
+        }
 
-        // Match each metric entry to its node to avoid counting usage without allocatable data
+        // Numerator: usage from nodes that exist in the cluster
+        const nodeNames = new Set((nodes.items || []).map(n => n.metadata?.name));
+        let usedCpu = 0, usedMemory = 0;
         for (const metric of nodeMetrics.items) {
-          const node = nodes.items?.find(n => n.metadata?.name === metric.metadata?.name);
-          if (!node) continue;
-          const allocatable = node.status?.allocatable;
-          if (!allocatable) continue;
-          totalCpu += parseCpu(allocatable.cpu);
-          totalMemory += parseMemory(allocatable.memory);
+          if (!nodeNames.has(metric.metadata?.name)) continue;
           usedCpu += parseCpu(metric.usage?.cpu);
           usedMemory += parseMemory(metric.usage?.memory);
         }
 
-        console.log(`CPU  — allocatable: ${totalCpu.toFixed(3)} cores, used: ${usedCpu.toFixed(3)} cores`);
-        console.log(`Mem  — allocatable: ${(totalMemory / 1024**3).toFixed(2)} GiB, used: ${(usedMemory / 1024**3).toFixed(2)} GiB`);
+        console.log(`CPU  — capacity: ${(totalCpu / 1e9).toFixed(3)} cores, used: ${(usedCpu / 1e9).toFixed(3)} cores`);
+        console.log(`Mem  — capacity: ${(totalMemory / 1024**3).toFixed(2)} GiB, used: ${(usedMemory / 1024**3).toFixed(2)} GiB`);
 
-        if (totalCpu > 0) {
-          const raw = (usedCpu / totalCpu) * 100;
-          if (raw > 100) {
-            console.warn(`CPU percent sanity check failed: raw=${raw.toFixed(2)}% (usedCpu=${usedCpu}, totalCpu=${totalCpu}) — skipping metric`);
-          } else {
-            metrics.cpu_usage_percent = raw;
-          }
-        }
-        if (totalMemory > 0) {
-          const raw = (usedMemory / totalMemory) * 100;
-          if (raw > 100) {
-            console.warn(`Memory percent sanity check failed: raw=${raw.toFixed(2)}% — skipping metric`);
-          } else {
-            metrics.memory_usage_percent = raw;
-          }
-        }
+        if (totalCpu > 0)    metrics.cpu_usage_percent    = Math.min((usedCpu / totalCpu) * 100, 100);
+        if (totalMemory > 0) metrics.memory_usage_percent = Math.min((usedMemory / totalMemory) * 100, 100);
       }
     } catch (e) {
       console.log('Metrics server not available, skipping resource metrics');
@@ -188,23 +179,36 @@ async function collectMetrics() {
   return metrics;
 }
 
+// Returns nanocores so used/capacity ratio is dimensionless.
+// Mirrors Headlamp's parseCpu (frontend/src/lib/units.ts).
 function parseCpu(cpu) {
   if (!cpu) return 0;
   const s = String(cpu).trim();
-  if (s.endsWith('n')) return parseFloat(s) / 1e9;   // nanocores
-  if (s.endsWith('m')) return parseFloat(s) / 1000;  // millicores
-  return parseFloat(s);                               // whole cores (may be decimal)
+  const n = parseFloat(s);
+  if (Number.isNaN(n)) return 0;
+  if (s.endsWith('n')) return n;        // nanocores (metrics-server default)
+  if (s.endsWith('u')) return n * 1e3;  // microcores (occasionally emitted)
+  if (s.endsWith('m')) return n * 1e6;  // millicores
+  return n * 1e9;                       // whole cores
 }
 
+// Mirrors Headlamp's parseRam (frontend/src/lib/units.ts).
+// Handles binary (Ki/Mi/Gi…), decimal (K/M/G…), and scientific notation (1e9).
 function parseMemory(mem) {
   if (!mem) return 0;
-  const units = { Ki: 1024, Mi: 1024**2, Gi: 1024**3, Ti: 1024**4 };
-  for (const [unit, multiplier] of Object.entries(units)) {
-    if (mem.endsWith(unit)) {
-      return parseInt(mem) * multiplier;
-    }
-  }
-  return parseInt(mem);
+  const s = String(mem).trim();
+  const UNITS = ['B', 'K', 'M', 'G', 'T', 'P', 'E'];
+  const groups = s.match(/^(\d+(?:\.\d+)?)([BKMGTPEe])?(i)?(\d+)?$/);
+  if (!groups) return 0;
+  const number = parseFloat(groups[1]);
+  if (Number.isNaN(number)) return 0;
+  if (!groups[2]) return number;                                    // plain bytes
+  if (groups[4] !== undefined) return number * 10 ** parseInt(groups[4], 10); // 1e9
+  const unitIndex = UNITS.indexOf(groups[2]);
+  if (unitIndex < 0) return number;
+  return groups[3] !== undefined
+    ? number * 1024 ** unitIndex   // binary: Ki/Mi/Gi…
+    : number * 1000 ** unitIndex;  // decimal: K/M/G…
 }
 
 async function sendMetrics(metrics) {

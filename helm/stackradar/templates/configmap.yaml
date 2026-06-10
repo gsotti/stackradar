@@ -1,0 +1,11 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "stackradar.fullname" . }}-config
+  labels:
+    {{- include "stackradar.labels" . | nindent 4 }}
+data:
+  stackradar.config.yml: |
+{{ .Values.config.content | indent 4 }}
+{{- end }}

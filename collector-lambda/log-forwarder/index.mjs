@@ -104,11 +104,77 @@ function extractRequestId(message) {
   return null;
 }
 
+const SFN_ERROR_TYPES = new Set([
+  'ExecutionFailed', 'ExecutionTimedOut', 'ExecutionAborted',
+  'TaskFailed', 'TaskTimedOut', 'ActivityFailed', 'ActivityTimedOut',
+]);
+
+/**
+ * Recursively parse any string values that look like JSON.
+ */
+function deepParseJson(value) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.length > 2) {
+      try { return deepParseJson(JSON.parse(trimmed)); } catch { /* not json */ }
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(deepParseJson);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, deepParseJson(v)]));
+  }
+  return value;
+}
+
+/**
+ * Try to parse a Step Functions structured log event.
+ * Returns { message, level, metadata } or null if not an SF event.
+ */
+function parseSfnEvent(rawMessage) {
+  let parsed;
+  try { parsed = JSON.parse(rawMessage); } catch { return null; }
+  if (!parsed || typeof parsed.type !== 'string') return null;
+
+  const level = SFN_ERROR_TYPES.has(parsed.type) ? 'error' : 'info';
+  const message = `[${parsed.type}] event #${parsed.id ?? '?'}`;
+
+  const metadata = {
+    source: 'aws-stepfunctions',
+    sfn_type: parsed.type,
+    sfn_event_id: parsed.id,
+    sfn_previous_event_id: parsed.previous_event_id,
+    execution_arn: parsed.execution_arn,
+    redrive_count: parsed.redrive_count,
+  };
+
+  if (parsed.details) {
+    metadata.details = deepParseJson(parsed.details);
+  }
+
+  return { message, level, metadata };
+}
+
 /**
  * Map a single CloudWatch log event to a StackRadar log entry.
  */
 function mapLogEvent(event, logGroup, logStream, functionName) {
   const rawMessage = event.message.replace(/\n$/, ''); // strip trailing newline
+
+  // Step Functions structured event
+  const sfn = parseSfnEvent(rawMessage);
+  if (sfn) {
+    sfn.metadata.log_stream = logStream;
+    return {
+      timestamp: new Date(event.timestamp).toISOString(),
+      level: sfn.level,
+      message: sfn.message,
+      system: functionName,
+      environment: STACKRADAR_ENVIRONMENT,
+      metadata: sfn.metadata,
+    };
+  }
+
   const level = detectLogLevel(rawMessage);
   const isReport = /^REPORT\s+RequestId:/.test(rawMessage.trimStart());
 

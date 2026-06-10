@@ -32,6 +32,13 @@ const ENVIRONMENT = process.env.ENVIRONMENT || 'production';
 // Optional override for the system/app name sent to stackradar
 const SYSTEM = process.env.SYSTEM;
 
+// Derive system name from label selector value (e.g. "app.kubernetes.io/name=web" → "web")
+function systemFromLabelSelector(selector) {
+  if (!selector) return null;
+  const match = selector.match(/=([^,]+)/);
+  return match ? match[1] : null;
+}
+
 // Cached pod name when using label selector
 let resolvedPodName = null;
 
@@ -132,7 +139,7 @@ async function collectPodLogs(sinceTime = null) {
 
       console.log(`Collected ${logLines.length} log lines`);
 
-      const appName = SYSTEM || targetPodName.split('-')[0];
+      const appName = SYSTEM || systemFromLabelSelector(POD_LABEL_SELECTOR) || targetPodName.split('-')[0];
 
       // Send each log line to stackradar
       let successCount = 0;
