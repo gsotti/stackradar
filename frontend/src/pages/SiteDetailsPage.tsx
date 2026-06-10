@@ -337,6 +337,11 @@ export default function SiteDetailsPage() {
                   <div className="text-xs px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">{t('details.cpu_badge')}</div>
                 </div>
                 <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{safePercent(summary.cpu_usage_percent, 1)}%</div>
+                {summary.cpu_total_cores > 0 && (
+                  <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    {safeNumber(summary.cpu_used_cores).toFixed(2)} / {safeNumber(summary.cpu_total_cores).toFixed(2)} {t('details.cores')}
+                  </div>
+                )}
               </div>
 
               {/* Memory usage */}
@@ -346,6 +351,11 @@ export default function SiteDetailsPage() {
                   <div className="text-xs px-2 py-0.5 rounded-full bg-accent-info/10 text-accent-info">{t('details.memory_badge')}</div>
                 </div>
                 <div className="text-2xl font-bold text-accent-info">{safePercent(summary.memory_usage_percent, 1)}%</div>
+                {summary.memory_total_gb > 0 && (
+                  <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    {safeNumber(summary.memory_used_gb).toFixed(2)} / {safeNumber(summary.memory_total_gb).toFixed(2)} GB
+                  </div>
+                )}
               </div>
 
               {/* Pods/Containers */}

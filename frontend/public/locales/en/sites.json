@@ -64,6 +64,7 @@
     "retention_days": "{{count}} days",
     "cpu_usage_label": "CPU Usage",
     "cpu_badge": "CPU",
+    "cores": "Cores",
     "memory_usage_label": "Memory Usage",
     "memory_badge": "Memory",
     "stopped_label": "Stopped:",

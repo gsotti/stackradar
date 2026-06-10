@@ -113,6 +113,10 @@ export interface K8sMetrics {
   pod_failed: number;
   cpu_usage_percent: number;
   memory_usage_percent: number;
+  cpu_used_cores: number;
+  cpu_total_cores: number;
+  memory_used_gb: number;
+  memory_total_gb: number;
   deployment_count: number;
   deployment_ready: number;
   service_count: number;

@@ -74,6 +74,10 @@ async function collectMetrics() {
     pod_failed: 0,
     cpu_usage_percent: 0,
     memory_usage_percent: 0,
+    cpu_used_cores: 0,
+    cpu_total_cores: 0,
+    memory_used_gb: 0,
+    memory_total_gb: 0,
     deployment_count: 0,
     deployment_ready: 0,
     service_count: 0,
@@ -161,11 +165,24 @@ async function collectMetrics() {
           usedMemory += parseMemory(metric.usage?.memory);
         }
 
-        console.log(`CPU  — capacity: ${(totalCpu / 1e9).toFixed(3)} cores, used: ${(usedCpu / 1e9).toFixed(3)} cores`);
-        console.log(`Mem  — capacity: ${(totalMemory / 1024**3).toFixed(2)} GiB, used: ${(usedMemory / 1024**3).toFixed(2)} GiB`);
+        const usedCores = usedCpu / 1e9;
+        const totalCores = totalCpu / 1e9;
+        const usedGb = usedMemory / 1024 ** 3;
+        const totalGb = totalMemory / 1024 ** 3;
 
-        if (totalCpu > 0)    metrics.cpu_usage_percent    = Math.min((usedCpu / totalCpu) * 100, 100);
-        if (totalMemory > 0) metrics.memory_usage_percent = Math.min((usedMemory / totalMemory) * 100, 100);
+        console.log(`CPU  — capacity: ${totalCores.toFixed(3)} cores, used: ${usedCores.toFixed(3)} cores`);
+        console.log(`Mem  — capacity: ${totalGb.toFixed(2)} GiB, used: ${usedGb.toFixed(2)} GiB`);
+
+        if (totalCpu > 0) {
+          metrics.cpu_usage_percent = Math.min((usedCpu / totalCpu) * 100, 100);
+          metrics.cpu_used_cores  = usedCores;
+          metrics.cpu_total_cores = totalCores;
+        }
+        if (totalMemory > 0) {
+          metrics.memory_usage_percent = Math.min((usedMemory / totalMemory) * 100, 100);
+          metrics.memory_used_gb  = usedGb;
+          metrics.memory_total_gb = totalGb;
+        }
       }
     } catch (e) {
       console.log('Metrics server not available, skipping resource metrics');

@@ -64,6 +64,7 @@
     "retention_days": "{{count}} Tage",
     "cpu_usage_label": "CPU-Auslastung",
     "cpu_badge": "CPU",
+    "cores": "Kerne",
     "memory_usage_label": "Speicher-Auslastung",
     "memory_badge": "Speicher",
     "stopped_label": "Gestoppt:",

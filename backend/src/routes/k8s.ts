@@ -17,6 +17,10 @@ interface K8sMetricsInput {
   pod_failed?: number;
   cpu_usage_percent?: number;
   memory_usage_percent?: number;
+  cpu_used_cores?: number;
+  cpu_total_cores?: number;
+  memory_used_gb?: number;
+  memory_total_gb?: number;
   cpu_requests?: number;
   cpu_limits?: number;
   memory_requests?: number;
@@ -73,6 +77,10 @@ router.post('/metrics/:apiToken', validateApiToken, async (
             pvc_bound = $13,
             pv_count = $14,
             tenant_id = $15,
+            cpu_used_cores = $17,
+            cpu_total_cores = $18,
+            memory_used_gb = $19,
+            memory_total_gb = $20,
             updated_at = CURRENT_TIMESTAMP
           WHERE site_id = $16`,
           [
@@ -91,7 +99,11 @@ router.post('/metrics/:apiToken', validateApiToken, async (
             metrics.pvc_bound || 0,
             metrics.pv_count || 0,
             tenantId,
-            siteId
+            siteId,
+            metrics.cpu_used_cores || 0,
+            metrics.cpu_total_cores || 0,
+            metrics.memory_used_gb || 0,
+            metrics.memory_total_gb || 0
           ]
         );
       } else {
@@ -100,8 +112,9 @@ router.post('/metrics/:apiToken', validateApiToken, async (
           `INSERT INTO site_metrics (
             site_id, node_count, node_ready, pod_count, pod_running,
             pod_pending, pod_failed, deployment_count, deployment_ready,
-            service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, tenant_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+            service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, tenant_id,
+            cpu_used_cores, cpu_total_cores, memory_used_gb, memory_total_gb
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
           [
             siteId,
             metrics.node_count || 0,
@@ -118,7 +131,11 @@ router.post('/metrics/:apiToken', validateApiToken, async (
             metrics.pvc_count || 0,
             metrics.pvc_bound || 0,
             metrics.pv_count || 0,
-            tenantId
+            tenantId,
+            metrics.cpu_used_cores || 0,
+            metrics.cpu_total_cores || 0,
+            metrics.memory_used_gb || 0,
+            metrics.memory_total_gb || 0
           ]
         );
       }
@@ -128,9 +145,10 @@ router.post('/metrics/:apiToken', validateApiToken, async (
         `INSERT INTO site_metrics_history (
            site_id, node_count, node_ready, pod_count, pod_running,
            pod_pending, pod_failed, deployment_count, deployment_ready,
-           service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, timestamp
+           service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count,
+           cpu_used_cores, cpu_total_cores, memory_used_gb, memory_total_gb, timestamp
          ) VALUES (
-           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, CURRENT_TIMESTAMP
          )`,
         [
           siteId,
@@ -147,7 +165,11 @@ router.post('/metrics/:apiToken', validateApiToken, async (
           Math.min(Math.max(metrics.memory_usage_percent || 0, 0), 100),
           metrics.pvc_count || 0,
           metrics.pvc_bound || 0,
-          metrics.pv_count || 0
+          metrics.pv_count || 0,
+          metrics.cpu_used_cores || 0,
+          metrics.cpu_total_cores || 0,
+          metrics.memory_used_gb || 0,
+          metrics.memory_total_gb || 0
         ]
       );
 
@@ -199,6 +221,10 @@ router.post('/stats/:apiToken', validateApiToken, async (
             pvc_bound = $13,
             pv_count = $14,
             tenant_id = $15,
+            cpu_used_cores = $17,
+            cpu_total_cores = $18,
+            memory_used_gb = $19,
+            memory_total_gb = $20,
             updated_at = CURRENT_TIMESTAMP
           WHERE site_id = $16`,
           [
@@ -217,7 +243,11 @@ router.post('/stats/:apiToken', validateApiToken, async (
             metrics.pvc_bound || 0,
             metrics.pv_count || 0,
             tenantId,
-            siteId
+            siteId,
+            metrics.cpu_used_cores || 0,
+            metrics.cpu_total_cores || 0,
+            metrics.memory_used_gb || 0,
+            metrics.memory_total_gb || 0
           ]
         );
       } else {
@@ -225,8 +255,9 @@ router.post('/stats/:apiToken', validateApiToken, async (
           `INSERT INTO site_metrics (
             site_id, node_count, node_ready, pod_count, pod_running,
             pod_pending, pod_failed, deployment_count, deployment_ready,
-            service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, tenant_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+            service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, tenant_id,
+            cpu_used_cores, cpu_total_cores, memory_used_gb, memory_total_gb
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
           [
             siteId,
             metrics.node_count || 0,
@@ -243,7 +274,11 @@ router.post('/stats/:apiToken', validateApiToken, async (
             metrics.pvc_count || 0,
             metrics.pvc_bound || 0,
             metrics.pv_count || 0,
-            tenantId
+            tenantId,
+            metrics.cpu_used_cores || 0,
+            metrics.cpu_total_cores || 0,
+            metrics.memory_used_gb || 0,
+            metrics.memory_total_gb || 0
           ]
         );
       }
@@ -252,9 +287,10 @@ router.post('/stats/:apiToken', validateApiToken, async (
         `INSERT INTO site_metrics_history (
            site_id, node_count, node_ready, pod_count, pod_running,
            pod_pending, pod_failed, deployment_count, deployment_ready,
-           service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count, timestamp
+           service_count, cpu_usage_percent, memory_usage_percent, pvc_count, pvc_bound, pv_count,
+           cpu_used_cores, cpu_total_cores, memory_used_gb, memory_total_gb, timestamp
          ) VALUES (
-           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, CURRENT_TIMESTAMP
          )`,
         [
           siteId,
@@ -271,7 +307,11 @@ router.post('/stats/:apiToken', validateApiToken, async (
           Math.min(Math.max(metrics.memory_usage_percent || 0, 0), 100),
           metrics.pvc_count || 0,
           metrics.pvc_bound || 0,
-          metrics.pv_count || 0
+          metrics.pv_count || 0,
+          metrics.cpu_used_cores || 0,
+          metrics.cpu_total_cores || 0,
+          metrics.memory_used_gb || 0,
+          metrics.memory_total_gb || 0
         ]
       );
 
